@@ -1,0 +1,73 @@
+# OSX
+#
+.DS_Store
+
+# XDE
+.expo/
+
+# VSCode
+.vscode/
+jsconfig.json
+
+# Xcode
+#
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
+
+# Android/IJ
+#
+.classpath
+.cxx
+.gradle
+.idea
+.project
+.settings
+local.properties
+android.iml
+
+# Cocoapods
+#
+Pods
+Podfile.lock
+
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Yarn and monorepo
+.yarn
+yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/patches
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Synced shared native code
+packages/cordova/native_shared
+
+# Cordova artifacts
+packages/lib-cordova/lib/
+packages/lib-cordova/native_shared
+
+# lib artifacts
+*.tgz
