@@ -1,0 +1,19 @@
+{
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "testapp-cordova",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "rollup -c rollup.config.js -w",
+    "packCordova": "cd packages/lib-cordova && yarn pack"
+  },
+  "devDependencies": {
+    "rollup": "^4.52.3",
+    "rollup-plugin-dts": "^6.2.3",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "yarn@4.3.1+sha512.af78262d7d125afbfeed740602ace8c5e4405cd7f4735c08feb327286b2fdb2390fbca01589bfd1f50b1240548b74806767f5a063c94b67e431aabd0d86f7774"
+}
