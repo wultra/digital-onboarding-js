@@ -20,10 +20,11 @@ export class WDOActivationService extends WDOBaseActivationService {
      * Creates service instance
      * 
      * @param powerauth Configured PowerAuthSDK instance. This instance needs to be without valid activation.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server.
      */
-    constructor(powerauth: PowerAuth) {
+    constructor(powerauth: PowerAuth, baseUrl: string) {
         super()
-        this.api = new WDOApi(powerauth)
+        this.api = new WDOApi(powerauth, baseUrl)
         this.powerauth = powerauth
     }
 

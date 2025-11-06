@@ -15,12 +15,13 @@ import "cordova-powerauth-mobile-sdk"
 
 export class WDOApi extends WDOBaseApi {
 
-    private networking: WPNNetworking
-    private powerauth: PowerAuth
+    readonly networking: WPNNetworking
+    readonly powerauth: PowerAuth
 
-    constructor(powerauth: PowerAuth) {
+    constructor(powerauth: PowerAuth, baseUrl: string) {
         super()
-        this.networking = new WPNNetworking(powerauth)
+        // TODO: additional configuration?
+        this.networking = new WPNNetworking(powerauth, baseUrl)
         this.powerauth = powerauth
     }
 
