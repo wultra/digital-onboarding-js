@@ -1,0 +1,31 @@
+{
+  "name": "com.wultra.cordova.onboardingtestapp",
+  "displayName": "OnboardingTestApp",
+  "version": "1.0.0",
+  "description": "A sample Apache Cordova application that responds to the deviceready event.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "author": "Apache Cordova Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "cordova-android": "^14.0.1",
+    "cordova-digital-onboarding": "file:../packages/lib-cordova",
+    "cordova-ios": "^7.1.1",
+    "cordova-powerauth-mobile-sdk": "^4.1.0",
+    "cordova-powerauth-networking": "^1.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "plugins": {
+      "cordova-digital-onboarding": {}
+    }
+  }
+}

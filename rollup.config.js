@@ -6,12 +6,27 @@ const libCordovaDir = 'packages/lib-cordova'
 const libCordovaInput = `${libCordovaDir}/src/index.ts`
 const libCordovaOutput = `${libCordovaDir}/lib/index.js`
 const libCordovaOutputDts = `${libCordovaDir}/lib/index.d.ts`
-const expectedCordovaModules = ["cordova-powerauth-mobile-sdk", "cordova", "cordova-powerauth-networking"]
+const expectedCordovaModules = ["cordova-powerauth-mobile-sdk", "cordova", "cordova-powerauth-networking", "cordova-digital-onboarding"]
+
+// Cordova App Configuration
+const appCordovaDir = 'testapp-cordova'
 
 // React Native Library Configuration
 const libRNDir = 'packages/lib-react-native'
 const libRNInput = `${libRNDir}/src/index.ts`
 const libRNOutput = `${libRNDir}/lib` 
+
+// We dont want to import modules that will be supplied by Cordova environment
+// Cordova plugins are injected at runtime, so we need to strip these imports from the final bundle to not cause errors.
+const stripCordovaImportsPlugin =  {
+  name: "remove-cordova-modules",
+  transform(code, id) {
+    return {
+      code: code.replace(new RegExp(`^import.*(?:${expectedCordovaModules.map(m => `"${m}"`).join("|")}).*$`, "gm"), ""),
+      map: null,
+    };
+  },
+}
 
 // Generate both the JavaScript bundle and the TypeScript declaration file
 export default [
@@ -54,6 +69,21 @@ export default [
     },
     plugins: [dts()],
   },
+  // Cordova App
+  {
+    input: `${appCordovaDir}/src/index.ts`,
+    output: {
+      file: `${appCordovaDir}/www/js/index.js`,
+      format: 'cjs',
+      sourcemap: true
+    },
+    plugins: [
+      typescript({
+        tsconfig: `${appCordovaDir}/tsconfig.json`
+      }),
+      stripCordovaImportsPlugin
+    ]
+  }
 
   /**************
    * REACT NATIVE
