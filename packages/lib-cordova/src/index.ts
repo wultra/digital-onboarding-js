@@ -7,4 +7,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export * from './CordovaActivationService'
+export * from './WDOCordovaActivationService'
+export * from './WDOCordovaVerificationService'

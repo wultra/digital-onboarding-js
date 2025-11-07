@@ -76,20 +76,25 @@ function simulateActivation() {
                 birthDate: "1990/03/04"
             };
         }
-        var pin, powerAuth, activationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, error_1;
+        var serverCredentials, pin, powerAuth, activationService, verificationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, vfStatus, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    serverCredentials = {
+                        server: "https://localhost",
+                        paConfig: "base64-encoded-powerauth-configuration-string",
+                    };
                     pin = "1234";
-                    powerAuth = new PowerAuth("sample-instance-id");
+                    powerAuth = new PowerAuth(generateRandomNumericString());
                     powerAuth.configure({
-                        configuration: "TODO",
-                        baseEndpointUrl: "TODO"
+                        configuration: serverCredentials.paConfig,
+                        baseEndpointUrl: "".concat(serverCredentials.server, "/enrollment-server/")
                     });
-                    activationService = new WDOActivationService(powerAuth, "TODO");
+                    activationService = new WDOActivationService(powerAuth, "".concat(serverCredentials.server, "/enrollment-server-onboarding/"));
+                    verificationService = new WDOVerificationService(powerAuth, "".concat(serverCredentials.server, "/enrollment-server-onboarding/"));
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 12, , 13]);
+                    _a.trys.push([1, 12, 13, 15]);
                     // FIRST ACTIVATION PROCESS WITH CANCEL
                     console.log("Starting onboarding process...");
                     return [4 /*yield*/, activationService.start(getRandomAttributes())];
@@ -143,17 +148,26 @@ function simulateActivation() {
                 case 10:
                     paStatus = _a.sent();
                     console.log("PowerAuth SDK activation status: ".concat(paStatus.state));
-                    console.log("Removing PowerAuth SDK activation...");
-                    return [4 /*yield*/, powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))];
+                    // VERIFICATION STARTS HERE
+                    console.log("Retrieving verification status...");
+                    return [4 /*yield*/, verificationService.status()];
                 case 11:
-                    _a.sent();
-                    console.log("PowerAuth SDK activation removed.");
-                    return [3 /*break*/, 13];
+                    vfStatus = _a.sent();
+                    console.log("Onboarding verification status: ".concat(vfStatus.type));
+                    return [3 /*break*/, 15];
                 case 12:
                     error_1 = _a.sent();
                     console.error("Error during activation", error_1);
-                    return [3 /*break*/, 13];
-                case 13: return [2 /*return*/];
+                    return [3 /*break*/, 15];
+                case 13:
+                    // REMOVING POWERAUTH SDK ACTIVATION
+                    console.log("Removing PowerAuth SDK activation...");
+                    return [4 /*yield*/, powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))];
+                case 14:
+                    _a.sent();
+                    console.log("PowerAuth SDK activation removed.");
+                    return [7 /*endfinally*/];
+                case 15: return [2 /*return*/];
             }
         });
     });

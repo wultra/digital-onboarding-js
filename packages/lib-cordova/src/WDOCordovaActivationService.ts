@@ -8,9 +8,17 @@
  */
 
 import { WDOBaseActivationService, WDOPowerAuthActivationResult } from '../../lib-shared/src/WDOActivationService'
-import { WDOApi } from './CordovaApi'
+import { WDOApi } from './WDOCordovaApi'
 import "cordova-powerauth-mobile-sdk"
 
+/**
+ * Service that can activate PowerAuthSDK instance by user weak credentials (like his email, phone number or client ID) + SMS OTP.
+ * 
+ * When the PowerAuthSDK is activated with this service, `PowerAuthActivationStatus.needVerification` will be `true`
+ * and you will need to verify the PowerAuthSDK instance via `WDOVerificationService`.
+ * 
+ * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
+ */
 export class WDOActivationService extends WDOBaseActivationService {
 
     protected override api: WDOApi

@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDOBaseApi } from '../../lib-shared/src/api/Api'
-import { WDOEndpoint } from '../../lib-shared/src/api/Endpoints'
+import { WDOBaseApi } from '../../lib-shared/src/api/WDOBaseApi'
+import { WDOEndpoint } from '../../lib-shared/src/api/WDOEndpoints'
 import { WDOError } from '../../lib-shared/src/WDOError'
 import { WPNE2EEConfiguration, WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 import "cordova-powerauth-mobile-sdk"
@@ -31,7 +31,7 @@ export class WDOApi extends WDOBaseApi {
             // construct 
             this.cosntructEndpoint(endpoint),
             { requestObject: requestObject },
-            endpoint.e2eeScope === "NONE" ? undefined : PowerAuthAuthentication.possession()
+            endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined // if signed, use possession auth
         ).then(result => {
             if (result.responseObject) {
                 return result.responseObject as TResponse

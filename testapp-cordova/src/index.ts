@@ -1,7 +1,6 @@
 
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService} from "cordova-digital-onboarding"
-import { WPNNetworking } from "cordova-powerauth-networking"
+import { WDOActivationService, WDOVerificationService } from "cordova-digital-onboarding"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -17,16 +16,26 @@ function onDeviceReady() {
 
 async function simulateActivation() {
 
+    const serverCredentials = {
+        server: "https://localhost",
+        paConfig: "base64-encoded-powerauth-configuration-string",
+    }
+
     const pin = "1234"
-    const powerAuth = new PowerAuth("sample-instance-id");
+    const powerAuth = new PowerAuth(generateRandomNumericString());
     powerAuth.configure({
-        configuration: "TODO",
-        baseEndpointUrl: "TODO"
+        configuration: serverCredentials.paConfig,
+        baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
     });
     
     const activationService = new WDOActivationService(
         powerAuth,
-        "TODO"
+        `${serverCredentials.server}/enrollment-server-onboarding/`
+    )
+
+    const verificationService = new WDOVerificationService(
+        powerAuth, 
+        `${serverCredentials.server}/enrollment-server-onboarding/`
     )
 
     function getRandomAttributes(): any {
@@ -86,12 +95,21 @@ async function simulateActivation() {
         const paStatus = await powerAuth.fetchActivationStatus()
         console.log(`PowerAuth SDK activation status: ${paStatus.state}`);
 
-        console.log("Removing PowerAuth SDK activation...")
-        await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
-        console.log("PowerAuth SDK activation removed.");
+        // VERIFICATION STARTS HERE
+
+        console.log("Retrieving verification status...")
+        const vfStatus = await verificationService.status()
+        console.log(`Onboarding verification status: ${vfStatus.type}`);
 
     } catch (error) {
         console.error(`Error during activation`, error);
+    } finally {
+
+        // REMOVING POWERAUTH SDK ACTIVATION
+
+        console.log("Removing PowerAuth SDK activation...")
+        await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
+        console.log("PowerAuth SDK activation removed.");
     }
 
 }

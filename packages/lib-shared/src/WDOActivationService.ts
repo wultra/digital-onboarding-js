@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDOBaseApi } from './api/Api'
-import { WDOOnboardingStatus } from './api/OnboardingObjects'
+import { WDOBaseApi } from './api/WDOBaseApi'
+import { WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 

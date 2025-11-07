@@ -21,7 +21,7 @@ export class WDOLogger {
         console.warn(`[WDO][WARN] ${message}`)
     }
 
-    static error(message: string) {
-        console.error(`[WDO][ERROR] ${message}`)
+    static error(message: string, error?: any) {
+        console.error(`[WDO][ERROR] ${message}`, error)
     }
 }
