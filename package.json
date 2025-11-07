@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "rollup -c rollup.config.js -w",
+    "dev": "sh scripts/build.sh -dev",
     "packCordova": "cd packages/lib-cordova && yarn pack"
   },
   "devDependencies": {

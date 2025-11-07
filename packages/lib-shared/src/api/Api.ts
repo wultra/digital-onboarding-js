@@ -43,7 +43,7 @@ export abstract class WDOBaseApi {
 
     activationGetOTP(processId: string): Promise<{ otpCode: string }> {
         const requestObject = { processId: processId, otpType: "ACTIVATION" }
-        return this.callApi(requestObject, { path: "/api/onboarding/otp/detail", e2eeScope: "APPLICATION" })
+        return this.callApi(requestObject, { path: "/api/onboarding/otp/detail", e2eeScope: "APPLICATION", returnsData: true })
     }
 
     // Verification endpoints

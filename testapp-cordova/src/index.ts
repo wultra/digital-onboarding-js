@@ -12,8 +12,94 @@ function onDeviceReady() {
 
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready')?.classList.add('ready');
+    document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
+}
 
-    console.log(`${WPNNetworking.name}`)
-    console.log(`${PowerAuth.name}`)
-    console.log(`${WDOActivationService.name}`)
+async function simulateActivation() {
+
+    const pin = "1234"
+    const powerAuth = new PowerAuth("sample-instance-id");
+    powerAuth.configure({
+        configuration: "TODO",
+        baseEndpointUrl: "TODO"
+    });
+    
+    const activationService = new WDOActivationService(
+        powerAuth,
+        "TODO"
+    )
+
+    function getRandomAttributes(): any {
+        return {
+            clientNumber: generateRandomNumericString(),
+            birthDate: "1990/03/04"
+        }
+    }
+
+    try {
+
+        // FIRST ACTIVATION PROCESS WITH CANCEL
+
+        console.log("Starting onboarding process...")
+        await activationService.start(getRandomAttributes())
+        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+
+        console.log("Getting activation status...")
+        const status = await activationService.status()
+        console.log(`Activation status after start: ${status}`)
+        
+        // console.log("Resending OTP...")
+        // await activationService.resendOTP()
+        // console.log("OTP resent.")
+
+        // TODO: retrieve OTP from server or user input
+
+        console.log("Cancelling activation...")
+        await activationService.cancel(false)
+        console.log("Activation process canceled.")
+
+        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+
+        // SECOND ACTIVATION PROCESS WITHOUT CANCEL
+
+        console.log("Starting second onboarding process...")
+        await activationService.start(getRandomAttributes())
+        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+
+        console.log("Getting activation status...")
+        const status2 = await activationService.status()
+        console.log(`Activation status after start: ${status2}`)
+
+        console.log("Retrieving OTP from server...")
+        const anyActivationService: any = activationService // to access non-public method
+        const otp: string = await anyActivationService.getOTP()
+        console.log(`OTP retrieved: ${otp}`)
+
+        console.log("Activating PowerAuth SDK...")
+        const activationResult = await activationService.activate(otp, "my-test-activation")
+        console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`);
+
+        await powerAuth.persistActivation(PowerAuthAuthentication.persistWithPassword(pin))
+        console.log("PowerAuth SDK activation persisted with password.");
+
+        console.log("Fetching PowerAuth SDK activation status...")
+        const paStatus = await powerAuth.fetchActivationStatus()
+        console.log(`PowerAuth SDK activation status: ${paStatus.state}`);
+
+        console.log("Removing PowerAuth SDK activation...")
+        await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
+        console.log("PowerAuth SDK activation removed.");
+
+    } catch (error) {
+        console.error(`Error during activation`, error);
+    }
+
+}
+
+function generateRandomNumericString(length: number = 10): string {
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += Math.floor(Math.random() * 10).toString();
+    }
+    return result;
 }

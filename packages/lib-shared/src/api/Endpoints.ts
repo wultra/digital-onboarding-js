@@ -12,6 +12,7 @@ export interface WDOEndpoint {
     e2eeScope: "ACTIVATION" | "APPLICATION" | "NONE" // Configuration for end-to-end encryption.
     uriId?: string // URI ID used for signature calculation. Only for signed endpoints.
     tokenName?: string // Name of the token used for authentication. Only for signed-with-token endpoints.
+    returnsData: boolean // Indicates whether the endpoint response contains data object.
 }
 
 export class WDOEndpoints {
@@ -20,22 +21,26 @@ export class WDOEndpoints {
     
     static start: WDOEndpoint = {
         path: "/api/onboarding/start",
-        e2eeScope: "APPLICATION"
+        e2eeScope: "APPLICATION",
+        returnsData: true
     }
 
     static cancel: WDOEndpoint = {
         path: "/api/onboarding/cleanup",
-        e2eeScope: "APPLICATION"
+        e2eeScope: "APPLICATION",
+        returnsData: false
     }
 
     static resendOTP: WDOEndpoint = {
         path: "/api/onboarding/otp/resend",
-        e2eeScope: "APPLICATION"
+        e2eeScope: "APPLICATION",
+        returnsData: false
     }
 
     static getStatus: WDOEndpoint = {
         path: "/api/onboarding/status",
-        e2eeScope: "APPLICATION"
+        e2eeScope: "APPLICATION",
+        returnsData: true
     }
 
     // Idenitification endpoints

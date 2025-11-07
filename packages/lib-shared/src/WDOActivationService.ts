@@ -121,13 +121,24 @@ export abstract class WDOBaseActivationService {
         await this.api.activationResendOTP(pid)
     }
 
+    /**
+     * Demo endpoint available only in Wultra Demo systems.
+     * 
+     * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
+     */
+    private async getOTP(): Promise<String> {
+        WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
+        const pid = this.verifyHasActiveProcess()
+        return (await this.api.activationGetOTP(pid)).otpCode
+    }
+
     async activate(otp: string, activationName?: string): Promise<WDOPowerAuthActivationResult> {
         // TODO: add some default activation name from the PA SDK (like device name)
         const actName = activationName ?? "TODO-Activation-Name"
         WDOLogger.debug(`Activating the PowerAuth with activation name '${actName}'`)
         await this.verifyCanStartProcess()
         const pid = this.verifyHasActiveProcess()
-        const identityAttributes = { processId: pid, otp: otp }
+        const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
         return this.activatePowerAuth(identityAttributes, actName)
     }
     // PRIVATE METHODS

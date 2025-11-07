@@ -37,6 +37,9 @@ export class WDOApi extends WDOBaseApi {
                 return result.responseObject as TResponse
             } else if (result.responseError) {
                 throw new WDOError(`Server API error: ${result.responseError.code}, ${result.responseError.message}`, result.responseError)
+            } else if (!endpoint.returnsData) {
+                // for void responses
+                return {} as TResponse
             } else {
                 throw new WDOError(`Failed to retrieve activation data`)
             }
@@ -62,7 +65,7 @@ export class WDOApi extends WDOBaseApi {
         } else if (endpoint.tokenName) {
             return WPNEndpoint.signedWithToken(endpoint.path, endpoint.tokenName, undefined, scope)
         } else {
-            return WPNEndpoint.unsigned(endpoint.path)
+            return WPNEndpoint.unsigned(endpoint.path, undefined, scope)
         }
     }
 }
