@@ -74,7 +74,7 @@ export abstract class WDOBaseApi {
     }
 
     verificationInitScanSDK(processId: string, challenge: string): Promise<any> { // TODO: proper return type?
-        const requestObject = { processId: processId, attributes: { challengeToken: challenge }} 
+        const requestObject = { processId: processId, attributes: { 'sdk-init-token': challenge }} 
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 

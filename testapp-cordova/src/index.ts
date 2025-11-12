@@ -1,6 +1,6 @@
 
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDOVerificationService, WDOVerificationStateType } from "cordova-digital-onboarding"
+import { WDOActivationService, WDODocumentType, WDOVerificationService, WDOVerificationStateType } from "cordova-digital-onboarding"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -125,6 +125,23 @@ async function simulateActivation() {
         const approvalResult = await verificationService.consentApprove()
         guardState(approvalResult.type, WDOVerificationStateType.documentsToScanSelect)
         console.log("Consent approved.")
+
+        // init document scanning SDK
+        console.log("Initializing document scanning SDK...")
+        const initResult = await verificationService.documentsInitSDK()
+        console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
+
+        // set selected document types
+        console.log("Setting selected document types...")
+        const docTypesResult = await verificationService.documentsSetSelectedTypes([
+            WDODocumentType.idCard,
+            WDODocumentType.driversLicense
+        ])
+        guardState(docTypesResult.type, WDOVerificationStateType.scanDocument)
+        console.log("Selected document types set.")
+        if (docTypesResult.type == WDOVerificationStateType.scanDocument) {
+            console.log(`Documents to scan: ${JSON.stringify(docTypesResult.process.documents)}`)
+        }
 
     } catch (error) {
         console.error(`Error during activation`, error);

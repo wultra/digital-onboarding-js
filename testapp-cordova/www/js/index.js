@@ -76,7 +76,7 @@ function simulateActivation() {
                 birthDate: "1990/03/04"
             };
         }
-        var serverCredentials, pin, powerAuth, activationService, verificationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, vfStatus, consentTextResponse, approvalResult, error_1;
+        var serverCredentials, pin, powerAuth, activationService, verificationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, vfStatus, consentTextResponse, approvalResult, initResult, docTypesResult, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -94,7 +94,7 @@ function simulateActivation() {
                     verificationService = new WDOVerificationService(powerAuth, "".concat(serverCredentials.server, "/enrollment-server-onboarding/"));
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 14, 15, 17]);
+                    _a.trys.push([1, 16, 17, 19]);
                     // FIRST ACTIVATION PROCESS WITH CANCEL
                     console.log("Starting onboarding process...");
                     return [4 /*yield*/, activationService.start(getRandomAttributes())];
@@ -182,20 +182,39 @@ function simulateActivation() {
                     approvalResult = _a.sent();
                     guardState(approvalResult.type, WDOVerificationStateType.documentsToScanSelect);
                     console.log("Consent approved.");
-                    return [3 /*break*/, 17];
+                    // init document scanning SDK
+                    console.log("Initializing document scanning SDK...");
+                    return [4 /*yield*/, verificationService.documentsInitSDK()];
                 case 14:
+                    initResult = _a.sent();
+                    console.log("Document scanning SDK initialized: ".concat(JSON.stringify(initResult)));
+                    // set selected document types
+                    console.log("Setting selected document types...");
+                    return [4 /*yield*/, verificationService.documentsSetSelectedTypes([
+                            WDODocumentType.idCard,
+                            WDODocumentType.driversLicense
+                        ])];
+                case 15:
+                    docTypesResult = _a.sent();
+                    guardState(docTypesResult.type, WDOVerificationStateType.scanDocument);
+                    console.log("Selected document types set.");
+                    if (docTypesResult.type == WDOVerificationStateType.scanDocument) {
+                        console.log("Documents to scan: ".concat(JSON.stringify(docTypesResult.process.documents)));
+                    }
+                    return [3 /*break*/, 19];
+                case 16:
                     error_1 = _a.sent();
                     console.error("Error during activation", error_1);
-                    return [3 /*break*/, 17];
-                case 15:
+                    return [3 /*break*/, 19];
+                case 17:
                     // REMOVING POWERAUTH SDK ACTIVATION
                     console.log("Removing PowerAuth SDK activation...");
                     return [4 /*yield*/, powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))];
-                case 16:
+                case 18:
                     _a.sent();
                     console.log("PowerAuth SDK activation removed.");
                     return [7 /*endfinally*/];
-                case 17: return [2 /*return*/];
+                case 19: return [2 /*return*/];
             }
         });
     });

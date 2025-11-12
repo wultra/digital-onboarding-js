@@ -13,6 +13,7 @@ import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 import { WDOEndStateReason, WDOProcessingItem, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
+import { WDODocumentType } from './WDODocumentFile'
 
 export interface WDOVerificationServiceListener {
     /**
@@ -134,6 +135,19 @@ export abstract class WDOBaseVerificationService {
         const response = await this.handleError(this.api.verificationResolveConsent(pid, true))
         await this.handleError(this.api.verificationStart(pid))
         return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
+    }
+
+    async documentsInitSDK(challenge?: string): Promise<any> {
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verificationInitScanSDK(pid, challenge ?? ""))
+        return response
+    }
+
+    async documentsSetSelectedTypes(types: WDODocumentType[]): Promise<WDOVerificationState> {
+        WDOLogger.debug(`Submitting selected document types: ${types}`)
+        const process = new WDOVerificationScanProcess(types)
+        this.cachedProcess = process
+        return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: process })
     }
 
     private verifyHasActiveProcess(): string {

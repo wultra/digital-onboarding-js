@@ -16,7 +16,7 @@ export class WDOVerificationScanProcess {
 
     public get nextDocumentToScan(): WDOScannedDocument | undefined { return this.documents.find(d => d.uploadState !== UploadState.accepted) }
 
-    constructor(types: [WDODocumentType]) {
+    constructor(types: WDODocumentType[]) {
         this.documents = types.map(t => new WDOScannedDocument(t))
     }
 
