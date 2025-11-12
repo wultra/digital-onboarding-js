@@ -158,45 +158,12 @@ export enum DocumentSubmitFileSide {
     back = "BACK"
 }
 
-/// Submitted document metadata
-export interface Document {
-    /// Name of the file (with path within the submit ZIP file).
-    filename: string
-    /// Unique ID of the file
-    id: string
-    /// Type of the file
-    type: DocumentSubmitFileType
-    /// Side of the file
-    side: DocumentSubmitFileSide
-    /// Status of the processing
-    status: DocumentStatus
-    /// Possible errors
-    errors?: string[]
-}
-
-export enum DocumentStatus {
-    /// Document was accepted
-    accepted = "ACCEPTED",
-    /// Document is being uploaded to the verification system by the backend
-    uploadInProgress = "UPLOAD_IN_PROGRESS",
-    /// Document are being processed
-    inProgress = "IN_PROGRESS",
-    /// Document is pending verification
-    verificationPending = "VERIFICATION_PENDING",
-    /// Document is being verified
-    verificationInProgress = "VERIFICATION_IN_PROGRESS",
-    /// Document was rejected
-    rejected = "REJECTED",
-    /// Verification of the document failed
-    failed = "FAILED"
-}
-
 /// Status of the documents
 export interface DocumentStatusResponse {
     /// Overall status
-    status: DocumentStatus
+    status: WDODocumentStatus
     /// Status for each document.
-    documents: Document[]
+    documents: WDODocument[]
 }
 
 /// Response of the OTP verify

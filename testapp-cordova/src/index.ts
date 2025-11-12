@@ -1,6 +1,6 @@
 
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDOVerificationService } from "cordova-digital-onboarding"
+import { WDOActivationService, WDOVerificationService, WDOVerificationStateType } from "cordova-digital-onboarding"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -71,35 +71,60 @@ async function simulateActivation() {
 
         // SECOND ACTIVATION PROCESS WITHOUT CANCEL
 
+        // start onboarding
         console.log("Starting second onboarding process...")
         await activationService.start(getRandomAttributes())
         console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
 
+        // get onboarding status
         console.log("Getting activation status...")
         const status2 = await activationService.status()
         console.log(`Activation status after start: ${status2}`)
 
+        // retrieve OTP from server (in real app, user would input it)
         console.log("Retrieving OTP from server...")
         const anyActivationService: any = activationService // to access non-public method
         const otp: string = await anyActivationService.getOTP()
         console.log(`OTP retrieved: ${otp}`)
 
+        // activate PowerAuth SDK
         console.log("Activating PowerAuth SDK...")
         const activationResult = await activationService.activate(otp, "my-test-activation")
         console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`);
 
+        // persist activation
         await powerAuth.persistActivation(PowerAuthAuthentication.persistWithPassword(pin))
         console.log("PowerAuth SDK activation persisted with password.");
 
+        // fetch activation status to verify it's active
         console.log("Fetching PowerAuth SDK activation status...")
         const paStatus = await powerAuth.fetchActivationStatus()
         console.log(`PowerAuth SDK activation status: ${paStatus.state}`);
+        if (paStatus.state !== PowerAuthActivationState.ACTIVE) {
+            throw new Error("PowerAuth SDK is not active after activation!")
+        }
 
         // VERIFICATION STARTS HERE
 
+        // get verification status
         console.log("Retrieving verification status...")
         const vfStatus = await verificationService.status()
         console.log(`Onboarding verification status: ${vfStatus.type}`);
+        guardState(vfStatus.type, WDOVerificationStateType.intro)
+
+        // get consent text
+        console.log("Retrieving consent text...")
+        const consentTextResponse = await verificationService.consentGet()
+        guardState(consentTextResponse.type, WDOVerificationStateType.consent)
+        if (consentTextResponse.type == WDOVerificationStateType.consent) {
+            console.log(`Consent text retrieved: ${(consentTextResponse).body.substring(0, 50)}...`)
+        }
+
+        // approve consent
+        console.log("Approving consent...")
+        const approvalResult = await verificationService.consentApprove()
+        guardState(approvalResult.type, WDOVerificationStateType.documentsToScanSelect)
+        console.log("Consent approved.")
 
     } catch (error) {
         console.error(`Error during activation`, error);
@@ -112,6 +137,14 @@ async function simulateActivation() {
         console.log("PowerAuth SDK activation removed.");
     }
 
+}
+
+function guardState(state: WDOVerificationStateType, expected: WDOVerificationStateType) {
+    if (state !== expected) {
+        throw new Error(`Invalid verification state. Expected: ${expected}, actual: ${state}`)
+    } else {
+        console.log(`Verification state is as expected: ${state}`)
+    }
 }
 
 function generateRandomNumericString(length: number = 10): string {

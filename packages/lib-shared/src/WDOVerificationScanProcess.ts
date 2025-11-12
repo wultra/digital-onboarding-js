@@ -19,6 +19,21 @@ export class WDOVerificationScanProcess {
     constructor(types: [WDODocumentType]) {
         this.documents = types.map(t => new WDOScannedDocument(t))
     }
+
+    feedServerData(documents: WDODocument[]) {
+        const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
+            const key = doc.type
+            const group = map.get(key) ?? [];
+            group.push(doc);
+            map.set(key, group);
+            return map;
+        }, new Map())
+
+        groups.forEach((docs, type) => {
+             // TODO: type missmatch?
+            this.documents.find(d => d.type === type)?.processServerData(docs)
+        })
+    }
 }
 
 export class WDOScannedDocument {

@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDOVerificationScanProcess } from "./WDOVerificationScanProcess"
 import { WDOStatusCheckReason } from "./WDOVerificationService"
 
 export type WDOVerificationState =
@@ -36,7 +37,7 @@ interface DocumentsToScanSelect {
 
 interface ScanDocument {
     type: WDOVerificationStateType.scanDocument
-    process: any // TODO: WDOVerificationScanProcess
+    process: WDOVerificationScanProcess
 }
 
 interface Processing {

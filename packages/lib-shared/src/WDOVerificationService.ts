@@ -8,7 +8,7 @@
  */
 
 import { WDOBaseApi } from './api/WDOBaseApi'
-import { WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
+import { WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 import { WDOEndStateReason, WDOProcessingItem, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
@@ -80,7 +80,21 @@ export abstract class WDOBaseVerificationService {
                     const cachedProcess = this.cachedProcess
 
                     if (cachedProcess) {
-                        // TODO: implement
+                        
+                        cachedProcess.feedServerData(docsResponse.documents)
+
+                        if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
+                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                        } else if (documents.every(d => documentAction(d) === "proceed")) {
+                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                        } else if (documents.some(d => documentAction(d) === "wait")) {
+                            return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification })
+                        } else if (documents.length == 0) {
+                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                        } else {
+                            return this.processSuccess({ type: WDOVerificationStateType.failed })
+                        }
+
                     } else {
                         if (documents.length == 0) {
                             return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
@@ -109,12 +123,40 @@ export abstract class WDOBaseVerificationService {
         }
     }
 
+    async consentGet(): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verificationGetConsentText(pid))
+        return this.processSuccess({ type: WDOVerificationStateType.consent, body: response.consentText })
+    }
+    
+    async consentApprove(): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verificationResolveConsent(pid, true))
+        await this.handleError(this.api.verificationStart(pid))
+        return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
+    }
+
+    private verifyHasActiveProcess(): string {
+        const pid = this.lastStatus?.processId
+        if (!pid) {
+            WDOLogger.error("Process id not available - did you start the verification process and fetched the status?")
+            throw new WDOError("Process id not available - did you start the verification process and fetched the status?")
+        }
+        return pid
+    }
+
     private processSuccess<T>(result: T): T {
         // TODO:
         // if (result instanceof Success) {
         //     this.listener?.verificationStatusChanged(this, result.status)
         // }
         return result
+    }
+
+    private handleError<T>(promise: Promise<T>): Promise<T> {
+        return promise.catch(error => {
+            throw this.processError(error)
+        })
     }
 
     private processError(error: any): any {
@@ -334,4 +376,16 @@ export enum WDOStatusCheckReason {
     clientVerification = "clientVerification",
     clientAccepted = "clientAccepted",
     verifyingPresence = "verifyingPresence"
+}
+
+function documentAction(document: WDODocument): "proceed" | "wait" | "error" {
+    switch (document.status) {
+        case WDODocumentStatus.accepted:
+            return "proceed"
+        case WDODocumentStatus.uploadInProgress, WDODocumentStatus.inProgress, WDODocumentStatus.verificationPending, WDODocumentStatus.verificationInProgress:
+            return "wait"
+        case WDODocumentStatus.rejected, WDODocumentStatus.failed:
+            return "error"
+    }
+    return "error" // fallback
 }

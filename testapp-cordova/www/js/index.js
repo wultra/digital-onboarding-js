@@ -76,13 +76,13 @@ function simulateActivation() {
                 birthDate: "1990/03/04"
             };
         }
-        var serverCredentials, pin, powerAuth, activationService, verificationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, vfStatus, error_1;
+        var serverCredentials, pin, powerAuth, activationService, verificationService, status_1, status2, anyActivationService, otp, activationResult, paStatus, vfStatus, consentTextResponse, approvalResult, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     serverCredentials = {
-                        server: "https://localhost",
-                        paConfig: "base64-encoded-powerauth-configuration-string",
+                        server: "https://powerauth-dev.westeurope.cloudapp.azure.com",
+                        paConfig: "ARCB+/qxpmLCa04AyT2IPXHKED4Heu76QU+v2PtnzQbe0sYBAUEEU05t3byEUdh90CBiBvqgr4sWU7r1YTAtdpTh3EyhAUL791k66wy+SZM1qELw6zdoOHNFk/z4neDDqKtIQ5E5jg==",
                     };
                     pin = "1234";
                     powerAuth = new PowerAuth(generateRandomNumericString());
@@ -94,7 +94,7 @@ function simulateActivation() {
                     verificationService = new WDOVerificationService(powerAuth, "".concat(serverCredentials.server, "/enrollment-server-onboarding/"));
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 12, 13, 15]);
+                    _a.trys.push([1, 14, 15, 17]);
                     // FIRST ACTIVATION PROCESS WITH CANCEL
                     console.log("Starting onboarding process...");
                     return [4 /*yield*/, activationService.start(getRandomAttributes())];
@@ -117,16 +117,19 @@ function simulateActivation() {
                     console.log("Activation process canceled.");
                     console.log("Activation started:  ".concat(activationService.hasActiveProcess ? "yes" : "no"));
                     // SECOND ACTIVATION PROCESS WITHOUT CANCEL
+                    // start onboarding
                     console.log("Starting second onboarding process...");
                     return [4 /*yield*/, activationService.start(getRandomAttributes())];
                 case 5:
                     _a.sent();
                     console.log("Activation started:  ".concat(activationService.hasActiveProcess ? "yes" : "no"));
+                    // get onboarding status
                     console.log("Getting activation status...");
                     return [4 /*yield*/, activationService.status()];
                 case 6:
                     status2 = _a.sent();
                     console.log("Activation status after start: ".concat(status2));
+                    // retrieve OTP from server (in real app, user would input it)
                     console.log("Retrieving OTP from server...");
                     anyActivationService = activationService // to access non-public method
                     ;
@@ -134,43 +137,76 @@ function simulateActivation() {
                 case 7:
                     otp = _a.sent();
                     console.log("OTP retrieved: ".concat(otp));
+                    // activate PowerAuth SDK
                     console.log("Activating PowerAuth SDK...");
                     return [4 /*yield*/, activationService.activate(otp, "my-test-activation")];
                 case 8:
                     activationResult = _a.sent();
                     console.log("PowerAuth SDK activated. Activation fingerprint: ".concat(activationResult.activationFingerprint));
+                    // persist activation
                     return [4 /*yield*/, powerAuth.persistActivation(PowerAuthAuthentication.persistWithPassword(pin))];
                 case 9:
+                    // persist activation
                     _a.sent();
                     console.log("PowerAuth SDK activation persisted with password.");
+                    // fetch activation status to verify it's active
                     console.log("Fetching PowerAuth SDK activation status...");
                     return [4 /*yield*/, powerAuth.fetchActivationStatus()];
                 case 10:
                     paStatus = _a.sent();
                     console.log("PowerAuth SDK activation status: ".concat(paStatus.state));
+                    if (paStatus.state !== PowerAuthActivationState.ACTIVE) {
+                        throw new Error("PowerAuth SDK is not active after activation!");
+                    }
                     // VERIFICATION STARTS HERE
+                    // get verification status
                     console.log("Retrieving verification status...");
                     return [4 /*yield*/, verificationService.status()];
                 case 11:
                     vfStatus = _a.sent();
                     console.log("Onboarding verification status: ".concat(vfStatus.type));
-                    return [3 /*break*/, 15];
+                    guardState(vfStatus.type, WDOVerificationStateType.intro);
+                    // get consent text
+                    console.log("Retrieving consent text...");
+                    return [4 /*yield*/, verificationService.consentGet()];
                 case 12:
+                    consentTextResponse = _a.sent();
+                    guardState(consentTextResponse.type, WDOVerificationStateType.consent);
+                    if (consentTextResponse.type == WDOVerificationStateType.consent) {
+                        console.log("Consent text retrieved: ".concat((consentTextResponse).body.substring(0, 50), "..."));
+                    }
+                    // approve consent
+                    console.log("Approving consent...");
+                    return [4 /*yield*/, verificationService.consentApprove()];
+                case 13:
+                    approvalResult = _a.sent();
+                    guardState(approvalResult.type, WDOVerificationStateType.documentsToScanSelect);
+                    console.log("Consent approved.");
+                    return [3 /*break*/, 17];
+                case 14:
                     error_1 = _a.sent();
                     console.error("Error during activation", error_1);
-                    return [3 /*break*/, 15];
-                case 13:
+                    return [3 /*break*/, 17];
+                case 15:
                     // REMOVING POWERAUTH SDK ACTIVATION
                     console.log("Removing PowerAuth SDK activation...");
                     return [4 /*yield*/, powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))];
-                case 14:
+                case 16:
                     _a.sent();
                     console.log("PowerAuth SDK activation removed.");
                     return [7 /*endfinally*/];
-                case 15: return [2 /*return*/];
+                case 17: return [2 /*return*/];
             }
         });
     });
+}
+function guardState(state, expected) {
+    if (state !== expected) {
+        throw new Error("Invalid verification state. Expected: ".concat(expected, ", actual: ").concat(state));
+    }
+    else {
+        console.log("Verification state is as expected: ".concat(state));
+    }
 }
 function generateRandomNumericString(length) {
     if (length === void 0) { length = 10; }

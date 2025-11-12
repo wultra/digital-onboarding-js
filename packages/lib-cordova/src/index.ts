@@ -9,3 +9,4 @@
 
 export * from './WDOCordovaActivationService'
 export * from './WDOCordovaVerificationService'
+export * from '../../lib-shared/src/WDOVerificationState'
