@@ -7,21 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// TODO: add log level control
 export class WDOLogger {
 
     static debug(message: string) {
-        console.debug(`[WDO][DEBUG] ${message}`)
+        console.log(`[WDO][DEBUG] ${message}`)
     }
 
     static info(message: string) {
-        console.info(`[WDO][INFO] ${message}`)
+        console.log(`[WDO][INFO] ${message}`)
     }
 
     static warn(message: string) {
-        console.warn(`[WDO][WARN] ${message}`)
+        console.log(`[WDO][WARN] ${message}`)
     }
 
     static error(message: string, error?: any) {
-        console.error(`[WDO][ERROR] ${message}`, error)
+        console.log(`[WDO][ERROR] ${message}`, error)
     }
 }

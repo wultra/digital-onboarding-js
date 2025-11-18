@@ -9,10 +9,12 @@
 
 import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 
+export type Base64EncodedJPEG = string
+
 /** Image of a document that can be sent to the backend for Identity Verification. */
 export class WDODocumentFile {
     /** Raw data to upload. Make sure that the data aren't too big, hundreds of kbs should be enough. */
-    public data: Uint8Array // The binary data of the document file
+    public data: Base64EncodedJPEG
     /**
      * Image signature.
      * 
@@ -30,16 +32,12 @@ export class WDODocumentFile {
      */
     public originalDocumentId: string | undefined
 
-    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Uint8Array, dataSignature?: string): WDODocumentFile {
+    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string): WDODocumentFile {
         const originalDocumentId = scannedDocument.sides.find(s => s.type === side)?.serverId
-        return new WDODocumentFile(data, dataSignature, scannedDocument.type, side, originalDocumentId)
+        return new WDODocumentFile(data, scannedDocument.type, side, originalDocumentId, dataSignature)
     }
 
-    static fromRawData(data: Uint8Array, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string): WDODocumentFile {
-        return new WDODocumentFile(data, dataSignature, type, side, originalDocumentId)
-    }
-
-    constructor(data: Uint8Array, dataSignature: string | undefined = undefined, type: WDODocumentType, side: WDODocumentSide, originalDocumentId: string | undefined) {
+    constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string) {
         this.data = data
         this.dataSignature = dataSignature
         this.type = type

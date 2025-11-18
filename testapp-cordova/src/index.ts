@@ -1,6 +1,8 @@
 
+import { zipIDcard, zipDLcard, serverCredentials } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentType, WDOVerificationService, WDOVerificationStateType } from "cordova-digital-onboarding"
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType } from "cordova-digital-onboarding"
+import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking";
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -15,11 +17,6 @@ function onDeviceReady() {
 }
 
 async function simulateActivation() {
-
-    const serverCredentials = {
-        server: "https://localhost",
-        paConfig: "base64-encoded-powerauth-configuration-string",
-    }
 
     const pin = "1234"
     const powerAuth = new PowerAuth(generateRandomNumericString());
@@ -46,6 +43,8 @@ async function simulateActivation() {
     }
 
     try {
+
+        //WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
 
         // FIRST ACTIVATION PROCESS WITH CANCEL
 
@@ -143,8 +142,29 @@ async function simulateActivation() {
             console.log(`Documents to scan: ${JSON.stringify(docTypesResult.process.documents)}`)
         }
 
+        const scannedId = [
+            new WDODocumentFile("fakedata", WDODocumentType.idCard, WDODocumentSide.front),
+            new WDODocumentFile("fakedata", WDODocumentType.idCard, WDODocumentSide.back),
+        ]
+
+        const scannedDL = [
+            new WDODocumentFile("fakedata", WDODocumentType.driversLicense, WDODocumentSide.front)
+        ]
+
+        // simulate document scanning by submitting demo ZIP file
+        console.log("Demo ID card scan")
+        const demoResultIdcard = await uploadDocuments(verificationService, scannedId, zipIDcard)
+        console.log(`Verification status after ID card scan: ${demoResultIdcard.type}`)
+        guardState(demoResultIdcard.type, WDOVerificationStateType.scanDocument)
+
+        // simulate document scanning by submitting demo ZIP file
+        console.log("Driving License card scan")
+        const demoResultDLcard = await uploadDocuments(verificationService, scannedDL, zipDLcard)
+        console.log(`Verification status after Driving License card scan: ${demoResultDLcard.type}`)
+        guardState(demoResultDLcard.type, WDOVerificationStateType.presenceCheck)
+
     } catch (error) {
-        console.error(`Error during activation`, error);
+        console.error(`Error during activation: ${JSON.stringify(error)}`);
     } finally {
 
         // REMOVING POWERAUTH SDK ACTIVATION
@@ -154,6 +174,31 @@ async function simulateActivation() {
         console.log("PowerAuth SDK activation removed.");
     }
 
+}
+
+async function uploadDocuments(verificationService: WDOVerificationService, documents: WDODocumentFile[], zip: { folder: string, data: string }): Promise<WDOVerificationState> {
+    // simulate document scanning by submitting demo ZIP file
+    console.log("Simulating document scanning by submitting demo ZIP file...")
+    const scanResult = await verificationService.documentsSubmit(
+        documents,
+        zip.folder,
+        zip.data
+    )
+    guardState(scanResult.type, WDOVerificationStateType.processing)
+    console.log("Demo document scans submitted, fetching status.")
+
+    let repeatedStatus = await verificationService.status()
+
+    console.log(`Status after document submission: ${repeatedStatus.type}`)
+
+    while(repeatedStatus.type === WDOVerificationStateType.processing) {
+        console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)
+        await new Promise(resolve => setTimeout(resolve, 3000))
+       
+        repeatedStatus = await verificationService.status()
+    }
+
+    return repeatedStatus
 }
 
 function guardState(state: WDOVerificationStateType, expected: WDOVerificationStateType) {

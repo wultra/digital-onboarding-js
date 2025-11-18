@@ -69,7 +69,7 @@ export abstract class WDOBaseActivationService {
      * @param credentials Object with credentials. Which credentials are needed should be provided by a system/backend provider.
      */
     async start(credentials: any): Promise<void> {
-        WDOLogger.debug(`Starting activation with credentials: ${credentials}`)
+        WDOLogger.debug(`Starting activation with credentials: ${JSON.stringify(credentials)}`)
         if (this.processId) {
             throw new WDOError("Cannot start the process - processId already obtained, cancel first.")
         }

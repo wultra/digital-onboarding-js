@@ -19,7 +19,7 @@
     </engines>
 
     <!-- DEPENDENCIES -->
-    <dependency id="cordova-powerauth-networking" version="1.0.0" />
+    <dependency id="cordova-powerauth-networking" version="1.0.1" />
 
     <!-- PLATFORMS -->
     <platform name="android" kotlin="1.9.22">

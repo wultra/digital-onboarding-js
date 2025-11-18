@@ -14,7 +14,7 @@
         "plugin.xml"
     ],
     "scripts": {
-        "prepack": "cd ../.. && rollup -c rollup.config.js && cp README.md LICENSE packages/lib-cordova/",
+        "prepack": "yarn install && cd ../.. && rollup -c rollup.config.js && cp README.md LICENSE packages/lib-cordova/",
         "postpack": "rm README.md LICENSE"
     },
     "repository": {
@@ -27,7 +27,7 @@
     "devDependencies": {
         "cordova": "^12.0.0",
         "cordova-powerauth-mobile-sdk": "^4.1.0",
-        "cordova-powerauth-networking": "^1.0.0",
+        "cordova-powerauth-networking": "^1.0.1",
         "typescript": "^5.9.2"
     }
 }

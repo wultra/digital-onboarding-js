@@ -78,7 +78,6 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 
-    // TODO: data = base64 encoded zip. How to do it?
     verificationSubmitDocuments(processId: string, data: string, resubmit: boolean, documents: DocumentSubmitFile[]): Promise<void> {
         const requestObject = { processId: processId, data: data, resubmit: resubmit, documents: documents }
         // TODO: there should be longer timeout!

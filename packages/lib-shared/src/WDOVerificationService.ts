@@ -8,12 +8,12 @@
  */
 
 import { WDOBaseApi } from './api/WDOBaseApi'
-import { WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
+import { CreateDocumentSubmitFileSide, CreateDocumentSubmitFileType, DocumentSubmitFile, DocumentSubmitFileType, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 import { WDOEndStateReason, WDOProcessingItem, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
-import { WDODocumentType } from './WDODocumentFile'
+import { WDODocumentFile, WDODocumentSide, WDODocumentType } from './WDODocumentFile'
 
 export interface WDOVerificationServiceListener {
     /**
@@ -56,7 +56,10 @@ export abstract class WDOBaseVerificationService {
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
 
             switch (response.identityVerificationStatus) {
-                case WDOIdentityVerificationStatus.failed, WDOIdentityVerificationStatus.rejected, WDOIdentityVerificationStatus.notInitialized, WDOIdentityVerificationStatus.accepted:
+                case WDOIdentityVerificationStatus.failed:
+                case WDOIdentityVerificationStatus.rejected: 
+                case WDOIdentityVerificationStatus.notInitialized:
+                case WDOIdentityVerificationStatus.accepted:
                     WDOLogger.debug(`Status ${response.identityVerificationStatus} - clearing cache`)
                     this.cachedProcess = undefined
                     break
@@ -76,6 +79,8 @@ export abstract class WDOBaseVerificationService {
                     WDOLogger.debug("Verifying documents status")
                     const docsResponse = await this.api.verificationDocumentsStatus(response.processId)
 
+                    WDOLogger.debug(`Documents status: ${JSON.stringify(docsResponse)}`)
+
                     const documents = docsResponse.documents
 
                     const cachedProcess = this.cachedProcess
@@ -85,12 +90,16 @@ export abstract class WDOBaseVerificationService {
                         cachedProcess.feedServerData(docsResponse.documents)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
+                            WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
                             return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
                         } else if (documents.every(d => documentAction(d) === "proceed")) {
+                            WDOLogger.debug("All documents accepted, proceeding")
                             return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
                         } else if (documents.some(d => documentAction(d) === "wait")) {
+                            WDOLogger.debug("At least one document still in progress, moving to processing")
                             return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification })
                         } else if (documents.length == 0) {
+                            WDOLogger.debug("No documents scanned, scan documents...")
                             return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
                         } else {
                             return this.processSuccess({ type: WDOVerificationStateType.failed })
@@ -149,6 +158,27 @@ export abstract class WDOBaseVerificationService {
         this.cachedProcess = process
         return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: process })
     }
+
+    async documentsSubmit(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+
+        const resubmit = files.some(f => f.originalDocumentId != undefined)
+
+        const submitFiles: DocumentSubmitFile[] = files.map(f => {
+
+            return {
+                filename: `${zipFolderNameDemo}/${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
+                type: CreateDocumentSubmitFileType(f.type),
+                side: CreateDocumentSubmitFileSide(f.side),
+                originalDocumentId: f.originalDocumentId
+            }
+        })
+
+        await this.handleError(this.api.verificationSubmitDocuments(pid, base64zipDemo, resubmit, submitFiles))
+        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
+    }
+
+    // PRIVATE METHODS
 
     private verifyHasActiveProcess(): string {
         const pid = this.lastStatus?.processId
@@ -308,7 +338,8 @@ class WDOVerificationStatus {
         // PRESENCE CHECK PHASE
         else if (phase === WDOIdentityVerificationPhase.presenceCheck) {
             switch (status) {
-                case WDOIdentityVerificationStatus.notInitialized, WDOIdentityVerificationStatus.inProgress:
+                case WDOIdentityVerificationStatus.notInitialized: 
+                case WDOIdentityVerificationStatus.inProgress:
                     nextStep = WDONextStep.presenceCheck
                     break
                 case WDOIdentityVerificationStatus.verificationPending:
@@ -396,10 +427,14 @@ function documentAction(document: WDODocument): "proceed" | "wait" | "error" {
     switch (document.status) {
         case WDODocumentStatus.accepted:
             return "proceed"
-        case WDODocumentStatus.uploadInProgress, WDODocumentStatus.inProgress, WDODocumentStatus.verificationPending, WDODocumentStatus.verificationInProgress:
+        case WDODocumentStatus.uploadInProgress: 
+        case WDODocumentStatus.inProgress:
+        case WDODocumentStatus.verificationPending:
+        case WDODocumentStatus.verificationInProgress:
             return "wait"
         case WDODocumentStatus.rejected, WDODocumentStatus.failed:
             return "error"
     }
+    WDOLogger.debug(`Unknown document status: ${document.status} for document ID: ${document.id}`)
     return "error" // fallback
 }

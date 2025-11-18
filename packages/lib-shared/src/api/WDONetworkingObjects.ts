@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDODocumentSide, WDODocumentType } from "../WDODocumentFile"
+
 /** For request that needs to identify the current process. */
 export interface ProcessRequest {
     processId: string
@@ -150,12 +152,32 @@ export enum DocumentSubmitFileType {
     selfiePhoto = "SELFIE_PHOTO"
 }
 
+export function CreateDocumentSubmitFileType(type: WDODocumentType): DocumentSubmitFileType {
+    switch (type) {
+        case WDODocumentType.idCard:
+            return DocumentSubmitFileType.idCard
+        case WDODocumentType.passport:
+            return DocumentSubmitFileType.passport
+        case WDODocumentType.driversLicense:
+            return DocumentSubmitFileType.driversLicense
+    }
+}
+
 /// Side of the file
 export enum DocumentSubmitFileSide {
     /// Front side of an document. Usually the one with the picture
     front = "FRONT",
     /// Back side of an document
     back = "BACK"
+}
+
+export function CreateDocumentSubmitFileSide(side: WDODocumentSide): DocumentSubmitFileSide {
+    switch (side) {
+        case WDODocumentSide.front:
+            return DocumentSubmitFileSide.front
+        case WDODocumentSide.back:
+            return DocumentSubmitFileSide.back
+    }
 }
 
 /// Status of the documents
