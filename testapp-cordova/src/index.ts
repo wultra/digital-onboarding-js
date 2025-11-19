@@ -3,6 +3,7 @@ import { zipIDcard, zipDLcard, serverCredentials } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType } from "cordova-digital-onboarding"
 import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking";
+import { IProov, IProovListener } from "iproov-cordova-plugin"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -98,7 +99,7 @@ async function simulateActivation() {
         // fetch activation status to verify it's active
         console.log("Fetching PowerAuth SDK activation status...")
         const paStatus = await powerAuth.fetchActivationStatus()
-        console.log(`PowerAuth SDK activation status: ${paStatus.state}`);
+        console.log(`PowerAuth SDK activation status: ${JSON.stringify(paStatus)}`);
         if (paStatus.state !== PowerAuthActivationState.ACTIVE) {
             throw new Error("PowerAuth SDK is not active after activation!")
         }
@@ -163,6 +164,50 @@ async function simulateActivation() {
         console.log(`Verification status after Driving License card scan: ${demoResultDLcard.type}`)
         guardState(demoResultDLcard.type, WDOVerificationStateType.presenceCheck)
 
+        // init presence check
+        console.log("Initializing presence check...")
+        const presenceInitResult = await verificationService.presenceCheckInit()
+        console.log(`Presence check result: ${JSON.stringify(presenceInitResult)}`)
+
+        // Run iProov SDK
+        console.log("Starting iProov presence check...")
+        const iProovResult = await IProov.launch("wss://eu3.rp.secure.iproov.me/ws", presenceInitResult.iProovVerificationToken, null, (event) => {
+            console.log(`iProov event: ${event.name}`)
+        })
+        console.log(`iProov presence check completed with result: ${JSON.stringify(iProovResult)}`)
+
+        // submit presence check result
+        console.log("Submitting presence check result...")
+        await verificationService.presenceCheckSubmit()
+        console.log(`Verification status after presence check submitted.`)
+
+        // wait for another status
+        const afterPresenceCheckStatus = await waitForStatusChange(verificationService)
+        console.log(`Verification status after presence check processing: ${afterPresenceCheckStatus.type}`)
+        guardState(afterPresenceCheckStatus.type, WDOVerificationStateType.otp)
+
+        // retrieve OTP from server (in real app, user would input it)
+        console.log("Retrieving OTP from server for verification...")
+        const anyVerificationService: any = verificationService // to access non-public method
+        const otpVerification: string = await anyVerificationService.getOTP()
+        console.log(`OTP retrieved for verification: ${otpVerification}`)
+
+        // submit OTP
+        console.log("Submitting OTP for verification...")
+        const otpStatus = await verificationService.verifyOTP(otpVerification)
+        console.log(`Status after OTP submission: ${otpStatus.type}`)
+
+        // wait for final status
+        const finalStatus = await waitForStatusChange(verificationService)
+        console.log(`Verification status after presence check processing: ${finalStatus.type}`)
+        guardState(finalStatus.type, WDOVerificationStateType.success)
+
+        console.log("Onboarding process completed successfully.")
+
+        console.log("Fetching PowerAuth SDK activation status...")
+        const finalPaStatus = await powerAuth.fetchActivationStatus()
+        console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`);
+
     } catch (error) {
         console.error(`Error during activation: ${JSON.stringify(error)}`);
     } finally {
@@ -187,9 +232,14 @@ async function uploadDocuments(verificationService: WDOVerificationService, docu
     guardState(scanResult.type, WDOVerificationStateType.processing)
     console.log("Demo document scans submitted, fetching status.")
 
+    return await waitForStatusChange(verificationService)
+}
+
+async function waitForStatusChange(verificationService: WDOVerificationService): Promise<WDOVerificationState> {
+    
     let repeatedStatus = await verificationService.status()
 
-    console.log(`Status after document submission: ${repeatedStatus.type}`)
+    console.log(`Initial status verification: ${repeatedStatus.type}`)
 
     while(repeatedStatus.type === WDOVerificationStateType.processing) {
         console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)

@@ -38,17 +38,26 @@ export interface WDOVerificationServiceListener {
  */
 export abstract class WDOBaseVerificationService {
 
-    public listener?: WDOVerificationServiceListener
-
     protected abstract api: WDOBaseApi
 
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
-    private cachedProcess: WDOVerificationScanProcess | undefined = undefined
-
-    // TODO: cache
+    private cachedProcess: WDOVerificationScanProcess | undefined = undefined // TODO: persistence?
 
     // PUBLIC API
 
+    /** Time in seconds that user needs to wait between OTP resend calls */
+    public get otpResendPeriod(): number | undefined { // TODO: format
+        return this.lastStatus?.config?.otpResendPeriodSeconds
+    }
+
+    /**
+     * Listener that retrieves information about the verification and activation changes.
+     */
+    public listener?: WDOVerificationServiceListener
+
+    /**
+     * Status of the verification.
+     */
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
@@ -133,12 +142,20 @@ export abstract class WDOBaseVerificationService {
         }
     }
 
+    /**
+     * Returns consent text for user to approve. The content of the text depends on the server configuration and might be plain text or HTML.
+     * 
+     * Consent text explains how the service will handle his document photos or selfie scans.
+     */
     async consentGet(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationGetConsentText(pid))
         return this.processSuccess({ type: WDOVerificationStateType.consent, body: response.consentText })
     }
     
+    /**
+     * Approves the consent for this process and starts the activation.
+     */
     async consentApprove(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationResolveConsent(pid, true))
@@ -146,12 +163,26 @@ export abstract class WDOBaseVerificationService {
         return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
     }
 
+    /**
+     * Get the token for the document scanning SDK, when required.
+     * 
+     * This is needed for example for ZenID or BlinkID provider.
+     * 
+     * @param challenge Optional challenge provided by the scanning SDK.
+     */
     async documentsInitSDK(challenge?: string): Promise<any> {
         const pid = this.verifyHasActiveProcess()
-        const response = await this.handleError(this.api.verificationInitScanSDK(pid, challenge ?? ""))
+        const response = await this.handleError(this.api.verificationInitScanSDK(pid, challenge ?? "-")) // TODO: is "-" acceptable?
         return response
     }
 
+    /**
+     * Set which documents will be scanned.
+     * 
+     * Note that this needs to be in sync what server expects based on the configuration.
+     * 
+     * @param types Types of documents to scan.
+     */
     async documentsSetSelectedTypes(types: WDODocumentType[]): Promise<WDOVerificationState> {
         WDOLogger.debug(`Submitting selected document types: ${types}`)
         const process = new WDOVerificationScanProcess(types)
@@ -159,6 +190,14 @@ export abstract class WDOBaseVerificationService {
         return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: process })
     }
 
+    /**
+     * Upload document files to the server. The order of the documents is up to you. 
+     * Make sure that uploaded document are reasonable size so you're not uploading large files.
+     * 
+     * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
+     * 
+     * @param files Document files to upload.
+     */
     async documentsSubmit(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
 
@@ -176,6 +215,89 @@ export abstract class WDOBaseVerificationService {
 
         await this.handleError(this.api.verificationSubmitDocuments(pid, base64zipDemo, resubmit, submitFiles))
         return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
+    }
+
+    /**
+     * Initiates the presence check. This returns attributes that are needed to start the 3rd party SDK (if needed).
+     */
+    async presenceCheckInit(): Promise<any> { // TODO: proper return type?
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verificationPresenceCheckInit(pid))
+        return this.processSuccess(response.sessionAttributes)
+    }
+
+    /** 
+     * Call when presence check was finished in the 3rd party SDK.
+     */
+    async presenceCheckSubmit(): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        await this.handleError(this.api.verificationPresenceCheckSubmit(pid))
+        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.verifyingPresence })
+    }
+
+    /**
+     * Verification restart. When sucessfully called, intro screen should be presented.
+     */
+    async restartVerification(): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        await this.handleError(this.api.verificationCleanup(pid))
+        this.cachedProcess = undefined
+        WDOLogger.info("Verification process restarted.")
+        return this.processSuccess({ type: WDOVerificationStateType.intro })
+    }
+
+    /**
+     * Cancel the whole activation/verification. After this it's no longer possible to call
+     * any API of this library and PowerAuth activation should be removed and activation started again.
+     */
+    async cancelWholeProcess(): Promise<void> {
+        const pid = this.verifyHasActiveProcess()
+        await this.handleError(this.api.verificationCleanup(pid))
+        this.cachedProcess = undefined
+        WDOLogger.info("Verification process canceled.")
+    }
+
+    /**
+     * Verify OTP that user entered as a last step of the verification.
+     * 
+     * @param otp OTP that user obtained via other channel (usually SMS or email).
+     */
+    async verifyOTP(otp: string): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verifyOTP(pid, otp))
+        if (response.verified) {
+            WDOLogger.info("OTP verified successfully.")
+            return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
+        } else {
+            if (response.remainingAttempts > 0 && response.expired == false) {
+                WDOLogger.error(`OTP verification failed, remaining attempts: ${response.remainingAttempts}`)
+                return this.processSuccess({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
+            } else {
+                WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
+                throw this.processError(new WDOError("OTP verification failed, no remaining attempts or OTP expired"))
+            }
+        }
+    }
+
+    /**
+     * Request OTP resend.
+     * 
+     * Since SMS or emails can fail to deliver, use this to send the OTP again.
+     */
+    async resendOTP(): Promise<void> {
+        const pid = this.verifyHasActiveProcess()
+        await this.handleError(this.api.verificationResendOTP(pid))
+    }
+
+    /**
+     * Demo endpoint available only in Wultra Demo systems.
+     * 
+     * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
+     */
+    private async getOTP(): Promise<String> {
+        WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
+        const pid = this.verifyHasActiveProcess()
+        return (await this.api.activationGetOTP(pid, "USER_VERIFICATION")).otpCode
     }
 
     // PRIVATE METHODS

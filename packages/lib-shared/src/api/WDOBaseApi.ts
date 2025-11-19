@@ -41,8 +41,8 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOActivationEndpoints.resendOTP)
     }
 
-    activationGetOTP(processId: string): Promise<{ otpCode: string }> {
-        const requestObject = { processId: processId, otpType: "ACTIVATION" }
+    activationGetOTP(processId: string, otpType: "ACTIVATION" | "USER_VERIFICATION"): Promise<{ otpCode: string }> {
+        const requestObject = { processId: processId, otpType: otpType }
         return this.callApi(requestObject, { path: "/api/onboarding/otp/detail", e2eeScope: "APPLICATION", returnsData: true })
     }
 
@@ -90,7 +90,7 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.documentsStatus)
     }
 
-    verificationPresenceCheckInit(processId: string): Promise<{ attributes: any }> {
+    verificationPresenceCheckInit(processId: string): Promise<{ sessionAttributes: any }> {
         const requestObject = { processId: processId }
         return this.callApi(requestObject, WDOVerificationEndpoints.presenceCheckInit)
     }

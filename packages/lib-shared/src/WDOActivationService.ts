@@ -129,7 +129,7 @@ export abstract class WDOBaseActivationService {
     private async getOTP(): Promise<String> {
         WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
         const pid = this.verifyHasActiveProcess()
-        return (await this.api.activationGetOTP(pid)).otpCode
+        return (await this.api.activationGetOTP(pid, "ACTIVATION")).otpCode
     }
 
     async activate(otp: string, activationName?: string): Promise<WDOPowerAuthActivationResult> {

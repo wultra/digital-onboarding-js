@@ -17,7 +17,8 @@
     "cordova-digital-onboarding": "file:../packages/lib-cordova",
     "cordova-ios": "^7.1.1",
     "cordova-powerauth-mobile-sdk": "^4.1.0",
-    "cordova-powerauth-networking": "^1.0.1"
+    "cordova-powerauth-networking": "^1.0.1",
+    "iproov-cordova-plugin": "file:../../iproov-cordova-plugin"
   },
   "cordova": {
     "platforms": [
@@ -25,7 +26,8 @@
       "android"
     ],
     "plugins": {
-      "cordova-digital-onboarding": {}
+      "cordova-digital-onboarding": {},
+      "iproov-cordova-plugin": {}
     }
   }
 }

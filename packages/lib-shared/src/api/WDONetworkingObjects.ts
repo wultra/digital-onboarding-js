@@ -39,6 +39,7 @@ export interface WDOIdentityStatusResponse {
 
 export interface WDOIdentityConfig {
     otpResendPeriod: string // ISO8601Duration
+    otpResendPeriodSeconds: number
 }
 
 /** Status of the current identity verification */
