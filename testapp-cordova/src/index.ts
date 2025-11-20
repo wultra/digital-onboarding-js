@@ -15,6 +15,17 @@ function onDeviceReady() {
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready')?.classList.add('ready');
     document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
+    const outputElem = document.getElementById('output') as HTMLTextAreaElement
+
+    // Override console.log to also output to textarea
+    const originalConsoleLog = console.log
+    console.log = function(message?: any, ...optionalParams: any[]) {
+        const now = new Date()
+        const messageWithTime = `[${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:${now.getMilliseconds()}] ${message}`
+        outputElem.value += messageWithTime + ' ' + optionalParams.join(' ') + '\n'
+        outputElem.scrollTop = outputElem.scrollHeight
+        originalConsoleLog.apply(console, [messageWithTime, ...optionalParams])
+    }
 }
 
 async function simulateActivation() {
@@ -218,7 +229,6 @@ async function simulateActivation() {
         await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
         console.log("PowerAuth SDK activation removed.");
     }
-
 }
 
 async function uploadDocuments(verificationService: WDOVerificationService, documents: WDODocumentFile[], zip: { folder: string, data: string }): Promise<WDOVerificationState> {
