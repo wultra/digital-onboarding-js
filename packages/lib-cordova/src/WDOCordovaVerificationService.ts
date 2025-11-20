@@ -23,6 +23,11 @@ export class WDOVerificationService extends WDOBaseVerificationService {
     protected override api: WDOApi
     readonly powerauth: PowerAuth
 
+    public static isVerificationRequired(paStatus: PowerAuthActivationStatus): boolean {
+        const flags = paStatus.customObject?.activationFlags as Array<string> | undefined
+        return !!flags && flags.some(f => f === "VERIFICATION_PENDING" || f === "VERIFICATION_IN_PROGRESS")
+    }
+
     /**
      * Creates service instance
      * 

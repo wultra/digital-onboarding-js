@@ -100,7 +100,7 @@ async function simulateActivation() {
 
         // activate PowerAuth SDK
         console.log("Activating PowerAuth SDK...")
-        const activationResult = await activationService.activate(otp, "my-test-activation")
+        const activationResult = await activationService.activate("my-test-activation", otp)
         console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`);
 
         // persist activation
@@ -113,6 +113,18 @@ async function simulateActivation() {
         console.log(`PowerAuth SDK activation status: ${JSON.stringify(paStatus)}`);
         if (paStatus.state !== PowerAuthActivationState.ACTIVE) {
             throw new Error("PowerAuth SDK is not active after activation!")
+        }
+
+        const flags = paStatus.customObject?.activationFlags as Array<string> | undefined
+        console.log(`PowerAuth SDK activation flags: ${flags ? flags.join(", ") : "none"}`)
+        if (!flags || !flags.some(f => f === "VERIFICATION_PENDING")) {
+            throw new Error("PowerAuth SDK activation flags do not contain VERIFICATION_PENDING after onboarding activation!")
+        }
+
+        const isVerificationRequired = WDOVerificationService.isVerificationRequired(paStatus)
+        console.log(`Is verification required: ${isVerificationRequired ? "yes" : "no"}`)
+        if (!isVerificationRequired) {
+            throw new Error("Verification is not required according to WDOVerificationService after onboarding activation!")
         }
 
         // VERIFICATION STARTS HERE
@@ -220,7 +232,11 @@ async function simulateActivation() {
         console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`);
 
     } catch (error) {
-        console.error(`Error during activation: ${JSON.stringify(error)}`);
+        if (error instanceof Error) {
+            console.error(`Error during activation: ${error.message}`);
+        } else {
+            console.error(`Error during activation: ${JSON.stringify(error)}`);
+        }
     } finally {
 
         // REMOVING POWERAUTH SDK ACTIVATION
