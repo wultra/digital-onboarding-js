@@ -1,7 +1,7 @@
 
 import { zipIDcard, zipDLcard, serverCredentials } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType } from "cordova-digital-onboarding"
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService } from "cordova-digital-onboarding"
 import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking";
 import { IProov, IProovListener } from "iproov-cordova-plugin"
 
@@ -31,11 +31,11 @@ function onDeviceReady() {
 async function simulateActivation() {
 
     const pin = "1234"
-    const powerAuth = new PowerAuth(generateRandomNumericString());
+    const powerAuth = new PowerAuth(generateRandomNumericString())
     powerAuth.configure({
         configuration: serverCredentials.paConfig,
         baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
-    });
+    })
     
     const activationService = new WDOActivationService(
         powerAuth,
@@ -44,6 +44,11 @@ async function simulateActivation() {
 
     const verificationService = new WDOVerificationService(
         powerAuth, 
+        `${serverCredentials.server}/enrollment-server-onboarding/`
+    )
+
+    const configurationService = new WDOConfigurationService(
+        powerAuth,
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
 
@@ -57,6 +62,12 @@ async function simulateActivation() {
     try {
 
         //WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+
+        // FIRST TRY TO FETCH CONFIGURATION FROM THE SERVER
+
+        console.log("Fetching configuration from the server...")
+        const config = await configurationService.getConfiguration("onboarding")
+        console.log(`Configuration fetched: ${JSON.stringify(config)}`)
 
         // FIRST ACTIVATION PROCESS WITH CANCEL
 
@@ -233,9 +244,9 @@ async function simulateActivation() {
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error(`Error during activation: ${error.message}`);
+            console.log(`Error during activation: ${error.message}`);
         } else {
-            console.error(`Error during activation: ${JSON.stringify(error)}`);
+            console.log(`Error during activation: ${JSON.stringify(error)}`);
         }
     } finally {
 

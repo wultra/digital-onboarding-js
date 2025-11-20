@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DocumentStatusResponse, DocumentSubmitFile, ProcessResponse, VerifyOTPResponse, WDOIdentityStatusResponse } from './WDONetworkingObjects'
+import { DocumentStatusResponse, DocumentSubmitFile, ProcessResponse, VerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse } from './WDONetworkingObjects'
 import { WDOEndpoint, WDOActivationEndpoints, WDOVerificationEndpoints } from './WDOEndpoints'
 
 
@@ -18,6 +18,13 @@ export abstract class WDOBaseApi {
     protected abstract callApi<T>(requestObject: any, endpoint: WDOEndpoint): Promise<T>
 
     abstract canStartActivation(): Promise<boolean>
+
+    // Configuration endpoints
+
+    getConfiguration(processType: string): Promise<WDOConfigurationResponse> {
+        const requestObject = { processType: processType }
+        return this.callApi(requestObject, { path: "/api/configuration", e2eeScope: "APPLICATION", returnsData: true })
+    }
 
     // Activation endpoints
 

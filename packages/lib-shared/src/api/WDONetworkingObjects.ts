@@ -134,27 +134,27 @@ export enum WDODocumentStatus {
     failed = "FAILED"
 }
 
-/// Metadata for file inside ZIP (in `DocumentSubmitRequest.data`).
+/** Metadata for file inside ZIP (in `DocumentSubmitRequest.data`). */
 export interface DocumentSubmitFile {
-    /// Name of the file (with path)
+    /** Name of the file (with path) */
     filename: string
-    /// Type of the document
+    /** Type of the document */
     type: DocumentSubmitFileType
-    /// Side of the document (for example front side of the ID card)
+    /** Side of the document (for example front side of the ID card) */
     side?: DocumentSubmitFileSide
-    /// Original document ID in case of re-upload
+    /** Original document ID in case of re-upload */
     originalDocumentId?: string
 }
 
-/// Types of available documents
+/** Types of available documents */
 export enum DocumentSubmitFileType {
-    /// National ID card
+    /** National ID card */
     idCard = "ID_CARD",
-    /// Passport
+    /** Passport */
     passport = "PASSPORT",
-    // Driving license
+    /** Driving license */
     driversLicense = "DRIVING_LICENSE",
-    /// Selfie photo
+    /** Selfie photo */
     selfiePhoto = "SELFIE_PHOTO"
 }
 
@@ -169,11 +169,11 @@ export function CreateDocumentSubmitFileType(type: WDODocumentType): DocumentSub
     }
 }
 
-/// Side of the file
+/** Side of the file */
 export enum DocumentSubmitFileSide {
-    /// Front side of an document. Usually the one with the picture
+    /** Front side of an document. Usually the one with the picture */
     front = "FRONT",
-    /// Back side of an document
+    /** Back side of an document */
     back = "BACK"
 }
 
@@ -186,24 +186,40 @@ export function CreateDocumentSubmitFileSide(side: WDODocumentSide): DocumentSub
     }
 }
 
-/// Status of the documents
+/** Status of the documents */
 export interface DocumentStatusResponse {
-    /// Overall status
+    /** Overall status */
     status: WDODocumentStatus
-    /// Status for each document.
+    /** Status for each document. */
     documents: WDODocument[]
 }
 
-/// Response of the OTP verify
+/** Response of the OTP verify */
 export interface VerifyOTPResponse {
-    /// ID of the process
+    /** ID of the process */
     processId: string
-    /// Current onboarding status
+    /** Current onboarding status */
     onboardingStatus: WDOOnboardingStatus
-    /// Was OTP verified?
+    /** Was OTP verified? */
     verified: boolean
-    /// Is OTP expired
+    /** Is OTP expired */
     expired: boolean
-    /// How many attempts are remaining
+    /** How many attempts are remaining */
     remainingAttempts: number
+}
+
+export interface WDOConfigurationDocument {
+    type: string,
+    mandatory: boolean,
+    sideCount: string
+}
+
+export interface WDOConfigurationResponse {
+    enabled: boolean,
+    otpForIdentification: boolean,
+    otpForIdentityVerification: boolean,
+    documents: {
+      requiredDocumentsCount: number,
+      items: Array<WDOConfigurationDocument>
+    }
 }
