@@ -21,8 +21,8 @@ export abstract class WDOBaseApi {
 
     // Activation endpoints
 
-    activationStart(credentials: any): Promise<ProcessResponse> {
-        const requestObject = { identification: credentials }
+    activationStart(credentials: any, processType?: string): Promise<ProcessResponse> {
+        const requestObject = { identification: credentials, processType: processType }
         return this.callApi(requestObject, WDOActivationEndpoints.start)
     }
 

@@ -40,4 +40,12 @@ export class WDOActivationService extends WDOBaseActivationService {
         const activation = PowerAuthActivation.createWithIdentityAttributes(identityAttributes, activationName)
         return this.powerauth.createActivation(activation)
     }
+
+    protected override activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult> {
+        const activation = PowerAuthActivation.createWithActivationCode(activationCode, activationName)
+        if (otp) {
+            activation.additionalActivationOtp = otp
+        }
+        return this.powerauth.createActivation(activation)
+    }
 }

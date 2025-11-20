@@ -16,10 +16,15 @@ export interface ProcessRequest {
 
 /** Onboarding process response */
 export interface ProcessResponse {
-    /// ID of the process
+    /** ID of the process */
     processId: string
-    /// Status of the process
+    /** Status of the process */
     onboardingStatus: WDOOnboardingStatus
+    /** 
+     * Activation code used during the activation process. 
+     * If not present, the activation is created later on in the onboarding process. 
+     */
+    activationCode?: string
 }
 
 /** Status of the onboarding */

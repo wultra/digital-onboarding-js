@@ -35,11 +35,14 @@ export abstract class WDOBaseActivationService {
 
     protected abstract api: WDOBaseApi
     protected abstract activatePowerAuth(identityAttributes: any, activationName: string): Promise<WDOPowerAuthActivationResult>
+    protected abstract activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult>
 
-    public get hasActiveProcess(): boolean { return !!this.processId }
+    public get hasActiveProcess(): boolean { return !!this.processData }
         
     // TODO: Cache process ID?
-    private processId: string | undefined
+    private processData: { processId: string, activationCode?: string } | undefined
+
+    private get processId(): string | undefined { return this.processData?.processId }
 
     // PUBLIC API
 
@@ -67,17 +70,18 @@ export abstract class WDOBaseActivationService {
      * }
      * ```
      * @param credentials Object with credentials. Which credentials are needed should be provided by a system/backend provider.
+     * @param processType The process type identification. If not specified, the default process type will be used.
      */
-    async start(credentials: any): Promise<void> {
+    async start(credentials: any, processType?: string): Promise<void> {
         WDOLogger.debug(`Starting activation with credentials: ${JSON.stringify(credentials)}`)
         if (this.processId) {
             throw new WDOError("Cannot start the process - processId already obtained, cancel first.")
         }
         await this.verifyCanStartProcess()
-        const result = await this.api.activationStart(credentials)
+        const result = await this.api.activationStart(credentials, processType)
         WDOLogger.info("WDOActivationService.start success")
         WDOLogger.debug(` - processId: ${result.processId}`)
-        this.processId = result.processId
+        this.processData = { processId: result.processId, activationCode: result.activationCode }
     }
 
     /**
@@ -90,13 +94,13 @@ export abstract class WDOBaseActivationService {
         const pid = this.verifyHasActiveProcess()
         try {
             await this.api.activationCancel(pid)
-            this.processId = undefined
+            this.processData = undefined
             WDOLogger.info("WDOActivationService.cancel success")
         } catch (error) {
             if (forceCancel) {
                 // pretend it was successful and just log the error
                 WDOLogger.debug(`Process canceled (but the request failed) - ${error}.`)
-                this.processId = undefined
+                this.processData = undefined
             } else {
                 throw error // rethrow
             }
@@ -105,7 +109,7 @@ export abstract class WDOBaseActivationService {
 
     /** Clear the stored data (without networking call). */
     clear() {
-        this.processId = undefined
+        this.processData = undefined
     }
 
     /** 
@@ -132,21 +136,30 @@ export abstract class WDOBaseActivationService {
         return (await this.api.activationGetOTP(pid, "ACTIVATION")).otpCode
     }
 
-    async activate(otp: string, activationName?: string): Promise<WDOPowerAuthActivationResult> {
-        // TODO: add some default activation name from the PA SDK (like device name)
-        const actName = activationName ?? "TODO-Activation-Name"
-        WDOLogger.debug(`Activating the PowerAuth with activation name '${actName}'`)
+    async activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult> {
+        WDOLogger.debug(`Activating the PowerAuth with activation name '${activationName}'`)
         await this.verifyCanStartProcess()
         const pid = this.verifyHasActiveProcess()
-        const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
-        return this.activatePowerAuth(identityAttributes, actName)
+        const code = this.processData?.activationCode
+        let result: WDOPowerAuthActivationResult
+        if (code) {
+            WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
+            result = await this.activatePowerAuthWithCode(code, otp, activationName)
+        } else {
+            WDOLogger.info("Activating PowerAuth using identity attributes from the onboarding process")
+            const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
+            result = await this.activatePowerAuth(identityAttributes, activationName)
+        }
+        // Clear process ID after activation attempt
+        this.processData = undefined
+        return result
     }
     // PRIVATE METHODS
 
     private async verifyCanStartProcess(): Promise<void> {
         if (!(await this.api.canStartActivation())) {
             WDOLogger.error("PowerAuth is already activated - Activation cannot be started/processed.")
-            this.processId = undefined
+            this.processData = undefined
             throw new WDOError("PowerAuth is already activated")
         }
     }
