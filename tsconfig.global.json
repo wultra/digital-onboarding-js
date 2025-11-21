@@ -9,6 +9,6 @@
     "removeComments": false, // Keep comments for better documentation
     "noImplicitAny": true,
     "moduleResolution": "node",
-    "skipLibCheck": true
+    "skipLibCheck": true,
   }
 }

@@ -190,13 +190,14 @@ async function simulateActivation() {
         console.log("Demo ID card scan")
         const demoResultIdcard = await uploadDocuments(verificationService, scannedId, zipIDcard)
         console.log(`Verification status after ID card scan: ${demoResultIdcard.type}`)
-        guardState(demoResultIdcard.type, WDOVerificationStateType.scanDocument)
+        guardState(demoResultIdcard.type, WDOVerificationStateType.presenceCheck)
 
+        // current backend settings is that only ID card is required
         // simulate document scanning by submitting demo ZIP file
-        console.log("Driving License card scan")
-        const demoResultDLcard = await uploadDocuments(verificationService, scannedDL, zipDLcard)
-        console.log(`Verification status after Driving License card scan: ${demoResultDLcard.type}`)
-        guardState(demoResultDLcard.type, WDOVerificationStateType.presenceCheck)
+        // console.log("Driving License card scan")
+        // const demoResultDLcard = await uploadDocuments(verificationService, scannedDL, zipDLcard)
+        // console.log(`Verification status after Driving License card scan: ${demoResultDLcard.type}`)
+        // guardState(demoResultDLcard.type, WDOVerificationStateType.presenceCheck)
 
         // init presence check
         console.log("Initializing presence check...")

@@ -8,13 +8,16 @@
  */
 
 import { WDOBaseApi } from './api/WDOBaseApi'
-import { CreateDocumentSubmitFileSide, CreateDocumentSubmitFileType, DocumentSubmitFile, DocumentSubmitFileType, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
+import { WDOCreateDocumentSubmitFileSide, WDOCreateDocumentSubmitFileType, WDODocumentSubmitFile, WDODocumentSubmitFileType, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
-import { WDOEndStateReason, WDOProcessingItem, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
+import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
 import { WDODocumentFile, WDODocumentSide, WDODocumentType } from './WDODocumentFile'
 
+/**
+ * Listener of the Verification Service that can listen on Verification Status and PowerAuth Status changes.
+ */
 export interface WDOVerificationServiceListener {
     /**
      * Called when PowerAuth activation status changed.
@@ -22,7 +25,7 @@ export interface WDOVerificationServiceListener {
      *  Note that this happens only when error is returned in some of the Verification endpoints and this error indicates PowerAuth status change. For
      * example when the service finds out during the API call that the PowerAuth activation was removed or blocked on the server
      */
-    powerAuthActivationStatusChanged(sender: WDOBaseVerificationService, status: any): void // TODO: any?
+    powerAuthActivationStatusChanged(sender: WDOBaseVerificationService, status: any): void // TODO: any + not called yet
 
     /** Called when state of the verification has changed. */
     verificationStatusChanged(sender: WDOBaseVerificationService, status: WDOVerificationState): void
@@ -38,15 +41,17 @@ export interface WDOVerificationServiceListener {
  */
 export abstract class WDOBaseVerificationService {
 
+    /* @internal */
     protected abstract api: WDOBaseApi
-
+    /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
+    /* @internal */
     private cachedProcess: WDOVerificationScanProcess | undefined = undefined // TODO: persistence?
 
     // PUBLIC API
 
     /** Time in seconds that user needs to wait between OTP resend calls */
-    public get otpResendPeriod(): number | undefined { // TODO: format
+    public get otpResendPeriodSeconds(): number | undefined {
         return this.lastStatus?.config?.otpResendPeriodSeconds
     }
 
@@ -136,7 +141,7 @@ export abstract class WDOBaseVerificationService {
             }
 
         } catch (error) {
-            WDOLogger.error("Error fetching verification status", error)
+            WDOLogger.error(`Error fetching verification status: ${JSON.stringify(error)}`)
             this.lastStatus = undefined
             throw this.processError(error)
         }
@@ -203,12 +208,12 @@ export abstract class WDOBaseVerificationService {
 
         const resubmit = files.some(f => f.originalDocumentId != undefined)
 
-        const submitFiles: DocumentSubmitFile[] = files.map(f => {
+        const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
 
             return {
                 filename: `${zipFolderNameDemo}/${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
-                type: CreateDocumentSubmitFileType(f.type),
-                side: CreateDocumentSubmitFileSide(f.side),
+                type: WDOCreateDocumentSubmitFileType(f.type),
+                side: WDOCreateDocumentSubmitFileSide(f.side),
                 originalDocumentId: f.originalDocumentId
             }
         })
@@ -290,6 +295,7 @@ export abstract class WDOBaseVerificationService {
     }
 
     /**
+     * @internal
      * Demo endpoint available only in Wultra Demo systems.
      * 
      * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
@@ -302,6 +308,7 @@ export abstract class WDOBaseVerificationService {
 
     // PRIVATE METHODS
 
+    /* @internal */
     private verifyHasActiveProcess(): string {
         const pid = this.lastStatus?.processId
         if (!pid) {
@@ -311,20 +318,22 @@ export abstract class WDOBaseVerificationService {
         return pid
     }
 
+    /* @internal */
     private processSuccess<T>(result: T): T {
-        // TODO:
-        // if (result instanceof Success) {
-        //     this.listener?.verificationStatusChanged(this, result.status)
-        // }
+        if ((result as WDOVerificationState).type !== undefined) {
+            this.listener?.verificationStatusChanged(this, result as WDOVerificationState)
+        }
         return result
     }
 
+    /* @internal */
     private handleError<T>(promise: Promise<T>): Promise<T> {
         return promise.catch(error => {
             throw this.processError(error)
         })
     }
 
+    /* @internal */
     private processError(error: any): any {
         return error
         // TODO:
@@ -353,14 +362,18 @@ export abstract class WDOBaseVerificationService {
     
 }
 
-// Internal status that works as a translation layer between server API and SDK API
+/**
+  @internal
+  Internal status that works as a translation layer between server API and SDK API
+*/
 class WDOVerificationStatus {
     /** Expected next step */
     readonly nextStep: WDONextStep
     /** Reason for status check, if applicable (only when nextStep is `statusCheck`) */
     readonly statusCheckReason: WDOStatusCheckReason | undefined
 
-    // Translation from server status to phone status.
+
+    /** Translation from server status to phone status. */
     constructor(serverResponse: WDOIdentityStatusResponse) {
 
         const phase = serverResponse.identityVerificationPhase
@@ -523,7 +536,8 @@ class WDOVerificationStatus {
     }
 }
 
-export enum WDONextStep { // TODO: better naming?
+/* @internal */
+enum WDONextStep {
     intro = "intro",
     documentScan = "documentScan",
     statusCheck = "statusCheck",
@@ -534,6 +548,11 @@ export enum WDONextStep { // TODO: better naming?
     success = "success"
 }
 
+/**
+ * The reason for what we are waiting for. For example, we can wait for documents to be OCRed and matched against the database.
+ * Use these values for better loading texts to tell the user what is happening - some tasks may take some time 
+ * and it would be frustrating to just show a generic loading indicator.
+ */
 export enum WDOStatusCheckReason {
     unknown = "unknown",
     documentUpload = "documentUpload",

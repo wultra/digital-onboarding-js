@@ -28,6 +28,29 @@ const stripCordovaImportsPlugin =  {
   },
 }
 
+// Plugin to strip copyright comments from .d.ts files
+const stripCopyrightPlugin = {
+  name: "strip-copyright",
+  generateBundle(_, bundle) {
+      for (const fileName of Object.keys(bundle)) {
+        // Only process declaration files
+        if (!fileName.endsWith(".d.ts")) continue;
+
+        const copyrightString = `/**
+ * Copyright Wultra s.r.o.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license
+ * found in the LICENSE file in the root directory of this source tree.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */`
+
+        const file = bundle[fileName];
+        file.code = file.code.replaceAll(copyrightString,"").replaceAll("\n\n","\n").trimStart()
+      }
+    },
+}
+
 // Generate both the JavaScript bundle and the TypeScript declaration file
 export default [
 
@@ -67,7 +90,10 @@ export default [
       file: libCordovaOutputDts, 
       format: 'es'
     },
-    plugins: [dts()],
+    plugins: [
+      dts({ compilerOptions: { stripInternal: true } }),
+      stripCopyrightPlugin
+    ],
   },
   // Cordova App
   {

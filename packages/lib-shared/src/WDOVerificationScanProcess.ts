@@ -10,23 +10,28 @@
 import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
 import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 
+/** Describes the state of documents that need to be uploaded to the server. */
 export class WDOVerificationScanProcess {
 
-    public documents: WDOScannedDocument[]
+    /** All documents that need to be scanned. */
+    documents: WDOScannedDocument[]
 
-    public get nextDocumentToScan(): WDOScannedDocument | undefined { return this.documents.find(d => d.uploadState !== UploadState.accepted) }
+    /** Which document should be scanned next. `undefined` when all documents are uploaded and accepted. */
+    get nextDocumentToScan(): WDOScannedDocument | undefined { return this.documents.find(d => d.uploadState !== UploadState.accepted) }
 
+    /* @internal */
     constructor(types: WDODocumentType[]) {
         this.documents = types.map(t => new WDOScannedDocument(t))
     }
 
+    /* @internal */
     feedServerData(documents: WDODocument[]) {
         const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
             const key = doc.type
-            const group = map.get(key) ?? [];
-            group.push(doc);
-            map.set(key, group);
-            return map;
+            const group = map.get(key) ?? []
+            group.push(doc)
+            map.set(key, group)
+            return map
         }, new Map())
 
         groups.forEach((docs, type) => {
@@ -36,11 +41,14 @@ export class WDOVerificationScanProcess {
     }
 }
 
+/** Document that needs to be scanned during process. */
 export class WDOScannedDocument {
 
-    public type: WDODocumentType
+    /** Type of the document. */
+    type: WDODocumentType
 
-    public get uploadState(): UploadState {
+    /** Upload state. */
+    get uploadState(): UploadState {
         // if there are no sides, consider the document not uploaded
         if (this.sides.length === 0) {
             return UploadState.notUploaded
@@ -54,17 +62,20 @@ export class WDOScannedDocument {
         return UploadState.accepted
     }
 
-    // TODO: private set
-    public sides = new Array<Side>()
+    /** Sides of the document that were uploaded on the server. */
+    get sides(): Side[] { return this._sides }
+    
+    /* @internal */
+    private _sides = new Array<Side>()
 
-    // TODO: fileprivate
+    /* @internal */
     constructor(type: WDODocumentType) {
         this.type = type
     }
 
-    // TODO: fileprivate
+    /* @internal */
     processServerData(documents: WDODocument[]) {
-        this.sides = documents.map(doc => new Side(doc.side == WDODocumentSubmitFileSide.front ? WDODocumentSide.front : WDODocumentSide.back, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
+        this._sides = documents.map(doc => new Side(doc.side == WDODocumentSubmitFileSide.front ? WDODocumentSide.front : WDODocumentSide.back, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
     }
 }
 
@@ -80,18 +91,19 @@ export enum UploadState {
     rejected
 }
 
-/// Side of the uploaded document.
+/** Side of the uploaded document. */
 export class Side {
     
-    /// Type of the side.
+    /** Type of the side. */
     public type: WDODocumentSide
     
-    /// ID on the server. Use this ID in case of an reupload
+    /** ID on the server. Use this ID in case of an reupload */
     public serverId: string
     
-    /// Upload state of the document
+    /** Upload state of the document */
     public uploadState: UploadState
 
+    /* @internal */
     constructor(type: WDODocumentSide, serverId: string, uploadState: UploadState) {
         this.type = type
         this.serverId = serverId

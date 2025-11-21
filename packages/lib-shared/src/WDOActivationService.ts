@@ -12,36 +12,42 @@ import { WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 
+/** Duck-typed PowerAuthActivationResult for WDO space */
 export interface WDOPowerAuthActivationResult {
-    /**
-     * Decimalized fingerprint calculated from device's and server's public keys.
-     */
+    /** Decimalized fingerprint calculated from device's and server's public keys. */
     activationFingerprint: string
-    /**
-     * When available, contents of this object depends of your enrollment server configuration.
-     */
+    /** When available, contents of this object depends of your enrollment server configuration. */
     customAttributes?: any
 }
 
 /**
- * Service that can activate PowerAuthSDK instance by user weak credentials (like his email, phone number or client ID) + SMS OTP.
+ * Service that can activate PowerAuth instance by user weak credentials (like his email, phone number or client ID) + optional SMS OTP.
  * 
- *  When the PowerAuthSDK is activated with this service, `PowerAuthActivationStatus.needVerification` will be `true`
- * and you will need to verify the PowerAuthSDK instance via `WDOVerificationService`.
+ * When the PowerAuth is activated with this service, `WDOVerificationService.isVerificationRequired` will be `true`
+ * and you will need to verify the PowerAuth instance via `WDOVerificationService`.
  * 
  * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
  */
 export abstract class WDOBaseActivationService {
 
+    /* @internal  */
     protected abstract api: WDOBaseApi
+    /* @internal  */
     protected abstract activatePowerAuth(identityAttributes: any, activationName: string): Promise<WDOPowerAuthActivationResult>
+    /* @internal  */
     protected abstract activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult>
 
+    /** 
+     * If the activation process is in progress. 
+     * 
+     * Note that even if this property is `true` it can be already discontinued on the server.
+     * Calling `status()` for example after the app is launched in this case is recommended.
+     */
     public get hasActiveProcess(): boolean { return !!this.processData }
-        
-    // TODO: Cache process ID?
-    private processData: { processId: string, activationCode?: string } | undefined
-
+    
+    /* @internal  */
+    private processData: { processId: string, activationCode?: string } | undefined // TODO: Cache process ID?
+    /* @internal  */
     private get processId(): string | undefined { return this.processData?.processId }
 
     // PUBLIC API
@@ -126,6 +132,7 @@ export abstract class WDOBaseActivationService {
     }
 
     /**
+     * @internal
      * Demo endpoint available only in Wultra Demo systems.
      * 
      * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
@@ -136,6 +143,13 @@ export abstract class WDOBaseActivationService {
         return (await this.api.activationGetOTP(pid, "ACTIVATION")).otpCode
     }
 
+    /**
+     * Activate the PowerAuthSDK instance that was passed in the initializer.
+     * 
+     * @param activationName Name of the activation. Device name by default (usually something like John's iPhone or similar).
+     * @param otp OTP code received by the user (via SMS or email). Optional when not required.
+     * @return Promise resolved with activation result.
+     */ 
     async activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult> {
         WDOLogger.debug(`Activating the PowerAuth with activation name '${activationName}'`)
         await this.verifyCanStartProcess()
@@ -154,8 +168,10 @@ export abstract class WDOBaseActivationService {
         this.processData = undefined
         return result
     }
+
     // PRIVATE METHODS
 
+    /* @internal */
     private async verifyCanStartProcess(): Promise<void> {
         if (!(await this.api.canStartActivation())) {
             WDOLogger.error("PowerAuth is already activated - Activation cannot be started/processed.")
@@ -164,6 +180,7 @@ export abstract class WDOBaseActivationService {
         }
     }
 
+    /* @internal */
     private verifyHasActiveProcess(): string {
         const pid = this.processId
         if (!pid) {

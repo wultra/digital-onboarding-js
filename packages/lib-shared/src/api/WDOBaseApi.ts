@@ -7,9 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DocumentStatusResponse, DocumentSubmitFile, ProcessResponse, VerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse } from './WDONetworkingObjects'
+import { WDODocumentStatusResponse, WDODocumentSubmitFile, WDOProcessResponse, WDOVerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse } from './WDONetworkingObjects'
 import { WDOEndpoint, WDOActivationEndpoints, WDOVerificationEndpoints } from './WDOEndpoints'
-
 
 export abstract class WDOBaseApi {
 
@@ -28,7 +27,7 @@ export abstract class WDOBaseApi {
 
     // Activation endpoints
 
-    activationStart(credentials: any, processType?: string): Promise<ProcessResponse> {
+    activationStart(credentials: any, processType?: string): Promise<WDOProcessResponse> {
         const requestObject = { identification: credentials, processType: processType }
         return this.callApi(requestObject, WDOActivationEndpoints.start)
     }
@@ -38,7 +37,7 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOActivationEndpoints.cancel)
     }
 
-    activationGetStatus(processId: string): Promise<ProcessResponse> {
+    activationGetStatus(processId: string): Promise<WDOProcessResponse> {
         const requestObject = { processId: processId }
         return this.callApi(requestObject, WDOActivationEndpoints.getStatus)
     }
@@ -85,13 +84,13 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 
-    verificationSubmitDocuments(processId: string, data: string, resubmit: boolean, documents: DocumentSubmitFile[]): Promise<void> {
+    verificationSubmitDocuments(processId: string, data: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
         const requestObject = { processId: processId, data: data, resubmit: resubmit, documents: documents }
         // TODO: there should be longer timeout!
         return this.callApi(requestObject, WDOVerificationEndpoints.submitDocuments)
     }
 
-    verificationDocumentsStatus(processId: string): Promise<DocumentStatusResponse> {
+    verificationDocumentsStatus(processId: string): Promise<WDODocumentStatusResponse> {
         const requestObject = { processId: processId }
         // TODO: longer timeout?
         return this.callApi(requestObject, WDOVerificationEndpoints.documentsStatus)
@@ -112,7 +111,7 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.resendOTP)
     }
 
-    verifyOTP(processId: string, otp: string): Promise<VerifyOTPResponse> {
+    verifyOTP(processId: string, otp: string): Promise<WDOVerifyOTPResponse> {
         const requestObject = { processId: processId, otpCode: otp }
         return this.callApi(requestObject, WDOVerificationEndpoints.verifyOTP)
     }

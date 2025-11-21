@@ -11,19 +11,24 @@ import { WDOBaseConfigurationService } from '../../lib-shared/src/WDOConfigurati
 import { WDOApi } from './WDOCordovaApi'
 import "cordova-powerauth-mobile-sdk"
 
-/** Service that provides configuration-related operations for the Wultra Digital Onboarding SDK. */
+/** Service that provides configuration for the Wultra Digital Onboarding SDK. */
 export class WDOConfigurationService extends WDOBaseConfigurationService {
 
+    /* @internal */
     protected override api: WDOApi
+
+    /** PowerAuth instance */
+    readonly powerauth: PowerAuth
 
     /**
      * Creates service instance
      * 
-     * @param powerauth Configured PowerAuthSDK instance.
-     * @param baseUrl Base URL of the Wultra Digital Onboarding server.
+     * @param powerauth Configured PowerAuth instance.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server. Usually ending with `/enrollment-onboarding-server`.
      */
     constructor(powerauth: PowerAuth, baseUrl: string) {
         super()
         this.api = new WDOApi(powerauth, baseUrl)
+        this.powerauth = powerauth
     }
 }

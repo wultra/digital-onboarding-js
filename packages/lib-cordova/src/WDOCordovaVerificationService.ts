@@ -12,17 +12,21 @@ import { WDOApi } from './WDOCordovaApi'
 import "cordova-powerauth-mobile-sdk"
 
 /**
- * Service that can verify previously activated PowerAuthSDK instance.
+ * Service that can verify previously activated PowerAuth instance.
  * 
- * When PowerAuthSDK instance was activated with weak credentials via `WDOActivationService`, user needs to verify his genuine presence.
+ * When PowerAuth instance was activated with weak credentials via `WDOActivationService`, user needs to verify his genuine presence.
  * 
  * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
  */
 export class WDOVerificationService extends WDOBaseVerificationService {
 
+    /* @internal */
     protected override api: WDOApi
+
+    /** PowerAuth instance */
     readonly powerauth: PowerAuth
 
+    /** Checks if verification is required based on PowerAuth activation status */
     public static isVerificationRequired(paStatus: PowerAuthActivationStatus): boolean {
         const flags = paStatus.customObject?.activationFlags as Array<string> | undefined
         return !!flags && flags.some(f => f === "VERIFICATION_PENDING" || f === "VERIFICATION_IN_PROGRESS")
@@ -31,8 +35,8 @@ export class WDOVerificationService extends WDOBaseVerificationService {
     /**
      * Creates service instance
      * 
-     * @param powerauth Configured PowerAuthSDK instance. This instance needs to be without valid activation.
-     * @param baseUrl Base URL of the Wultra Digital Onboarding server.
+     * @param powerauth Configured PowerAuth instance. This instance needs to be without valid activation.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server. Usually ending with `/enrollment-onboarding-server`.
      */
     constructor(powerauth: PowerAuth, baseUrl: string) {
         super()

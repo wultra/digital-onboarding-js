@@ -10,8 +10,10 @@
 import { WDOBaseApi } from './api/WDOBaseApi'
 import { WDOConfigurationResponse } from './api/WDONetworkingObjects'
 
+/** Service that provides configuration for the Wultra Digital Onboarding SDK. */
 export abstract class WDOBaseConfigurationService {
 
+    /* @internal */
     protected abstract api: WDOBaseApi
 
     /**

@@ -9,6 +9,7 @@
 
 import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 
+/** String that contains a Base64 encoded JPEG image */
 export type Base64EncodedJPEG = string
 
 /** Image of a document that can be sent to the backend for Identity Verification. */
@@ -32,11 +33,29 @@ export class WDODocumentFile {
      */
     public originalDocumentId: string | undefined
 
+    /**
+     * Create the document file from an image that can be sent to the backend for Identity Verification.
+     * 
+     * @param scannedDocument Document to upload.
+     * @param side The side of the document that the image captures.
+     * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
+     * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @returns Document file to upload.
+     */
     static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string): WDODocumentFile {
         const originalDocumentId = scannedDocument.sides.find(s => s.type === side)?.serverId
         return new WDODocumentFile(data, scannedDocument.type, side, originalDocumentId, dataSignature)
     }
 
+    /**
+     * Image of a document that can be sent to the backend for Identity Verification.
+     * 
+     * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
+     * @param type Type of the document.
+     * @param side The side of the document that the image captures.
+     * @param originalDocumentId Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
+     * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     */
     constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string) {
         this.data = data
         this.dataSignature = dataSignature
@@ -48,11 +67,11 @@ export class WDODocumentFile {
 
 /** Type of the document. */ 
 export enum WDODocumentType {
-    /// National ID card
+    /** National ID card */
     idCard = "idCard",
-    /// Passport
+    /** Passport */
     passport = "passport",
-    // Drivers license
+    /** Drivers license */
     driversLicense = "driversLicense"
 }
 
@@ -73,7 +92,7 @@ export function WDODocumentTypeSides(type: WDODocumentType): WDODocumentSide[] {
     }
 }
 
-/// Side of the document
+/** Side of the document */ 
 export enum WDODocumentSide {
     /** Front side of a document. Usually the one with the picture.
      * 

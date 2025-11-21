@@ -10,12 +10,12 @@
 import { WDODocumentSide, WDODocumentType } from "../WDODocumentFile"
 
 /** For request that needs to identify the current process. */
-export interface ProcessRequest {
+export interface WDOProcessRequest {
     processId: string
 }
 
 /** Onboarding process response */
-export interface ProcessResponse {
+export interface WDOProcessResponse {
     /** ID of the process */
     processId: string
     /** Status of the process */
@@ -29,9 +29,13 @@ export interface ProcessResponse {
 
 /** Status of the onboarding */
 export enum WDOOnboardingStatus {
+    /** Activation part of the process is in progress */
     activationInProgress = "ACTIVATION_IN_PROGRESS",
+    /** Verification part of the process is in progress */
     verificationInProgress = "VERIFICATION_IN_PROGRESS",
+    /** Onboarding process has failed */
     failed = "FAILED",
+    /** Onboarding process is completed */
     finished = "FINISHED"
 }
 
@@ -42,8 +46,9 @@ export interface WDOIdentityStatusResponse {
     config: WDOIdentityConfig
 }
 
+/** Configuration for identity verification */
 export interface WDOIdentityConfig {
-    otpResendPeriod: string // ISO8601Duration
+    /** Period after which the OTP can be resent, in seconds */
     otpResendPeriodSeconds: number
 }
 
@@ -101,7 +106,7 @@ export enum WDODocumentSubmitFileSide {
     back = "BACK"
 }
 
-/// Submitted document metadata
+/** Submitted document metadata */
 export interface WDODocument {
     /** Name of the file (with path within the submit ZIP file). */
     filename: string
@@ -117,6 +122,7 @@ export interface WDODocument {
     errors?: string[]
 }
 
+/** Status of the document */
 export enum WDODocumentStatus {
     /** Document was accepted */
     accepted = "ACCEPTED",
@@ -135,59 +141,41 @@ export enum WDODocumentStatus {
 }
 
 /** Metadata for file inside ZIP (in `DocumentSubmitRequest.data`). */
-export interface DocumentSubmitFile {
+export interface WDODocumentSubmitFile {
     /** Name of the file (with path) */
     filename: string
     /** Type of the document */
-    type: DocumentSubmitFileType
+    type: WDODocumentSubmitFileType
     /** Side of the document (for example front side of the ID card) */
-    side?: DocumentSubmitFileSide
+    side?: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
 }
 
-/** Types of available documents */
-export enum DocumentSubmitFileType {
-    /** National ID card */
-    idCard = "ID_CARD",
-    /** Passport */
-    passport = "PASSPORT",
-    /** Driving license */
-    driversLicense = "DRIVING_LICENSE",
-    /** Selfie photo */
-    selfiePhoto = "SELFIE_PHOTO"
-}
-
-export function CreateDocumentSubmitFileType(type: WDODocumentType): DocumentSubmitFileType {
+/** Converts WDODocumentType to DocumentSubmitFileType */
+export function WDOCreateDocumentSubmitFileType(type: WDODocumentType): WDODocumentSubmitFileType {
     switch (type) {
         case WDODocumentType.idCard:
-            return DocumentSubmitFileType.idCard
+            return WDODocumentSubmitFileType.idCard
         case WDODocumentType.passport:
-            return DocumentSubmitFileType.passport
+            return WDODocumentSubmitFileType.passport
         case WDODocumentType.driversLicense:
-            return DocumentSubmitFileType.driversLicense
+            return WDODocumentSubmitFileType.driversLicense
     }
 }
 
-/** Side of the file */
-export enum DocumentSubmitFileSide {
-    /** Front side of an document. Usually the one with the picture */
-    front = "FRONT",
-    /** Back side of an document */
-    back = "BACK"
-}
-
-export function CreateDocumentSubmitFileSide(side: WDODocumentSide): DocumentSubmitFileSide {
+/** Converts WDODocumentSide to DocumentSubmitFileSide */
+export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
     switch (side) {
         case WDODocumentSide.front:
-            return DocumentSubmitFileSide.front
+            return WDODocumentSubmitFileSide.front
         case WDODocumentSide.back:
-            return DocumentSubmitFileSide.back
+            return WDODocumentSubmitFileSide.back
     }
 }
 
 /** Status of the documents */
-export interface DocumentStatusResponse {
+export interface WDODocumentStatusResponse {
     /** Overall status */
     status: WDODocumentStatus
     /** Status for each document. */
@@ -195,7 +183,7 @@ export interface DocumentStatusResponse {
 }
 
 /** Response of the OTP verify */
-export interface VerifyOTPResponse {
+export interface WDOVerifyOTPResponse {
     /** ID of the process */
     processId: string
     /** Current onboarding status */
@@ -208,18 +196,29 @@ export interface VerifyOTPResponse {
     remainingAttempts: number
 }
 
+/** Configuration for a document */
 export interface WDOConfigurationDocument {
+    /** Type of the document */
     type: string,
+    /** Is the document mandatory */
     mandatory: boolean,
-    sideCount: string
+    /** Number of sides the document has */
+    sideCount: number
 }
 
+/** Configuration for the onboarding process */
 export interface WDOConfigurationResponse {
+    /** Is the onboarding process enabled */
     enabled: boolean,
+    /** Is OTP required for the first part - identification/activation. */
     otpForIdentification: boolean,
+    /** Is OTP required for the second part - identity verification. */
     otpForIdentityVerification: boolean,
+    /** Documents required for identity verification. */
     documents: {
-      requiredDocumentsCount: number,
-      items: Array<WDOConfigurationDocument>
+        /** Number of required documents */
+        requiredDocumentsCount: number,
+        /** List of documents */
+        items: Array<WDOConfigurationDocument>
     }
 }
