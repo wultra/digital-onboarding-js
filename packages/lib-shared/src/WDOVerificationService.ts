@@ -45,7 +45,7 @@ export abstract class WDOBaseVerificationService {
     protected abstract api: WDOBaseApi
     /* @internal */
     protected abstract changeAcceptLanguageImpl(language: string): void
-    
+
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
     /* @internal */
@@ -218,7 +218,24 @@ export abstract class WDOBaseVerificationService {
      * 
      * @param files Document files to upload.
      */
-    async documentsSubmit(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
+    async documentsSubmit(files: WDODocumentFile[]): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+
+        const resubmit = files.some(f => f.originalDocumentId != undefined)
+
+        throw new WDOError("documentsSubmit is not available in this version of the SDK.")
+    }
+
+    /**
+     * @internal
+     * Upload document files to the server. The order of the documents is up to you. 
+     * Make sure that uploaded document are reasonable size so you're not uploading large files.
+     * 
+     * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
+     * 
+     * @param files Document files to upload.
+     */
+    private async documentsSubmitDemo(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
 
         const resubmit = files.some(f => f.originalDocumentId != undefined)

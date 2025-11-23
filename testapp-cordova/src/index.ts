@@ -271,7 +271,8 @@ async function simulateActivation() {
 async function uploadDocuments(verificationService: WDOVerificationService, documents: WDODocumentFile[], zip: { folder: string, data: string }): Promise<WDOVerificationState> {
     // simulate document scanning by submitting demo ZIP file
     console.log("Simulating document scanning by submitting demo ZIP file...")
-    const scanResult = await verificationService.documentsSubmit(
+    const service = verificationService as any // to access non-public method
+    const scanResult = await service.documentsSubmitDemo(
         documents,
         zip.folder,
         zip.data
