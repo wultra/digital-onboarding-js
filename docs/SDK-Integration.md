@@ -17,4 +17,4 @@ cordova plugin add cordova-digital-onboarding
 
 ## Read next
 
-- [Device Activation](Device-Activation.md)
+- [Process Configuration](Process-Configuration.md)
