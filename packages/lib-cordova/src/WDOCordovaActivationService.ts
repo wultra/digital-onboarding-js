@@ -53,4 +53,9 @@ export class WDOActivationService extends WDOBaseActivationService {
         }
         return this.powerauth.createActivation(activation)
     }
+
+    /* @internal */
+    protected override changeAcceptLanguageImpl(language: string): void {
+        this.api.networking.acceptLanguage = language
+    }
 }

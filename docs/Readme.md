@@ -1,7 +1,7 @@
-# Wultra Digital Onboarding for Apple Platforms
+# Wultra Digital Onboarding for JS Mobile Platforms
 
 <!-- begin remove -->
-<p align="center"><img src="images/intro.jpg" alt="Wultra Digital Onboarding for Apple Platforms" width="100%" /></p>
+<p align="center"><img src="images/intro.jpg" alt="Wultra Digital Onboarding for JS Mobile Platforms" width="100%" /></p>
 <!-- end -->
 
 Elevate your standard device activation, user login, and request signing scenarios by incorporating facial recognition and document scanning in diverse situations:
@@ -10,21 +10,19 @@ Elevate your standard device activation, user login, and request signing scenari
 - Reinforce conventional password or PIN-based authentication with an extra layer of security through face recognition.
 - Seamlessly onboard new customers into your systems, authenticating them with identification cards and facial scans for access to your app.
 
-### Minimal requirements
+### Supported Platforms
 
-| Requirement  |      Value          |  
-|--------------|---------------------|
-| Min. system  |  __iOS 13__         | 
-| Integration  |  __Cocoapods, SPM__ | 
+- Cordova
+- (TBA) React Native
 
 ### Other resources
 
-We also provide an [Android version of this library](https://github.com/wultra/digital-onboarding-android).
+We also provide an [Android](https://github.com/wultra/digital-onboarding-android) and [iOS](https://github.com/wultra/digital-onboarding-apple) version of the Wultra Digital Onboarding SDK.
 
 ## What will you need before the implementation
 
 <!-- begin box info -->
-The Wultra Digital Onboarding SDK functions as an extension of [Wultra Mobile Authentication (PowerAuth)](https://github.com/wultra/powerauth-mobile-sdk) that is required.
+The Wultra Digital Onboarding SDK functions as an extension of [Wultra Mobile Authentication (PowerAuth)](https://github.com/wultra/react-native-powerauth-mobile-sdk) that is required.
 <!-- end -->
 
 Before initiating the integration, it's essential to ensure that your server environment is prepared with appropriately configured services capable of managing user verification and onboarding, seamlessly connecting to your systems.
@@ -36,6 +34,7 @@ Given the unique characteristics of each customer system, the utilization of thi
 We seamlessly incorporate industry-leading solutions for document scanning, ensuring versatility and effectiveness in your operations.
 
 - iProov for genuine presence
+- BlinkID for document scanning
 - Innovatrics for document scanning and genuine presence
 - ZenID for document scanning
 
@@ -43,20 +42,17 @@ Our dedicated technical and sales representatives are available to guide you in 
 
 ## Open Source Code
 
-The code of the library is open source and you can freely browse it in our GitHub at [https://github.com/wultra/digital-onboarding-apple](https://github.com/wultra/digital-onboarding-apple/tree/develop/)
+The code of the library is open source and you can freely browse it in our GitHub at [https://github.com/wultra/digital-onboarding-js](https://github.com/wultra/digital-onboarding-js/tree/develop/)
 
 <!-- begin remove -->
 ## Integration Tutorials
 - [SDK Integration](SDK-Integration.md)
-- [Device Activation With Email* Only](Device-Activation.md)
+- [Device Activation (With Weak Credentials)](Device-Activation.md)
 - [Verifying User With Document Scan And Genuine Presence Check](Verifying-User.md)
-- Onboarding a new user _(not available at the moment)_
-- [Error Handling](Error-Handling.md)
 - [Language Configuration](Language-Configuration.md)
 - [Logging](Logging.md)
 - [Changelog](Changelog.md)
 
-_* or similar weak identification like userID or phone number_
 <!-- end -->
 
 ## Read next

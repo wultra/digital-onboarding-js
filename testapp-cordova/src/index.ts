@@ -109,6 +109,15 @@ async function simulateActivation() {
         const otp: string = await anyActivationService.getOTP()
         console.log(`OTP retrieved: ${otp}`)
 
+        // use wrong OTP to test failure
+
+        try {
+            await activationService.activate("my-test-activation", "wrong-otp")
+            console.error("Activation should have failed with wrong OTP but it didn't.")
+        } catch (error) {
+            console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`);
+        }
+
         // activate PowerAuth SDK
         console.log("Activating PowerAuth SDK...")
         const activationResult = await activationService.activate("my-test-activation", otp)

@@ -36,6 +36,8 @@ export abstract class WDOBaseActivationService {
     protected abstract activatePowerAuth(identityAttributes: any, activationName: string): Promise<WDOPowerAuthActivationResult>
     /* @internal  */
     protected abstract activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult>
+    /* @internal */
+    protected abstract changeAcceptLanguageImpl(language: string): void
 
     /** 
      * If the activation process is in progress. 
@@ -44,6 +46,18 @@ export abstract class WDOBaseActivationService {
      * Calling `status()` for example after the app is launched in this case is recommended.
      */
     public get hasActiveProcess(): boolean { return !!this.processData }
+
+    /** 
+     * Accept language for the outgoing requests headers.
+     * Default value is "en".
+     *
+     * Standard RFC "Accept-Language" https://tools.ietf.org/html/rfc7231#section-5.3.5
+     * Response texts are based on this setting. For example when "de" is set, server
+     * will return error texts and other in german (if available).
+     */
+    public changeAcceptLanguage(language: string) {
+        this.changeAcceptLanguageImpl(language)
+    }
     
     /* @internal  */
     private processData: { processId: string, activationCode?: string } | undefined // TODO: Cache process ID?

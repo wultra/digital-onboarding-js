@@ -43,4 +43,9 @@ export class WDOVerificationService extends WDOBaseVerificationService {
         this.api = new WDOApi(powerauth, baseUrl)
         this.powerauth = powerauth
     }
+
+    /* @internal */
+    protected override changeAcceptLanguageImpl(language: string): void {
+        this.api.networking.acceptLanguage = language
+    }
 }

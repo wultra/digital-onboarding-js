@@ -8,31 +8,24 @@ Additional verification means that the user will need to scan his face and docum
 
 Verification is needed if the `activationFlags` in the `PowerAuthActivationStatus` contains `VERIFICATION_PENDING` or `VERIFICATION_IN_PROGRESS` value.
 
-These values can be accessed via the extension methods `verificationPending` and `verificationInProgress` or just simply `needVerification` if one of them is true.
+To simplify this check, you can use the `WDOVerificationService.isVerificationRequired` method that returns a boolean indicating whether verification is required.
 
 Example:
 
-```swift
-import WultraDigitalOnboarding
-import PowerAuth2
+```typescript
+const powerAuth: PowerAuth // configured and activated PowerAuth instance
 
-let powerAuth: PowerAuthSDK // configured and activated PowerAuth instance
-
-powerAuth.fetchActivationStatus { status, error in
-    if let error = error {
-        // handle error
-    } else if let status = status {
-        // note that `needVerification` property is an extension
-        // from the `WultraDigitalOnboarding` space
-        if status.needVerification {
-            // navigate to the verification flow 
-            // and call `WDOVerificationService.status`
-        } else {
-            // handle PA status
-        }
+try {
+    const status = await powerAuth.fetchActivationStatus()
+    if (WDOVerificationService.isVerificationRequired(status)) {
+        // navigate to the verification flow 
+        // and call `WDOVerificationService.status`
+    } else {
+        // handle PA status
     }
+} catch (error) {
+    // handle error
 }
-
 ```
 
 ## Example app flow
@@ -53,100 +46,98 @@ The final flow (which screens come after another) is controlled by the backend.
 
 ## Possible state values
 
-State is defined by the `WDOVerificationState` enum with the following possibilities:
+State is defined by the `WDOVerificationStateType` enum with the following possibilities:
 
-```swift
-/// State which should be presented to the user. Each state represents a separate screen UI that should be presented to the user.
-enum WDOVerificationState {
-    
-    /// Show the verification introduction screen where the user can start the activation.
-    ///
-    /// The next step should be calling the `getConsentText`.
-    case intro
-    
-    /// Show approve/cancel user consent.
-    /// The content of the text depends on the server configuration and might be plain text or HTML.
-    ///
-    /// The next step should be calling the `consentApprove`.
-    case consent(_ body: String)
-    
-    /// Show document selection to the user. Which documents are available and how many
-    /// can the user select is up to your backend configuration.
-    ///
-    /// The next step should be calling the `documentsSetSelectedTypes`.
-    case documentsToScanSelect
-    
-    /// User should scan documents - display UI for the user to scan all necessary documents.
-    ///
-    /// The next step should be calling the `documentsSubmit`.
-    case scanDocument(_ process: WDOVerificationScanProcess)
-    
-    /// The system is processing data - show loading with text hint from provided `ProcessingItem`.
-    ///
-    /// The next step should be calling the `status`.
-    case processing(_ item: ProcessingItem)
-    
-    /// The user should be presented with a presence check.
-    /// Presence check is handled by third-party SDK based on the project setup.
-    ///
-    /// The next step should be calling the `presenceCheckInit` to start the check and `presenceCheckSubmit` to
-    /// mark it finished  Note that these methods won't change the status and it's up to the app to handle the process of the presence check.
-    case presenceCheck
-    
-    /// Show enter OTP screen with resend button.
-    ///
-    /// The next step should be calling the `verifyOTP` with user-entered OTP.
-    /// The OTP is usually SMS or email.
-    case otp(_ remainingAttempts: Int?)
-    
-    /// Verification failed and can be restarted
-    ///
-    /// The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
-    /// the user's decision if he wants to try it again or cancel the process.
-    case failed
-    
-    /// Verification is canceled and the user needs to start again with a new PowerAuth activation.
-    ///
-    /// The next step should be calling the `PowerAuthSDK.removeActivationLocal()` and starting activation from scratch.
-    case endstate(_ reason: EndstateReason)
-    
-    /// Verification was successfully ended. Continue into your app
-    case success
+```typescript
+/** Types of the verification state */
+declare enum WDOVerificationStateType {
+    /**
+     * Show the verification introduction screen where the user can start the activation.
+     *
+     * The next step should be calling the `consentGet()`.
+     */
+    intro = "intro",
+    /**
+     * Show approve/cancel user consent.
+     *
+     * The content of the text depends on the server configuration and might be plain text or HTML.
+     *
+     * The next step should be calling the `consentApprove`.
+     */
+    consent = "consent",
+    /**
+     * Show document selection to the user. Which documents are available and how many
+     * can the user select is up to your backend configuration.
+     *
+     * The next step should be calling the `documentsSetSelectedTypes`.
+     */
+    documentsToScanSelect = "documentsToScanSelect",
+    /**
+     * User should scan documents - display UI for the user to scan all necessary documents.
+     *
+     * The next step should be calling the `documentsSubmit`.
+     */
+    scanDocument = "scanDocument",
+    /**
+     * The system is processing data - show loading with text hint from provided `WDOStatusCheckReason`.
+     *
+     * The next step should be calling the `status`.
+     */
+    processing = "processing",
+    /**
+     * The user should be presented with a presence check.
+     * Presence check is handled by third-party SDK based on the project setup.
+     *
+     * The next step should be calling the `presenceCheckInit` to start the check and `presenceCheckSubmit` to
+     * mark it finished.  Note that these methods won't change the status and it's up to the app to handle the process of the presence check.
+     */
+    presenceCheck = "presenceCheck",
+    /**
+     * Show enter OTP screen with resend button.
+     *
+     * The next step should be calling the `verifyOTP` with user-entered OTP.
+     * The OTP is usually SMS or email.
+     */
+    otp = "otp",
+    /**
+     * Verification failed and can be restarted
+     *
+     * The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
+     * the user's decision if he wants to try it again or cancel the process.
+     */
+    failed = "failed",
+    /**
+     * Verification is canceled and the user needs to start again with a new PowerAuth activation.
+     *
+     * The next step should be calling the `PowerAuth.removeActivationLocal()` and starting activation from scratch.
+     */
+    endState = "endState",
+    /**
+     * Verification was successfully ended. Continue into your app flow.
+     */
+    success = "success"
 }
 ```
 
 ## Creating an instance
 
-To create an instance you will need a `PowerAuthSDK` instance that is __already activated__ or a `WPNNetworkingService` with such a `PowerAuthSDK` instance.
+To create an instance you will need a `PowerAuth` instance that is __already activated__.
 
 <!-- begin box info -->
-[Documentation for `PowerAuthSDK`](https://github.com/wultra/powerauth-mobile-sdk).  
-[Documentation for `WPNNetworkingService`](https://github.com/wultra/networking-apple/).
+[Documentation for `PowerAuth`](https://github.com/wultra/react-native-powerauth-mobile-sdk).  
 <!-- end -->
 
 
-Example with `PowerAuthSDK` instance:
-
-```swift
-let powerAuth = PowerAuthSDK(configuration: ....)
-let verification = WDOVerificationService(
-    powerAuth: powerAuth,
-    config: WPNConfig(baseUrl: "https://sever.my/path/")
-)
-```
-
-Example with `WPNNetworkingService ` instance:
-
-```swift
-let powerAuth = PowerAuthSDK(configuration: ....)
-let networking = WPNNetworkingService(
-    powerAuth: powerAuth, // configured PowerAuthSDK instance
-    config: WPNConfig(baseUrl: "https://sever.my/path/"),
-    serviceName: "MyProjectNetworkingService", // for better debugging
-    acceptLanguage: "en" // more info in "Language Configuration" docs section
-)
-let verification = WDOVerificationService(
-    networking: networking
+Example:
+```typescript
+const powerAuth = new PowerAuth("my-pa-instance")
+powerAuth.configure({
+    configuration: "ARCB+...jg==", // base64 PowerAuth configuration
+    baseEndpointUrl: "https://my-server-deployment.com/enrollment-server/"
+})
+const verification = new WDOVerificationService(
+    powerAuth,
+    "https://my-server-deployment.com/enrollment-server-onboarding/"
 )
 ```
 
@@ -160,20 +151,16 @@ Most verification functions return the result and also the state for your conven
 
 Getting the state directly:
 
-```swift
-let verification: WDOVerificationService // configured instance
-verification.status { result in 
-    switch result {
-    case .success(let state):
-        // handle `WDOVerificationState` state and navigate to the expected screen
-        break
-    case .failure(let error):
-        if let state = error.state {
-            // show expected screen based on the state
-        } else {
-            // navigate to error screen and show the error in
-            // error.cause
-        }
+```typescript
+const verification: WDOVerificationService // configured instance
+try {
+    const vfStatus = await verification.status()
+    // handle `WDOVerificationState` state and navigate to the expected screen
+} catch (error) {
+    if (error.verificationState) {
+        // show expected screen based on the state
+    } else {
+        // navigate to error screen
     }
 }
 ```
@@ -182,20 +169,16 @@ verification.status { result in
 
 When the state is `intro`, the first step in the flow is to get the context text for the user to approve.
 
-```swift
-let verification: WDOVerificationService // configured instance
-verification.consentGet { result in 
-    switch result {
-    case .success(let state):
-        // state will be in the `consent` case here - display the consent screen
-        break
-    case .failure(let error):
-        if let state = error.state {
-            // show expected screen based on the state
-        } else {
-            // navigate to the error screen and show the error in
-            // error.cause
-        }
+```typescript
+const verification: WDOVerificationService // configured instance
+try {
+    const consentTextResponse = await verification.consentGet()
+    // state will be in the `consent` case here - display the consent screen
+} catch (error) {
+    if (error.verificationState) {
+        // show expected screen based on the state
+    } else {
+        // navigate to error screen
     }
 }
 ```
@@ -208,45 +191,39 @@ If the user __rejects the consent__, just return him to the intro screen, there'
 
 If the user chooses to accept the consent, call `consentApprove` function. If successful, `documentsToScanSelect` state will be returned.
 
-```swift
-let verification: WDOVerificationService // configured instance
-verification.consentApprove { result in 
-    switch result {
-    case .success(let state):
-        // state will be in the `documentsToScanSelect` case here - display the document selector
-        break
-    case .failure(let error):
-        if let state = error.state {
-            // show expected screen based on the state
-        } else {
-            // navigate to the error screen and show the error in
-            // error.cause
-        }
+```typescript
+const verification: WDOVerificationService // configured instance
+try {
+    const approvalResult = await verification.consentApprove()
+    // state will be in the `documentsToScanSelect` case here - display the document selector
+} catch (error) {
+    if (error.verificationState) {
+        // show expected screen based on the state
+    } else {
+        // navigate to error screen
     }
 }
 ```
 
 ## Set document types to scan
 
-After the user approves the consent, present a document selector for documents which will be scanned. The number and types of documents (or other rules like 1 type required) are completely dependent on your backend system integration, frontend SDK does not provide any hint for this configuration.
+After the user approves the consent, present a document selector for documents which will be scanned. The number and types of documents (or other rules like 1 type required) are completely dependent on your backend system integration. You can retrieve the list of available document types from the [configuration service](Process-Configuration.md).
 
 For example, your system might require a national ID and one additional document like a driver's license, passport, or any other government-issued personal document.
 
-```swift
-let verification: WDOVerificationService // configured instance
-let documentsToScan: [WDODocumentType] = [.idCard, .driversLicense]
-verification.documentsSetSelectedTypes(types: documentsToScan) { result in 
-    switch result {
-    case .success(let state):
-        // state will be in the `scanDocument` case here - display the document scanner
-        break
-    case .failure(let error):
-        if let state = error.state {
-            // show expected screen based on the state
-        } else {
-            // navigate to the error screen and show the error in
-            // error.cause
-        }
+```typescript
+const verification: WDOVerificationService // configured instance
+try {
+    const docTypesResult = await verification.documentsSetSelectedTypes([
+        WDODocumentType.idCard,
+        WDODocumentType.driversLicense
+    ])
+    // state will be in the `scanDocument` case here - display the document scanner
+} catch (error) {
+    if (error.verificationState) {
+        // show expected screen based on the state
+    } else {
+        // navigate to error screen
     }
 }
 ```
@@ -260,27 +237,6 @@ This step does not move the state of the process but is a "stand-alone" API call
 Since the document scanning itself is not provided by this library but by a 3rd party library, some of them need a server-side initialization.
 
 If your chosen scanning SDK requires such a step, use this function to retrieve necessary data from the server.
-
-ZenID RecogLib_iOS integration example:
-
-```swift
-let verification: WDOVerificationService // configured instance
-
-let documentsToScan = [WDODocumentType.idCard, .driversLicense]
-    
-verification.documentsSetSelectedTypes(types: documentsToScan) { result in
-    switch result {
-    case .success(let result):
-        // state will be in the `scanDocument` case here - tell the user to start scanning required documents
-        // in the `scanDocument` case, process object `WDOVerificationScanProcess` is present which will
-        // tell you the status of each document and also provide you `nextDocumentToScan` - the document that should be scanned next
-        break
-    case .failure(let error):
-        // handle error
-        break
-    }
-}
-```
 
 ## Scanning a document
 
@@ -307,74 +263,76 @@ To upload a document, use `documentsSubmit` function. Each side of a document is
 
 Example:
 
-```swift
-let verification: WDOVerificationService // configured instance
+```typescript
+const verification: WDOVerificationService // configured instance
 
-let passportToUpload = WDODocumentFile(
-    data: Data(...), // raw image data from the document scanning library/photo camera
-    type: WDODocumentType.passport,
-    side: WDODocumentSide.front, // passport has only front side
-    originalDocumentId: nil, // use only when re-uploading the file (for example when first upload was rejected because of a blur)
-    dataSignature: nil // optional, use when provided by the document scanning library
+const passportToUpload = WDODocumentFile(
+    "BASE64_ENCODED_IMAGE_DATA", // raw image data from the document scanning library/photo camera
+    WDODocumentType.passport,
+    WDODocumentSide.front, // passport has only front side
+    undefined, // use only when re-uploading the file (for example when first upload was rejected because of a blur)
+    undefined // optional, use when provided by the document scanning library
 )
-
-verification.documentsSubmit(
-    types: [passportToUpload],
-    progressCallback: { percentUploadProgress in
-        // report upload progress
-    }
-) { result in
-    switch result {
-    case .success(let result):
-        // state here will be "processing" - telling you that the file is being processed on the server
-        break
-    case .failure(let error):
-        // handle error
-        break
+try {
+    const result = await verification.documentsSubmit([passportToUpload])
+    // state will be in the `processing` case here - display the processing screen
+} catch (error) {
+    if (error.verificationState) {
+        // show expected screen based on the state
+    } else {
+        // navigate to error screen
     }
 }
-
 ```
 
 ### `WDODocumentFile`
 
-```swift
-class WDODocumentFile {
-    /// Raw data to upload. Make sure that the data aren't too big, hundreds of kbs should be enough.
-    public var data: Data
-    /// Image signature. Use only when the scan SDK supports this.
-    public var dataSignature: String?
-    /// Type of the document (for example .idCard).
-    public let type: WDODocumentType
-    /// Side of the document (`front` if the document is one-sided or only one side is expected).
-    public let side: WDODocumentSide
-    /// For image reuploading when the previous file of the same document was rejected.
-    /// Without specifying this value, the document side won't be overwritten.
-    public let originalDocumentId: String?
-    
-    /// Image of a document that can be sent to the backend for Identity Verification.
-    ///
-    /// - Parameters:
-    ///   - scannedDocument: Document to upload.
-    ///   - data: Raw image data.  Make sure that the data aren't too big, hundreds of kbs should be enough.
-    ///   - side: The side of the document that the image captures.
-    ///   - dataSignature: Signature of the image data. Optional, use only when the scan SDK supports this. `nil` by default.
-    public convenience init(scannedDocument: WDOScannedDocument, data: Data, side: WDODocumentSide, dataSignature: String? = nil)
-    
-    /// Image of a document that can be sent to the backend for Identity Verification.
-    ///
-    /// - Parameters:
-    ///   - data: Raw image data.  Make sure that the data aren't too big, hundreds of kbs should be enough.
-    ///   - type: The type of the document.
-    ///   - side: The side of the document the the image captures
-    ///   - originalDocumentId: Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
-    ///   - dataSignature: Signature of the image data. Optional, use only when the scan SDK supports this. `nil` by default.
-    public convenience init(data: Data, type: WDODocumentType, side: WDODocumentSide, originalDocumentId: String?, dataSignature: String? = nil)
+```typescript
+/** Image of a document that can be sent to the backend for Identity Verification. */
+declare class WDODocumentFile {
+    /** Raw data to upload. Make sure that the data aren't too big, hundreds of kbs should be enough. */
+    data: Base64EncodedJPEG;
+    /**
+     * Image signature.
+     *
+     * Optional, use only when the scan SDK supports this.
+     */
+    dataSignature: string | undefined;
+    /** Type of the document. */
+    type: WDODocumentType;
+    /** Side of the document (`front` if the document is one-sided or only one side is expected). */
+    side: WDODocumentSide;
+    /**
+     * For image reuploading when the previous file of the same document was rejected.
+     *
+     * Without specifying this value, the document side won't be overwritten.
+     */
+    originalDocumentId: string | undefined;
+    /**
+     * Create the document file from an image that can be sent to the backend for Identity Verification.
+     *
+     * @param scannedDocument Document to upload.
+     * @param side The side of the document that the image captures.
+     * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
+     * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @returns Document file to upload.
+     */
+    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string): WDODocumentFile;
+    /**
+     * Image of a document that can be sent to the backend for Identity Verification.
+     *
+     * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
+     * @param type Type of the document.
+     * @param side The side of the document that the image captures.
+     * @param originalDocumentId Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
+     * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     */
+    constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string);
 }
 ```
 
 <!-- begin box info -->
-To create an instance of the `WDODocumentFile`, you can use `WDOScannedDocument.createFileForUpload`. The `WDOScannedDocument` is returned in the process status as a "next document to scan".
+To create an instance of the `WDODocumentFile`, you can use `WDODocumentFile.fromScannedDocument`. The `WDOScannedDocument` is returned in the process status as a "next document to scan".
 <!-- end -->
 
 ## Presence check
@@ -387,7 +345,7 @@ When this state is obtained, the following steps need to be done:
 2. Make the presence check by the third-party library
 3. After the presence check is finished, call `presenceCheckSubmit` to tell the server you finished the process on the device.
 
-## Verify OTP
+## Verify OTP (optional step)
 
 After the presence check is finished, the user will receive an SMS/email OTP and the `otp` state will be reported. When this state is received, prompt the user for the OTP and verify it via `verifyOTP` method.
 
@@ -395,20 +353,13 @@ The `otp` state also contains the number of possible OTP attempts. When attempts
 
 Example:
 
-```swift
-let verification: WDOVerificationService // configured instance
-
-let userOTP = "123456"
-
-verification.verifyOTP(otp: userOTP) { result in
-    switch result {
-    case .success(let result):
-        // React to a new state returned in the result
-        break
-    case .failure(let error):
-        // handle error
-        break
-    }
+```typescript
+const verification: WDOVerificationService // configured instance
+try {
+    const otpStatus = await verificationService.verifyOTP("123456")
+    // React to a new state returned in the result
+} catch (error) {
+    // handle error
 }
 ```
 
@@ -424,8 +375,8 @@ When the process fails, a `failed` state is returned. This means that the curren
 
 ## Endstate state
 
-When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endstate` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuthSDK object. After that, user should be put inti the "fresh install state".
+When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endstate` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuth object. After that, user should be put inti the "fresh install state".
 
 ## Read next
 
-- [Error Handling](Error-Handling.md)
+- [Language Configuration](Language-Configuration.md)

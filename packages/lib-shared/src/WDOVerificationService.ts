@@ -44,11 +44,26 @@ export abstract class WDOBaseVerificationService {
     /* @internal */
     protected abstract api: WDOBaseApi
     /* @internal */
+    protected abstract changeAcceptLanguageImpl(language: string): void
+    
+    /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
     /* @internal */
     private cachedProcess: WDOVerificationScanProcess | undefined = undefined // TODO: persistence?
 
     // PUBLIC API
+
+    /** 
+     * Accept language for the outgoing requests headers.
+     * Default value is "en".
+     *
+     * Standard RFC "Accept-Language" https://tools.ietf.org/html/rfc7231#section-5.3.5
+     * Response texts are based on this setting. For example when "de" is set, server
+     * will return error texts and other in german (if available).
+     */
+    public changeAcceptLanguage(language: string) {
+        this.changeAcceptLanguageImpl(language)
+    }
 
     /** Time in seconds that user needs to wait between OTP resend calls */
     public get otpResendPeriodSeconds(): number | undefined {

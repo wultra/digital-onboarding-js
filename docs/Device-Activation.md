@@ -149,11 +149,11 @@ class MyUserService {
             // For more information, follow the PowerAuthSDK documentation.
         } catch (error) {
             if (allowOnboardingOtpRetry(error)) {
-                    // User entered the wrong OTP, prompt for a new one.
-                    // Remaining OTP attempts count: onboardingOtpRemainingAttempts(error)
-                } else {
-                    // show error UI
-                }
+                // User entered the wrong OTP, prompt for a new one.
+                // Remaining OTP attempts count: onboardingOtpRemainingAttempts(error)
+            } else {
+                // show error UI
+            }
         }
     }
 }
