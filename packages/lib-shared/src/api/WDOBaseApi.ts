@@ -84,6 +84,16 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 
+    verificationSubmitDocumentsV2(processId: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
+        const requestObject = { 
+            processId: processId, 
+            resubmit: resubmit, 
+            documents: documents 
+        }
+        // TODO: there should be longer timeout!
+        return this.callApi(requestObject, WDOVerificationEndpoints.v2submitDocuments)
+    }
+
     verificationSubmitDocuments(processId: string, data: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
         const requestObject = { processId: processId, data: data, resubmit: resubmit, documents: documents }
         // TODO: there should be longer timeout!

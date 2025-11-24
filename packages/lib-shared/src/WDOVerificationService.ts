@@ -223,7 +223,19 @@ export abstract class WDOBaseVerificationService {
 
         const resubmit = files.some(f => f.originalDocumentId != undefined)
 
-        throw new WDOError("documentsSubmit is not available in this version of the SDK.")
+        const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
+
+            return {
+                filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`, // TODO: OK?
+                type: WDOCreateDocumentSubmitFileType(f.type),
+                side: WDOCreateDocumentSubmitFileSide(f.side),
+                originalDocumentId: f.originalDocumentId,
+                data: f.data
+            }
+        })
+
+        await this.handleError(this.api.verificationSubmitDocumentsV2(pid, resubmit, submitFiles))
+        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
     }
 
     /**
