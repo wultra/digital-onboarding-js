@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO: consider ERROR codes
+// TODO: add ERROR codes
 export class WDOError {
 
     message: string

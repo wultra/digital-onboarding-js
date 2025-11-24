@@ -8,7 +8,6 @@
  */
 
 import { WDOVerificationScanProcess } from "./WDOVerificationScanProcess"
-import { WDOStatusCheckReason } from "./WDOVerificationService"
 
 /** 
  * State which should be presented to the user. 
@@ -232,4 +231,20 @@ export enum WDOEndStateReason {
 
     /** An unknown reason. */
     other = "other"
+}
+
+/**
+ * The reason for what we are waiting for. For example, we can wait for documents to be OCRed and matched against the database.
+ * Use these values for better loading texts to tell the user what is happening - some tasks may take some time 
+ * and it would be frustrating to just show a generic loading indicator.
+ */
+export enum WDOStatusCheckReason {
+    unknown = "unknown",
+    documentUpload = "documentUpload",
+    documentVerification = "documentVerification",
+    documentAccepted = "documentAccepted",
+    documentsCrossVerification = "documentsCrossVerification",
+    clientVerification = "clientVerification",
+    clientAccepted = "clientAccepted",
+    verifyingPresence = "verifyingPresence"
 }

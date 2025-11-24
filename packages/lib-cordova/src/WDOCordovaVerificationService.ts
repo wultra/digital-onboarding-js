@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from '../../lib-shared/src/WDOPowerAuthActivationStatus'
 import { WDOBaseVerificationService } from '../../lib-shared/src/WDOVerificationService'
 import { WDOApi } from './WDOCordovaApi'
 import "cordova-powerauth-mobile-sdk"
@@ -42,6 +43,18 @@ export class WDOVerificationService extends WDOBaseVerificationService {
         super()
         this.api = new WDOApi(powerauth, baseUrl)
         this.powerauth = powerauth
+    }
+
+    /* @internal */
+    protected override async fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus> {
+        const result = await this.powerauth.fetchActivationStatus()
+        return {
+            state: WDOPowerAuthActivationState[result.state],
+            failCount: result.failCount,
+            maxFailCount: result.maxFailCount,
+            remainingAttempts: result.remainingAttempts,
+            customObject: result.customObject
+        }
     }
 
     /* @internal */

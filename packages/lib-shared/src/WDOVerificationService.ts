@@ -11,9 +11,10 @@ import { WDOBaseApi } from './api/WDOBaseApi'
 import { WDOCreateDocumentSubmitFileSide, WDOCreateDocumentSubmitFileType, WDODocumentSubmitFile, WDODocumentSubmitFileType, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
-import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType } from './WDOVerificationState'
+import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
-import { WDODocumentFile, WDODocumentSide, WDODocumentType } from './WDODocumentFile'
+import { WDODocumentFile, WDODocumentType } from './WDODocumentFile'
+import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from './WDOPowerAuthActivationStatus'
 
 /**
  * Listener of the Verification Service that can listen on Verification Status and PowerAuth Status changes.
@@ -25,7 +26,7 @@ export interface WDOVerificationServiceListener {
      *  Note that this happens only when error is returned in some of the Verification endpoints and this error indicates PowerAuth status change. For
      * example when the service finds out during the API call that the PowerAuth activation was removed or blocked on the server
      */
-    powerAuthActivationStatusChanged(sender: WDOBaseVerificationService, status: any): void // TODO: any + not called yet
+    powerAuthActivationStatusChanged(sender: WDOBaseVerificationService, status: WDOPowerAuthActivationStatus): void
 
     /** Called when state of the verification has changed. */
     verificationStatusChanged(sender: WDOBaseVerificationService, status: WDOVerificationState): void
@@ -45,6 +46,8 @@ export abstract class WDOBaseVerificationService {
     protected abstract api: WDOBaseApi
     /* @internal */
     protected abstract changeAcceptLanguageImpl(language: string): void
+    /* @internal */
+    protected abstract fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
 
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
@@ -378,33 +381,25 @@ export abstract class WDOBaseVerificationService {
     }
 
     /* @internal */
-    private processError(error: any): any {
+    private async processError(error: any): Promise<any> {
+        if (error.code === "AUTHENTICATION_ERROR") { // PowerAuth Authentication failure
+            try {
+                const status = await this.fetchActivationStatus()
+                if (status.state !== WDOPowerAuthActivationState.ACTIVE) {
+                    WDOLogger.error(`PowerAuth status is not active (status${status.state}) - notifying the delegate and returning and error.`)
+                    this.listener?.powerAuthActivationStatusChanged(this, status)
+                    return new WDOError("PowerAuth activation is not active anymore")
+                }
+            } catch {
+                // no-op
+            }
+        }
+
         return error
-        // TODO:
-        // if error.networkIsNotReachable == false || error.restApiError?.errorCode == .authenticationFailure {
-        //     api.networking.powerAuth.fetchActivationStatus { [weak self] status, _ in
-                
-        //         guard let self else {
-        //             completion(.failure(.init(.init(reason: .unknown))))
-        //             return
-        //         }
-                
-        //         if let status, status.state != .active {
-        //             D.error("PowerAuth status is not active (status\(status.state)) - notifying the delegate and returning and error.")
-        //             self.delegate?.powerAuthActivationStatusChanged(self, status: status)
-        //             self.markCompleted(.failure(.init(.init(reason: .wdo_verification_activationNotActive, error: error))), completion)
-        //         } else {
-        //             D.error(error)
-        //             self.markCompleted(.failure(.init(error)), completion)
-        //         }
-        //     }
-        // } else {
-        //     D.error(error)
-        //     markCompleted(.failure(.init(error)), completion)
-        // }
-    }
-    
+    }   
 }
+
+// INTERNAL CLASSES
 
 /**
   @internal
@@ -590,22 +585,6 @@ enum WDONextStep {
     failed = "failed",
     rejected = "rejected",
     success = "success"
-}
-
-/**
- * The reason for what we are waiting for. For example, we can wait for documents to be OCRed and matched against the database.
- * Use these values for better loading texts to tell the user what is happening - some tasks may take some time 
- * and it would be frustrating to just show a generic loading indicator.
- */
-export enum WDOStatusCheckReason {
-    unknown = "unknown",
-    documentUpload = "documentUpload",
-    documentVerification = "documentVerification",
-    documentAccepted = "documentAccepted",
-    documentsCrossVerification = "documentsCrossVerification",
-    clientVerification = "clientVerification",
-    clientAccepted = "clientAccepted",
-    verifyingPresence = "verifyingPresence"
 }
 
 function documentAction(document: WDODocument): "proceed" | "wait" | "error" {
