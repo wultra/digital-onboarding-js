@@ -14,10 +14,6 @@
         "plugin.xml",
         "docs/"
     ],
-    "scripts": {
-        "prepack": "yarn install && cd ../.. && rollup -c rollup.config.js && cp -R README.md LICENSE docs packages/lib-cordova/",
-        "postpack": "rm -rf README.md LICENSE docs/"
-    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/wultra/digital-onboarding-js.git"
