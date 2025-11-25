@@ -8,4 +8,27 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+
+    <platform name="android">
+        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+            <application android:usesCleartextTraffic="true" />
+        </edit-config>
+    </platform>
+
+    <preference name="scheme" value="app" />
+    <preference name="hostname" value="localhost" />
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+
+    <preference name="android-targetSdkVersion" value="35" />
+    <preference name="android-compileSdkVersion" value="35" />
+    <preference name="android-buildToolsVersion" value="36.0.0" />
+    <preference name="GradleVersion" value="8.9" />
+    <preference name="GradlePluginKotlinEnabled" value="true" />
+    <preference name="GradlePluginKotlinCodeStyle" value="official" />
+    <preference name="GradlePluginKotlinVersion" value="1.9.22" />
+    <preference name="AndroidGradlePluginVersion" value="8.7.2" />
+    <preference name="AndroidXEnabled" value="true" />
+    <preference name="AndroidKotlinJVMTarget" value="17" />
+    <preference name="AndroidJavaSourceCompatibility" value="17" />
+    <preference name="AndroidJavaTargetCompatibility" value="17" />
 </widget>
