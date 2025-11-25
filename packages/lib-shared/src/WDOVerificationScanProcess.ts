@@ -35,7 +35,7 @@ export class WDOVerificationScanProcess {
         }, new Map())
 
         groups.forEach((docs, type) => {
-             // TODO: type missmatch?
+             // TODO: type mismatch?
             this.documents.find(d => d.type === type)?.processServerData(docs)
         })
     }

@@ -8,7 +8,7 @@
  */
 
 import { WDOBaseApi } from './api/WDOBaseApi'
-import { WDOCreateDocumentSubmitFileSide, WDOCreateDocumentSubmitFileType, WDODocumentSubmitFile, WDODocumentSubmitFileType, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus, WDOOnboardingStatus } from './api/WDONetworkingObjects'
+import { WDOCreateDocumentSubmitFileSide, WDOCreateDocumentSubmitFileType, WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
@@ -596,7 +596,8 @@ function documentAction(document: WDODocument): "proceed" | "wait" | "error" {
         case WDODocumentStatus.verificationPending:
         case WDODocumentStatus.verificationInProgress:
             return "wait"
-        case WDODocumentStatus.rejected, WDODocumentStatus.failed:
+        case WDODocumentStatus.rejected:
+        case WDODocumentStatus.failed:
             return "error"
     }
     WDOLogger.debug(`Unknown document status: ${document.status} for document ID: ${document.id}`)

@@ -29,7 +29,7 @@ export class WDOApi extends WDOBaseApi {
 
         return this.networking.call(
             // construct 
-            this.cosntructEndpoint(endpoint),
+            this.constructEndpoint(endpoint),
             { requestObject: requestObject },
             endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined // if signed, use possession auth
         ).then(result => {
@@ -50,7 +50,7 @@ export class WDOApi extends WDOBaseApi {
         return this.powerauth.canStartActivation()
     }
     
-    private cosntructEndpoint<TRequest, TResponse>(endpoint: WDOEndpoint): WPNEndpoint<TRequest, TResponse> {
+    private constructEndpoint<TRequest, TResponse>(endpoint: WDOEndpoint): WPNEndpoint<TRequest, TResponse> {
         let scope: WPNE2EEConfiguration
         if (endpoint.e2eeScope === "ACTIVATION") {
             scope = WPNE2EEConfiguration.ACTIVATION_SCOPE
