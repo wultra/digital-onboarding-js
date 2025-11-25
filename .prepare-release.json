@@ -1,0 +1,29 @@
+{
+    "metadata": {
+        "purpose": "This file is used as a definition file for the prepare-release script.",
+        "info": "It defines files that contains version number that should be updated during the release preparation.",
+        "customBuildscript": "If needed, in the library object, set \"buildscript\": \"your-custom-build-command\" command if your build command is different than 'npm i && npm run build'"
+    },
+    "library": {
+        "name": "digital-onboarding-js",
+        "type": "yarn",
+        "artifacts": [
+            "packages/lib-cordova/digital-onboarding-js.tgz"
+        ],
+        "buildscript": "corepack enable && yarn install && yarn packCordova"
+    },
+    "files": [
+        {
+            "description": "Cordova package definition file.",
+            "path": "packages/lib-cordova/package.json",
+            "type": "version_replace",
+            "match": "\"version\": \"%VERSION%\",\n"
+        },
+        {
+            "description": "Cordova plugin.xml file.",
+            "path": "packages/lib-cordova/plugin.xml",
+            "type": "version_replace",
+            "match": "id=\"cordova-digital-onboarding\" version=\"%VERSION%\""
+        }
+    ]
+}
