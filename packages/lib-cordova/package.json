@@ -2,7 +2,7 @@
     "name": "cordova-digital-onboarding",
     "title": "Digital Onboarding Cordova Plugin",
     "version": "1.0.0",
-    "description": "TODO",
+    "description": "Wultra Digital Onboarding for JS mobile platforms (Cordova and React Native)",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "type": "commonjs",
@@ -11,11 +11,12 @@
         "LICENSE",
         "lib/index.js",
         "lib/index.d.ts",
-        "plugin.xml"
+        "plugin.xml",
+        "docs/"
     ],
     "scripts": {
-        "prepack": "yarn install && cd ../.. && rollup -c rollup.config.js && cp README.md LICENSE packages/lib-cordova/",
-        "postpack": "rm README.md LICENSE"
+        "prepack": "yarn install && cd ../.. && rollup -c rollup.config.js && cp -R README.md LICENSE docs packages/lib-cordova/",
+        "postpack": "rm -rf README.md LICENSE docs/"
     },
     "repository": {
         "type": "git",
@@ -23,11 +24,22 @@
     },
     "author": "Wultra <support@wultra.com> (https://wultra.com)",
     "license": "Apache-2.0",
-    "homepage": "https://www.wultra.com/mobile-security-suite",
+    "homepage": "https://www.wultra.com/",
     "devDependencies": {
+        "clean-package": "^2.2.0",
         "cordova": "^12.0.0",
         "cordova-powerauth-mobile-sdk": "^4.1.0",
         "cordova-powerauth-networking": "^1.0.1",
         "typescript": "^5.9.2"
+    },
+    "clean-package": {
+        "indent": 2,
+        "remove": [
+            "repository",
+            "devDependencies",
+            "packageManager",
+            "scripts",
+            "clean-package"
+        ]
     }
 }
