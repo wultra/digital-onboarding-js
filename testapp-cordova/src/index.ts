@@ -1,7 +1,7 @@
 
 import { zipIDcard, zipDLcard, serverCredentials } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService } from "cordova-digital-onboarding"
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, WDOLogger, WDOLogLevel } from "cordova-digital-onboarding"
 import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking";
 import { IProov, IProovListener } from "iproov-cordova-plugin"
 
@@ -62,6 +62,7 @@ async function simulateActivation() {
     try {
 
         //WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+        WDOLogger.logLevel = WDOLogLevel.DEBUG
 
         // FIRST TRY TO FETCH CONFIGURATION FROM THE SERVER
 
@@ -102,24 +103,30 @@ async function simulateActivation() {
         const status2 = await activationService.status()
         console.log(`Activation status after start: ${status2}`)
 
-        // retrieve OTP from server (in real app, user would input it)
-        console.log("Retrieving OTP from server...")
-        const anyActivationService: any = activationService // to access non-public method
-        const otp: string = await anyActivationService.getOTP()
-        console.log(`OTP retrieved: ${otp}`)
+        let otpCode: string | undefined = undefined
 
-        // use wrong OTP to test failure
+        //retrieve OTP from server (in real app, user would input it)
+        if (config.otpForIdentification && false) { // TODO: right now - there is a bug in demo server - OTP is never required
+            console.log("Retrieving OTP from server...")
+            const anyActivationService: any = activationService // to access non-public method
+            otpCode = await anyActivationService.getOTP()
+            console.log(`OTP retrieved: ${otpCode}`)
 
-        try {
-            await activationService.activate("my-test-activation", "wrong-otp")
-            console.error("Activation should have failed with wrong OTP but it didn't.")
-        } catch (error) {
-            console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`);
+            // use wrong OTP to test failure
+
+            try {
+                await activationService.activate("my-test-activation", "wrong-otp")
+                console.error("Activation should have failed with wrong OTP but it didn't.")
+            } catch (error) {
+                console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`);
+            }
+        } else {
+            console.log("OTP for identification is not required, skipping OTP retrieval.")
         }
 
         // activate PowerAuth SDK
         console.log("Activating PowerAuth SDK...")
-        const activationResult = await activationService.activate("my-test-activation", otp)
+        const activationResult = await activationService.activate("my-test-activation", otpCode)
         console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`);
 
         // persist activation
