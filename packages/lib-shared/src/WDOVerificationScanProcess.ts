@@ -110,5 +110,3 @@ export class Side {
         this.uploadState = uploadState
     }
 }
-
-// TODO: cached data constructor

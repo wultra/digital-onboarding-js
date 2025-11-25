@@ -2,7 +2,7 @@
     "name": "cordova-digital-onboarding",
     "title": "Digital Onboarding Cordova Plugin",
     "version": "1.0.0",
-    "description": "Wultra Digital Onboarding for JS mobile platforms (Cordova and React Native)",
+    "description": "Wultra Digital Onboarding for Cordova",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "type": "commonjs",

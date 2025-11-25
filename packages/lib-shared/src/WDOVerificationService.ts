@@ -36,7 +36,7 @@ export interface WDOVerificationServiceListener {
  * Service that can verify previously activated PowerAuth instance.
  * 
  * When PowerAuth instance was activated with weak credentials via `WDOActivationService`, user needs to verify his genuine presence.
- * This can be confirmed in the `PowerAuthActivationStatus.needVerification` which will be `true`. TODO: fix API
+ * This can be confirmed in the `WDOVerificationService.isVerificationRequired` which will be `true`.
  * 
  * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
  */

@@ -79,11 +79,9 @@ async function simulateActivation() {
         const status = await activationService.status()
         console.log(`Activation status after start: ${status}`)
         
-        // console.log("Resending OTP...")
-        // await activationService.resendOTP()
-        // console.log("OTP resent.")
-
-        // TODO: retrieve OTP from server or user input
+        console.log("Resending OTP...")
+        await activationService.resendOTP()
+        console.log("OTP resent.")
 
         console.log("Cancelling activation...")
         await activationService.cancel(false)
