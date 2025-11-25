@@ -6,8 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "rollup -c rollup.config.js -w",
-    "packCordova": "cd packages/lib-cordova && yarn pack"
+    "dev": "sh scripts/build.sh -dev",
+    "packCordova": "cd packages/lib-cordova && yarn clean-package && yarn pack -o digital-onboarding-js.tgz && yarn clean-package restore"
   },
   "devDependencies": {
     "rollup": "^4.52.3",

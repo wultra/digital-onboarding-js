@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-digital-onboarding" version="1.0.0">
     <name>Digital Onboarding Cordova Plugin</name>
-    <description>TODO</description>
+    <description>Wultra Digital Onboarding for Cordova</description>
     <license>Apache 2.0</license>
     <keywords>cordova,digital-onboarding</keywords>
 
@@ -19,7 +19,7 @@
     </engines>
 
     <!-- DEPENDENCIES -->
-    <dependency id="cordova-powerauth-networking" version="1.0.0" />
+    <dependency id="cordova-powerauth-networking" version="1.0.1" />
 
     <!-- PLATFORMS -->
     <platform name="android" kotlin="1.9.22">

@@ -71,3 +71,6 @@ packages/lib-cordova/native_shared
 
 # lib artifacts
 *.tgz
+
+# Cordova test app
+testapp-cordova/www/js
