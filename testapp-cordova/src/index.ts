@@ -94,8 +94,8 @@ async function simulateActivation() {
         // SECOND ACTIVATION PROCESS WITHOUT CANCEL
 
         // start onboarding
-        console.log("Starting second onboarding process...")
-        await activationService.start(getRandomAttributes())
+        console.log("Starting second onboarding process with onboarding type...")
+        await activationService.start(getRandomAttributes(), "onboarding")
         console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
 
         // get onboarding status
