@@ -230,6 +230,21 @@ async function simulateActivation() {
         console.log(`Verification status after presence check processing: ${afterPresenceCheckStatus.type}`)
         guardState(afterPresenceCheckStatus.type, WDOVerificationStateType.otp)
 
+        // submit wrong OTP to test failure
+        try {
+            console.log("Submitting wrong OTP for verification...")
+            const otpStatusWrong = await verificationService.verifyOTP("1234567")
+            guardState(otpStatusWrong.type, WDOVerificationStateType.otp)
+            const remainingAfterWrong = (otpStatusWrong as any).remainingAttempts as number
+            if (remainingAfterWrong !== 4) {
+                throw new Error(`Remaining attempts after wrong OTP (${remainingAfterWrong})`)
+            }
+            console.log(`OTP failed as expected, remaining attempts: ${remainingAfterWrong}`)
+        } catch (error) {
+            console.log(`OTP should have not failed`)
+            throw error
+        }
+
         // retrieve OTP from server (in real app, user would input it)
         console.log("Retrieving OTP from server for verification...")
         const anyVerificationService: any = verificationService // to access non-public method
