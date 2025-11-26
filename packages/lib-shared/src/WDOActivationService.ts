@@ -160,7 +160,7 @@ export abstract class WDOBaseActivationService {
     /**
      * Activate the PowerAuth instance that was passed in the initializer.
      * 
-     * @param activationName Name of the activation. Device name by default (usually something like John's iPhone or similar).
+     * @param activationName Name of the activation. Usually something like John's iPhone or similar.
      * @param otp OTP code received by the user (via SMS or email). Optional when not required.
      * @return Promise resolved with activation result.
      */ 
