@@ -73,7 +73,7 @@ export abstract class WDOBaseActivationService {
      */
     async status(): Promise<WDOOnboardingStatus> {
         WDOLogger.debug(`Getting activation status for processId=${this.processId}`)
-        await this.verifyCanStartProcess()
+        await this.verifyCanStartActivation()
         const pid = this.verifyHasActiveProcess()
         const result = await this.api.activationGetStatus(pid)
         return result.onboardingStatus
@@ -97,7 +97,7 @@ export abstract class WDOBaseActivationService {
         if (this.processId) {
             throw new WDOError("Cannot start the process - processId already obtained, cancel first.")
         }
-        await this.verifyCanStartProcess()
+        await this.verifyCanStartActivation()
         const result = await this.api.activationStart(credentials, processType)
         WDOLogger.info("WDOActivationService.start success")
         WDOLogger.debug(` - processId: ${result.processId}`)
@@ -141,7 +141,7 @@ export abstract class WDOBaseActivationService {
     async resendOTP(): Promise<void> {
         WDOLogger.debug("Activation: resending OTP")
         const pid = this.verifyHasActiveProcess()
-        await this.verifyCanStartProcess()
+        await this.verifyCanStartActivation()
         await this.api.activationResendOTP(pid)
     }
 
@@ -166,7 +166,7 @@ export abstract class WDOBaseActivationService {
      */ 
     async activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult> {
         WDOLogger.debug(`Activating the PowerAuth with activation name '${activationName}'`)
-        await this.verifyCanStartProcess()
+        await this.verifyCanStartActivation()
         const pid = this.verifyHasActiveProcess()
         const code = this.processData?.activationCode
         let result: WDOPowerAuthActivationResult
@@ -186,7 +186,7 @@ export abstract class WDOBaseActivationService {
     // PRIVATE METHODS
 
     /* @internal */
-    private async verifyCanStartProcess(): Promise<void> {
+    private async verifyCanStartActivation(): Promise<void> {
         if (!(await this.api.canStartActivation())) {
             WDOLogger.error("PowerAuth is already activated - Activation cannot be started/processed.")
             this.processData = undefined

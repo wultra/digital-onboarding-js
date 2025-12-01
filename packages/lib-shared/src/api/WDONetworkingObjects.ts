@@ -147,7 +147,7 @@ export interface WDODocumentSubmitFile {
     /** Type of the document */
     type: WDODocumentSubmitFileType
     /** Side of the document (for example front side of the ID card) */
-    side?: WDODocumentSubmitFileSide
+    side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
     /** Base64 encoded data image. Optional for the v1 endpoint */
