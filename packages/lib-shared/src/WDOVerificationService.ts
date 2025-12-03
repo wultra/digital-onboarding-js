@@ -237,35 +237,7 @@ export abstract class WDOBaseVerificationService {
             }
         })
 
-        await this.handleError(this.api.verificationSubmitDocumentsV2(pid, resubmit, submitFiles))
-        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
-    }
-
-    /**
-     * @internal
-     * Upload document files to the server. The order of the documents is up to you. 
-     * Make sure that uploaded document are reasonable size so you're not uploading large files.
-     * 
-     * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
-     * 
-     * @param files Document files to upload.
-     */
-    private async documentsSubmitDemo(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
-        const pid = this.verifyHasActiveProcess()
-
-        const resubmit = files.some(f => f.originalDocumentId != undefined)
-
-        const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
-
-            return {
-                filename: `${zipFolderNameDemo}/${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
-                type: WDOCreateDocumentSubmitFileType(f.type),
-                side: WDOCreateDocumentSubmitFileSide(f.side),
-                originalDocumentId: f.originalDocumentId
-            }
-        })
-
-        await this.handleError(this.api.verificationSubmitDocuments(pid, base64zipDemo, resubmit, submitFiles))
+        await this.handleError(this.api.verificationSubmitDocuments(pid, resubmit, submitFiles))
         return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
     }
 

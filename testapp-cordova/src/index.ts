@@ -1,19 +1,20 @@
 
-import { zipIDcard, zipDLcard, serverCredentials } from "./demodata"
+import { serverCredentials, blinkIdIos } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, WDOLogger, WDOLogLevel } from "cordova-digital-onboarding"
-import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking";
-import { IProov, IProovListener } from "iproov-cordova-plugin"
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument } from "cordova-digital-onboarding"
+import "cordova-powerauth-networking"
+import { IProov } from "iproov-cordova-plugin"
+import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
-declare var  cordova: any;
+declare var  cordova: any
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
 
-    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
-    document.getElementById('deviceready')?.classList.add('ready');
+    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version)
+    document.getElementById('deviceready')?.classList.add('ready')
     document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
     const outputElem = document.getElementById('output') as HTMLTextAreaElement
 
@@ -26,6 +27,8 @@ function onDeviceReady() {
         outputElem.scrollTop = outputElem.scrollHeight
         originalConsoleLog.apply(console, [messageWithTime, ...optionalParams])
     }
+
+    simulateActivation()
 }
 
 async function simulateActivation() {
@@ -61,29 +64,80 @@ async function simulateActivation() {
 
     try {
 
-        //WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+        // SETUP LOGGING
+
+        // WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
         WDOLogger.logLevel = WDOLogLevel.DEBUG
 
-        // FIRST TRY TO FETCH CONFIGURATION FROM THE SERVER
+        // DEFAULT SETUP AND CONFIGURATION
 
-        console.log("Fetching configuration from the server...")
-        const config = await configurationService.getConfiguration("onboarding")
-        console.log(`Configuration fetched: ${JSON.stringify(config)}`)
+        const processType: string | undefined = "onboarding"
+        const needsConsent = false // TODO: get from server configuration!
+        const defaultConfig: WDOConfigurationResponse = {
+            enabled: true,
+            otpForIdentification: true,
+            otpForIdentityVerification: true,
+            documents: {
+                requiredDocumentsCount: 1,
+                items: [
+                    {
+                        type: "ID_CARD",
+                        mandatory: true,
+                        sideCount: 2
+                    }
+                ]
+            }
+        }
+
+        // FIRST TRY TO FETCH CONFIGURATION FROM THE SERVER
+        let config: WDOConfigurationResponse
+
+        if (!!processType) {
+            console.log("Fetching configuration from the server...")
+            config = await configurationService.getConfiguration(processType)
+            console.log(`Configuration fetched: ${JSON.stringify(config)}`)
+        } else {
+            console.log("No process type specified, skipping configuration fetch.")
+            config = defaultConfig
+        }
+
+        // PREPARE DOCUMENT TYPES FOR SCANNING BASED ON CONFIGURATION
+        const documentTypesToScan: { type: WDODocumentType, sideCount: number }[] = []
+        // first add mandatory documents
+        const mandatoryDocs = config.documents.items.filter(doc => doc.mandatory).map(doc => configDocToDocType(doc))
+        console.log(`Adding mandatory documents from configuration: ${JSON.stringify(mandatoryDocs)}`)
+        documentTypesToScan.push(...mandatoryDocs)
+
+        // then add non-mandatory documents if needed
+        if (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
+            const nonMandatoryDocs = config.documents.items.filter(doc => !doc.mandatory).map(doc => configDocToDocType(doc))
+            let idx = 0
+            while (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
+                console.log(`Adding non-mandatory document from configuration: ${nonMandatoryDocs[idx]}`)
+                documentTypesToScan.push(nonMandatoryDocs[idx])
+                idx++
+            }
+        }
+
+        console.log(`Final list of document types to scan: ${JSON.stringify(documentTypesToScan)}`)
 
         // FIRST ACTIVATION PROCESS WITH CANCEL
 
-        console.log("Starting onboarding process...")
-        await activationService.start(getRandomAttributes())
+        console.log(`Starting onboarding process (process type: ${processType})...`)
+        await activationService.start(getRandomAttributes(), processType)
         console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
 
         console.log("Getting activation status...")
         const status = await activationService.status()
         console.log(`Activation status after start: ${status}`)
         
-        // TODO: fix - does not work?
-        // console.log("Resending OTP...")
-        // await activationService.resendOTP()
-        // console.log("OTP resent.")
+        if (config.otpForIdentification) {
+            console.log("Resending OTP...")
+            await activationService.resendOTP()
+            console.log("OTP resent.")
+        } else {
+            console.log("OTP for identification is not required, skipping resend.")
+        }
 
         console.log("Cancelling activation...")
         await activationService.cancel(false)
@@ -94,8 +148,8 @@ async function simulateActivation() {
         // SECOND ACTIVATION PROCESS WITHOUT CANCEL
 
         // start onboarding
-        console.log("Starting second onboarding process with onboarding type...")
-        await activationService.start(getRandomAttributes(), "onboarding")
+        console.log(`Starting second onboarding process with onboarding type: ${processType}...`)
+        await activationService.start(getRandomAttributes(), processType)
         console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
 
         // get onboarding status
@@ -106,7 +160,7 @@ async function simulateActivation() {
         let otpCode: string | undefined = undefined
 
         //retrieve OTP from server (in real app, user would input it)
-        if (config.otpForIdentification && false) { // TODO: right now - there is a bug in demo server - OTP is never required
+        if (config.otpForIdentification) {
             console.log("Retrieving OTP from server...")
             const anyActivationService: any = activationService // to access non-public method
             otpCode = await anyActivationService.getOTP()
@@ -118,7 +172,7 @@ async function simulateActivation() {
                 await activationService.activate("my-test-activation", "wrong-otp")
                 console.error("Activation should have failed with wrong OTP but it didn't.")
             } catch (error) {
-                console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`);
+                console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`)
             }
         } else {
             console.log("OTP for identification is not required, skipping OTP retrieval.")
@@ -127,16 +181,16 @@ async function simulateActivation() {
         // activate PowerAuth SDK
         console.log("Activating PowerAuth SDK...")
         const activationResult = await activationService.activate("my-test-activation", otpCode)
-        console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`);
+        console.log(`PowerAuth SDK activated. Activation fingerprint: ${activationResult.activationFingerprint}`)
 
         // persist activation
         await powerAuth.persistActivation(PowerAuthAuthentication.persistWithPassword(pin))
-        console.log("PowerAuth SDK activation persisted with password.");
+        console.log("PowerAuth SDK activation persisted with password.")
 
         // fetch activation status to verify it's active
         console.log("Fetching PowerAuth SDK activation status...")
         const paStatus = await powerAuth.fetchActivationStatus()
-        console.log(`PowerAuth SDK activation status: ${JSON.stringify(paStatus)}`);
+        console.log(`PowerAuth SDK activation status: ${JSON.stringify(paStatus)}`)
         if (paStatus.state !== PowerAuthActivationState.ACTIVE) {
             throw new Error("PowerAuth SDK is not active after activation!")
         }
@@ -158,15 +212,19 @@ async function simulateActivation() {
         // get verification status
         console.log("Retrieving verification status...")
         const vfStatus = await verificationService.status()
-        console.log(`Onboarding verification status: ${vfStatus.type}`);
+        console.log(`Onboarding verification status: ${vfStatus.type}`)
         guardState(vfStatus.type, WDOVerificationStateType.intro)
 
         // get consent text
-        console.log("Retrieving consent text...")
-        const consentTextResponse = await verificationService.consentGet()
-        guardState(consentTextResponse.type, WDOVerificationStateType.consent)
-        if (consentTextResponse.type == WDOVerificationStateType.consent) {
-            console.log(`Consent text retrieved: ${(consentTextResponse).body.substring(0, 50)}...`)
+        if (needsConsent) {
+            console.log("Retrieving consent text...")
+            const consentTextResponse = await verificationService.consentGet()
+            guardState(consentTextResponse.type, WDOVerificationStateType.consent)
+            if (consentTextResponse.type == WDOVerificationStateType.consent) {
+                console.log(`Consent text retrieved: ${(consentTextResponse).body.substring(0, 50)}...`)
+            }
+        } else {
+            console.log("Consent not required, skipping consent retrieval.")
         }
 
         // approve consent
@@ -181,38 +239,61 @@ async function simulateActivation() {
         console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
 
         // set selected document types
-        console.log("Setting selected document types...")
-        const docTypesResult = await verificationService.documentsSetSelectedTypes([
-            WDODocumentType.idCard,
-            WDODocumentType.driversLicense
-        ])
+        console.log(`Setting selected document types: ${JSON.stringify(documentTypesToScan)}`)
+        const docTypesResult = await verificationService.documentsSetSelectedTypes(documentTypesToScan.map(d => d.type))
         guardState(docTypesResult.type, WDOVerificationStateType.scanDocument)
         console.log("Selected document types set.")
         if (docTypesResult.type == WDOVerificationStateType.scanDocument) {
             console.log(`Documents to scan: ${JSON.stringify(docTypesResult.process.documents)}`)
         }
 
-        const scannedId = [
-            new WDODocumentFile("fakedata", WDODocumentType.idCard, WDODocumentSide.front),
-            new WDODocumentFile("fakedata", WDODocumentType.idCard, WDODocumentSide.back),
-        ]
+        // retrieve license key for BlinkID
+        const licenseKey = initResult.attributes["license-key"]
+        console.log(`Retrieved BlinkID license key: ${licenseKey}`)
+        console.log("Using hardcoded BlinkID iOS license key for testing...")
 
-        const scannedDL = [
-            new WDODocumentFile("fakedata", WDODocumentType.driversLicense, WDODocumentSide.front)
-        ]
+        // perform BlinkID scan for documents
+        const sdkSettings = new BlinkIdSdkSettings(blinkIdIos)
+        const sessionSettings = new BlinkIdSessionSettings()
+        sessionSettings.scanningSettings = new BlinkIdScanningSettings()
+        sessionSettings.scanningSettings.returnInputImages = true
+        sessionSettings.scanningSettings.croppedImageSettings = new CroppedImageSettings()
+        sessionSettings.scanningSettings.croppedImageSettings.returnDocumentImage = true
 
-        // simulate document scanning by submitting demo ZIP file
-        console.log("Demo ID card scan")
-        const demoResultIdcard = await uploadDocuments(verificationService, scannedId, zipIDcard)
-        console.log(`Verification status after ID card scan: ${demoResultIdcard.type}`)
-        guardState(demoResultIdcard.type, WDOVerificationStateType.presenceCheck)
+        let blinkIDUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
+        
+        for (const doc of documentTypesToScan) {
+            console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
+            const result = await BlinkID.performScan(sdkSettings, sessionSettings)
 
-        // current backend settings is that only ID card is required
-        // simulate document scanning by submitting demo ZIP file
-        // console.log("Driving License card scan")
-        // const demoResultDLcard = await uploadDocuments(verificationService, scannedDL, zipDLcard)
-        // console.log(`Verification status after Driving License card scan: ${demoResultDLcard.type}`)
-        // guardState(demoResultDLcard.type, WDOVerificationStateType.presenceCheck)
+            //console.log(`BlinkID scan completed: ${JSON.stringify(result)}`)
+        
+            //const image1 = result.firstDocumentImage
+            const image1 = result.firstInputImage
+
+            if (!image1) {
+                throw { message: "No 1st side of document captured from BlinkID scan!" }
+            }
+
+            const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front)]
+
+            //const image2 = result.secondDocumentImage
+            const image2 = result.secondInputImage
+            if (!image2) {
+                console.log("No 2nd side of document captured from BlinkID scan!")
+                if (doc.sideCount > 1) {
+                    throw { message: "2nd side of document required but not captured from BlinkID scan!" }
+                }
+            } else {
+                console.log("2nd side of document captured from BlinkID scan.")
+                imagesToUpload.push(new WDODocumentFile(image2, doc.type, WDODocumentSide.back))
+            }
+
+            blinkIDUploadResult = await uploadDocumentsFromBlinkId(verificationService, imagesToUpload)
+            console.log(`Verification status after BlinkID ${doc.type} scan: ${blinkIDUploadResult.type}`)   
+        }
+
+        guardState(blinkIDUploadResult.type, WDOVerificationStateType.presenceCheck)
 
         // init presence check
         console.log("Initializing presence check...")
@@ -234,33 +315,38 @@ async function simulateActivation() {
         // wait for another status
         const afterPresenceCheckStatus = await waitForStatusChange(verificationService)
         console.log(`Verification status after presence check processing: ${afterPresenceCheckStatus.type}`)
-        guardState(afterPresenceCheckStatus.type, WDOVerificationStateType.otp)
 
-        // submit wrong OTP to test failure
-        try {
-            console.log("Submitting wrong OTP for verification...")
-            const otpStatusWrong = await verificationService.verifyOTP("1234567")
-            guardState(otpStatusWrong.type, WDOVerificationStateType.otp)
-            const remainingAfterWrong = (otpStatusWrong as any).remainingAttempts as number
-            if (remainingAfterWrong !== 4) {
-                throw new Error(`Remaining attempts after wrong OTP (${remainingAfterWrong})`)
+        if (config.otpForIdentityVerification) {
+            guardState(afterPresenceCheckStatus.type, WDOVerificationStateType.otp)
+
+            // submit wrong OTP to test failure
+            try {
+                console.log("Submitting wrong OTP for verification...")
+                const otpStatusWrong = await verificationService.verifyOTP("1234567")
+                guardState(otpStatusWrong.type, WDOVerificationStateType.otp)
+                const remainingAfterWrong = (otpStatusWrong as any).remainingAttempts as number
+                if (remainingAfterWrong !== 4) {
+                    throw new Error(`Remaining attempts after wrong OTP (${remainingAfterWrong})`)
+                }
+                console.log(`OTP failed as expected, remaining attempts: ${remainingAfterWrong}`)
+            } catch (error) {
+                console.log(`OTP should have not failed`)
+                throw error
             }
-            console.log(`OTP failed as expected, remaining attempts: ${remainingAfterWrong}`)
-        } catch (error) {
-            console.log(`OTP should have not failed`)
-            throw error
+
+            // retrieve OTP from server (in real app, user would input it)
+            console.log("Retrieving OTP from server for verification...")
+            const anyVerificationService: any = verificationService // to access non-public method
+            const otpVerification: string = await anyVerificationService.getOTP()
+            console.log(`OTP retrieved for verification: ${otpVerification}`)
+
+            // submit OTP
+            console.log("Submitting OTP for verification...")
+            const otpStatus = await verificationService.verifyOTP(otpVerification)
+            console.log(`Status after OTP submission: ${otpStatus.type}`)
+        } else {
+            console.log("OTP for identity verification is not required, skipping OTP retrieval and submission.")
         }
-
-        // retrieve OTP from server (in real app, user would input it)
-        console.log("Retrieving OTP from server for verification...")
-        const anyVerificationService: any = verificationService // to access non-public method
-        const otpVerification: string = await anyVerificationService.getOTP()
-        console.log(`OTP retrieved for verification: ${otpVerification}`)
-
-        // submit OTP
-        console.log("Submitting OTP for verification...")
-        const otpStatus = await verificationService.verifyOTP(otpVerification)
-        console.log(`Status after OTP submission: ${otpStatus.type}`)
 
         // wait for final status
         const finalStatus = await waitForStatusChange(verificationService)
@@ -271,32 +357,26 @@ async function simulateActivation() {
 
         console.log("Fetching PowerAuth SDK activation status...")
         const finalPaStatus = await powerAuth.fetchActivationStatus()
-        console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`);
+        console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
 
     } catch (error) {
-        if (error instanceof Error) {
-            console.log(`Error during activation: ${error.message}`);
-        } else {
-            console.log(`Error during activation: ${JSON.stringify(error)}`);
-        }
+        console.log(`Error during activation:`)
+        console.log(`  - message: ${(error as any)?.message}`)
+        console.log(`  - object: ${JSON.stringify(error)}`)
     } finally {
 
         // REMOVING POWERAUTH SDK ACTIVATION
 
         console.log("Removing PowerAuth SDK activation...")
         await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
-        console.log("PowerAuth SDK activation removed.");
+        console.log("PowerAuth SDK activation removed.")
     }
 }
 
-async function uploadDocuments(verificationService: WDOVerificationService, documents: WDODocumentFile[], zip: { folder: string, data: string }): Promise<WDOVerificationState> {
-    // simulate document scanning by submitting demo ZIP file
-    console.log("Simulating document scanning by submitting demo ZIP file...")
-    const service = verificationService as any // to access non-public method
-    const scanResult = await service.documentsSubmitDemo(
-        documents,
-        zip.folder,
-        zip.data
+async function uploadDocumentsFromBlinkId(verificationService: WDOVerificationService, documents: WDODocumentFile[]): Promise<WDOVerificationState> {
+    console.log("Simulating document scanning by submitting blinkID images...")
+    const scanResult = await verificationService.documentsSubmit(
+        documents
     )
     guardState(scanResult.type, WDOVerificationStateType.processing)
     console.log("Demo document scans submitted, fetching status.")
@@ -329,9 +409,22 @@ function guardState(state: WDOVerificationStateType, expected: WDOVerificationSt
 }
 
 function generateRandomNumericString(length: number = 10): string {
-    let result = '';
+    let result = ''
     for (let i = 0; i < length; i++) {
-        result += Math.floor(Math.random() * 10).toString();
+        result += Math.floor(Math.random() * 10).toString()
     }
-    return result;
+    return result
+}
+
+
+function configDocToDocType(doc: WDOConfigurationDocument): { type: WDODocumentType, sideCount: number } {
+    if (doc.type === "DRIVER_LICENSE") {
+        return { type: WDODocumentType.driversLicense, sideCount: doc.sideCount }
+    } else if (doc.type === "ID_CARD") {
+        return { type: WDODocumentType.idCard, sideCount: doc.sideCount }
+    } else if (doc.type === "PASSPORT") {
+        return { type: WDODocumentType.passport, sideCount: doc.sideCount }
+    } else {
+        throw new Error(`Unsupported document type in configuration: ${doc.type}`)
+    }
 }

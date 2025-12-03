@@ -86,14 +86,6 @@ export class WDOVerificationEndpoints {
         returnsData: true
     }
 
-    // Legacy endpoint that required zip file upload
-    static readonly submitDocuments: WDOEndpoint = {
-        path: "/api/identity/document/submit",
-        tokenName: "possession_universal",
-        e2eeScope: "ACTIVATION",
-        returnsData: false
-    }
-
     static readonly v2submitDocuments: WDOEndpoint = {
         path: "/api/v2/identity/document/submit",
         tokenName: "possession_universal",

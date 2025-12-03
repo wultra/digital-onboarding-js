@@ -6,7 +6,7 @@ const libCordovaDir = 'packages/lib-cordova'
 const libCordovaInput = `${libCordovaDir}/src/index.ts`
 const libCordovaOutput = `${libCordovaDir}/lib/index.js`
 const libCordovaOutputDts = `${libCordovaDir}/lib/index.d.ts`
-const expectedCordovaModules = ["cordova-powerauth-mobile-sdk", "cordova", "cordova-powerauth-networking", "cordova-digital-onboarding", "iproov-cordova-plugin"]
+const expectedCordovaModules = ["cordova-powerauth-mobile-sdk", "cordova", "cordova-powerauth-networking", "cordova-digital-onboarding", "iproov-cordova-plugin", "blinkid-cordova-plugin"]
 
 // Cordova App Configuration
 const appCordovaDir = 'testapp-cordova'
