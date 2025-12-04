@@ -32,6 +32,16 @@ export interface WDOVerificationServiceListener {
     verificationStatusChanged(sender: WDOBaseVerificationService, status: WDOVerificationState): void
 }
 
+/** Possible results of the user consent. */
+export enum WDOConsentResponse {
+    /** User approved the consent. */
+    approved,
+    /** User declined the consent. */
+    declined,
+    /** Consent is not required. */
+    notRequired
+}
+
 /**
  * Service that can verify previously activated PowerAuth instance.
  * 
@@ -84,6 +94,7 @@ export abstract class WDOBaseVerificationService {
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
+            response.consentRequired = false // TODO: remove when server fixed
             WDOLogger.info("Verification status successfully retrieved.")
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
 
@@ -106,7 +117,7 @@ export abstract class WDOBaseVerificationService {
 
             switch (vf.nextStep) {
                 case WDONextStep.intro:
-                    return this.processSuccess({ type: WDOVerificationStateType.intro })
+                    return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: response.consentRequired })
                 case WDONextStep.documentScan:
                     WDOLogger.debug("Verifying documents status")
                     const docsResponse = await this.api.verificationDocumentsStatus(response.processId)
@@ -170,18 +181,32 @@ export abstract class WDOBaseVerificationService {
      * 
      * Consent text explains how the service will handle his document photos or selfie scans.
      */
-    async consentGet(): Promise<WDOVerificationState> {
+    async consentGet(): Promise<string> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationGetConsentText(pid))
-        return this.processSuccess({ type: WDOVerificationStateType.consent, body: response.consentText })
+        return response.consentText
     }
     
     /**
-     * Approves the consent for this process and starts the activation.
+     * Start the identity verification after user approved the consent (if required)
+     * 
+     * @param consentApprovedByUser Response of the user to the consent. The hint can be obtained in the `status()` call (`consentRequired` property when the result is `intro`).
      */
-    async consentApprove(): Promise<WDOVerificationState> {
+    async start(consentApprovedByUser: WDOConsentResponse): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
-        const response = await this.handleError(this.api.verificationResolveConsent(pid, true))
+        switch (consentApprovedByUser) {
+            case WDOConsentResponse.approved:
+                WDOLogger.info("User approved consent - resolving on server")
+                await this.handleError(this.api.verificationResolveConsent(pid, true))
+                break
+            case WDOConsentResponse.declined:
+                WDOLogger.info("User declined consent - returning to intro state")
+                await this.handleError(this.api.verificationResolveConsent(pid, false))
+                return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true })
+            case WDOConsentResponse.notRequired:
+                WDOLogger.info("Consent not required - proceeding")
+        }
+
         await this.handleError(this.api.verificationStart(pid))
         return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
     }
@@ -267,7 +292,8 @@ export abstract class WDOBaseVerificationService {
         await this.handleError(this.api.verificationCleanup(pid))
         this.cachedProcess = undefined
         WDOLogger.info("Verification process restarted.")
-        return this.processSuccess({ type: WDOVerificationStateType.intro })
+        // return new status
+        return await this.status()
     }
 
     /**

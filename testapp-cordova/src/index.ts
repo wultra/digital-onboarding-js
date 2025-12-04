@@ -1,7 +1,10 @@
 
 import { serverCredentials, blinkIdIos, blinkIdAndroid } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument } from "cordova-digital-onboarding"
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
+    WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
+    WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
+    WDOIntroState, WDOConsentResponse } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -73,7 +76,6 @@ async function simulateActivation() {
         // DEFAULT SETUP AND CONFIGURATION
 
         const processType: string | undefined = "onboarding"
-        const needsConsent = false // TODO: get from server configuration!
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
@@ -215,24 +217,30 @@ async function simulateActivation() {
         const vfStatus = await verificationService.status()
         console.log(`Onboarding verification status: ${vfStatus.type}`)
         guardState(vfStatus.type, WDOVerificationStateType.intro)
+        const introState = vfStatus as WDOIntroState
 
-        // get consent text
-        if (needsConsent) {
+        // get consent text if required
+        if (introState.consentRequired) {
             console.log("Retrieving consent text...")
             const consentTextResponse = await verificationService.consentGet()
-            guardState(consentTextResponse.type, WDOVerificationStateType.consent)
-            if (consentTextResponse.type == WDOVerificationStateType.consent) {
-                console.log(`Consent text retrieved: ${(consentTextResponse).body.substring(0, 50)}...`)
-            }
+            console.log(`Consent text retrieved: ${consentTextResponse.substring(0, 50)}...`)
         } else {
             console.log("Consent not required, skipping consent retrieval.")
         }
 
-        // approve consent
-        console.log("Approving consent...")
-        const approvalResult = await verificationService.consentApprove()
-        guardState(approvalResult.type, WDOVerificationStateType.documentsToScanSelect)
-        console.log("Consent approved.")
+        if (introState.consentRequired) {
+            // simulate disapproval of consent to test the flow
+            console.log("Starting identification process (with consent declined)...")
+            const disapprovResult = await verificationService.start(WDOConsentResponse.declined)
+            guardState(disapprovResult.type, WDOVerificationStateType.intro)
+            console.log("Identification process returned to intro state after consent declined.")
+        }
+
+        // start identification
+        console.log(`Starting identification process ${introState.consentRequired ? "(with consent approved)" : "(consent not required)"}...`)
+        const startResult = await verificationService.start(introState.consentRequired ? WDOConsentResponse.approved : WDOConsentResponse.notRequired)
+        guardState(startResult.type, WDOVerificationStateType.documentsToScanSelect)
+        console.log("Identification process started.")
 
         // init document scanning SDK
         console.log("Initializing document scanning SDK...")

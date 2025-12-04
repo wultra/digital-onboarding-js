@@ -27,37 +27,24 @@ import { WDOVerificationScanProcess } from "./WDOVerificationScanProcess"
  * ```
  */
 export type WDOVerificationState =
-    | Intro
-    | Consent
-    | DocumentsToScanSelect
-    | ScanDocument
-    | Processing
-    | PresenceCheck
-    | Otp
-    | Failed
-    | EndState
-    | Success
+    | WDOIntroState
+    | WDODocumentsToScanSelectState
+    | WDOScanDocumentState
+    | WDOProcessingState
+    | WDOPresenceCheckState
+    | WDOOtpState
+    | WDOFailedState
+    | WDOEndStateState
+    | WDOSuccessState
 
 /** 
  * Show the verification introduction screen where the user can start the activation. 
  * 
  * The next step should be calling the `consentGet()`.
  */
-interface Intro {
-    type: WDOVerificationStateType.intro
-}
-
-/**
- * Show approve/cancel user consent.
- * 
- * The content of the text depends on the server configuration and might be plain text or HTML.
- * 
- * The next step should be calling the `consentApprove`.
- */
-interface Consent {
-    type: WDOVerificationStateType.consent
-    /** Content of the consent text, which may be plain text or HTML depending on server configuration */
-    body: string
+export interface WDOIntroState {
+    type: WDOVerificationStateType.intro,
+    consentRequired: boolean
 }
 
 /**
@@ -66,7 +53,7 @@ interface Consent {
  * 
  * The next step should be calling the `documentsSetSelectedTypes`.
  */
-interface DocumentsToScanSelect {
+export interface WDODocumentsToScanSelectState {
     type: WDOVerificationStateType.documentsToScanSelect
 }
 
@@ -75,7 +62,7 @@ interface DocumentsToScanSelect {
  * 
  * The next step should be calling the `documentsSubmit`.
  */
-interface ScanDocument {
+export interface WDOScanDocumentState {
     type: WDOVerificationStateType.scanDocument
     /** Scanning process that helps with the document scanning */
     process: WDOVerificationScanProcess
@@ -86,7 +73,7 @@ interface ScanDocument {
  * 
  * The next step should be calling the `status`.
  */
-interface Processing {
+export interface WDOProcessingState {
     type: WDOVerificationStateType.processing
     /** Reason for the current processing state */
     item: WDOStatusCheckReason
@@ -99,7 +86,7 @@ interface Processing {
  * The next step should be calling the `presenceCheckInit` to start the check and `presenceCheckSubmit` to
  * mark it finished.  Note that these methods won't change the status and it's up to the app to handle the process of the presence check.
  */
-interface PresenceCheck {
+export interface WDOPresenceCheckState {
     type: WDOVerificationStateType.presenceCheck
 }
 
@@ -109,7 +96,7 @@ interface PresenceCheck {
  * The next step should be calling the `verifyOTP` with user-entered OTP.
  * The OTP is usually SMS or email.
  */
-interface Otp {
+export interface WDOOtpState {
     type: WDOVerificationStateType.otp
     /** Number of remaining attempts to enter the correct OTP */
     remainingAttempts?: number
@@ -121,7 +108,7 @@ interface Otp {
  * The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
  * the user's decision if he wants to try it again or cancel the process.
  */
-interface Failed {
+export interface WDOFailedState {
     type: WDOVerificationStateType.failed
 }
 
@@ -130,7 +117,7 @@ interface Failed {
  * 
  * The next step should be calling the `PowerAuth.removeActivationLocal()` and starting activation from scratch.
  */
-interface EndState {
+export interface WDOEndStateState {
     type: WDOVerificationStateType.endState
     /** Reason for the end state */
     reason: WDOEndStateReason
@@ -139,7 +126,7 @@ interface EndState {
 /**
  * Verification was successfully ended. Continue into your app flow.
  */
-interface Success {
+export interface WDOSuccessState {
     type: WDOVerificationStateType.success
 }
 
@@ -151,14 +138,6 @@ export enum WDOVerificationStateType {
      * The next step should be calling the `consentGet()`.
      */
     intro = "intro",
-    /**
-     * Show approve/cancel user consent.
-     * 
-     * The content of the text depends on the server configuration and might be plain text or HTML.
-     * 
-     * The next step should be calling the `consentApprove`.
-     */
-    consent = "consent",
     /**
      * Show document selection to the user. Which documents are available and how many
      * can the user select is up to your backend configuration.

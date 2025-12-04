@@ -44,6 +44,7 @@ export interface WDOIdentityStatusResponse {
     identityVerificationStatus: WDOIdentityVerificationStatus
     identityVerificationPhase?: WDOIdentityVerificationPhase
     config: WDOIdentityConfig
+    consentRequired: boolean // TODO: not provided by backend yet
 }
 
 /** Configuration for identity verification */
