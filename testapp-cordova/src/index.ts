@@ -1,5 +1,5 @@
 
-import { serverCredentials, blinkIdIos } from "./demodata"
+import { serverCredentials, blinkIdIos, blinkIdAndroid } from "./demodata"
 import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, WDOScannedDocument, WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
@@ -8,12 +8,11 @@ import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSet
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
-declare var  cordova: any
+declare var cordova: Cordova
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
 
-    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version)
     document.getElementById('deviceready')?.classList.add('ready')
     document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
     const outputElem = document.getElementById('output') as HTMLTextAreaElement
@@ -27,6 +26,8 @@ function onDeviceReady() {
         outputElem.scrollTop = outputElem.scrollHeight
         originalConsoleLog.apply(console, [messageWithTime, ...optionalParams])
     }
+
+    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version)
 
     simulateActivation()
 }
@@ -253,7 +254,7 @@ async function simulateActivation() {
         console.log("Using hardcoded BlinkID iOS license key for testing...")
 
         // perform BlinkID scan for documents
-        const sdkSettings = new BlinkIdSdkSettings(blinkIdIos)
+        const sdkSettings = new BlinkIdSdkSettings(cordova.platformId == "ios" ? blinkIdIos : blinkIdAndroid)
         const sessionSettings = new BlinkIdSessionSettings()
         sessionSettings.scanningSettings = new BlinkIdScanningSettings()
         sessionSettings.scanningSettings.returnInputImages = true

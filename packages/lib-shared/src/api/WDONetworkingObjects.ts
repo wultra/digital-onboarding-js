@@ -150,8 +150,8 @@ export interface WDODocumentSubmitFile {
     side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
-    /** Base64 encoded data image. Optional for the v1 endpoint */
-    data?: Base64URLString
+    /** Base64 encoded data image. */
+    data: Base64URLString
 }
 
 /** Converts WDODocumentType to DocumentSubmitFileType */
