@@ -311,7 +311,7 @@ async function simulateActivation() {
 
         // Run iProov SDK
         console.log("Starting iProov presence check...")
-        const iProovResult = await IProov.launch("wss://eu3.rp.secure.iproov.me/ws", presenceInitResult.iProovVerificationToken, null, (event) => {
+        const iProovResult = await IProov.launch("wss://eu3.rp.secure.iproov.me/ws", presenceInitResult.iProovVerificationToken!, null, (event) => {
             console.log(`iProov event: ${event.name}`)
         })
         console.log(`iProov presence check completed with result: ${JSON.stringify(iProovResult)}`)
