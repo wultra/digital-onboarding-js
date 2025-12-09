@@ -263,7 +263,7 @@ try {
         // display intro screen
         const consentRequired = vfStatus.consentRequired // accessible based on union type 'intro'
         // show consent info if needed
-        verification.start(WDOConsentResponse.apaproved) // example of starting the process
+        verification.start(WDOConsentResponse.approved) // example of starting the process
 
     } else if (vfStatus.type === WDOVerificationStateType.documentsToScanSelect) {
         // display document selector

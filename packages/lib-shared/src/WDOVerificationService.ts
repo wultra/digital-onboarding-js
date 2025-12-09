@@ -94,7 +94,7 @@ export abstract class WDOBaseVerificationService {
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
-            response.consentRequired = false // TODO: remove when server fixed
+            response.consentRequired = response.consentRequired ?? false // when undefined, assume false
             WDOLogger.info("Verification status successfully retrieved.")
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
 

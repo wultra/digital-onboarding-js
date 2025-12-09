@@ -95,7 +95,7 @@ async function simulateActivation() {
         // FIRST TRY TO FETCH CONFIGURATION FROM THE SERVER
         let config: WDOConfigurationResponse
 
-        if (!!processType) {
+        if (processType) {
             console.log("Fetching configuration from the server...")
             config = await configurationService.getConfiguration(processType)
             console.log(`Configuration fetched: ${JSON.stringify(config)}`)
@@ -274,19 +274,14 @@ async function simulateActivation() {
         for (const doc of documentTypesToScan) {
             console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
             const result = await BlinkID.performScan(sdkSettings, sessionSettings)
-
-            //console.log(`BlinkID scan completed: ${JSON.stringify(result)}`)
         
-            //const image1 = result.firstDocumentImage
             const image1 = result.firstInputImage
-
             if (!image1) {
                 throw { message: "No 1st side of document captured from BlinkID scan!" }
             }
 
             const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front)]
 
-            //const image2 = result.secondDocumentImage
             const image2 = result.secondInputImage
             if (!image2) {
                 console.log("No 2nd side of document captured from BlinkID scan!")
