@@ -70,16 +70,16 @@ export abstract class WDOBaseApi {
     }
 
     verificationGetConsentText(processId: string): Promise<{ consentText: string }> {
-        const requestObject = { processId: processId, consentType: "GDPR" } // TODO: hardcoded type
+        const requestObject = { processId: processId, consentType: "GDPR" }
         return this.callApi(requestObject, WDOVerificationEndpoints.consentText)
     }
 
     verificationResolveConsent(processId: string, approved: boolean): Promise<void> {
-        const requestObject = { processId: processId, approved: approved, consentType: "GDPR" } // TODO: hardcoded type
+        const requestObject = { processId: processId, approved: approved, consentType: "GDPR" }
         return this.callApi(requestObject, WDOVerificationEndpoints.consentApprove)
     }
 
-    verificationInitScanSDK(processId: string, challenge: string): Promise<any> { // TODO: proper return type?
+    verificationInitScanSDK(processId: string, challenge: string): Promise<any> {
         const requestObject = { processId: processId, attributes: { 'sdk-init-token': challenge }} 
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
