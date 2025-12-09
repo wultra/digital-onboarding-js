@@ -1,8 +1,8 @@
-
 // Server configuration
 export const serverCredentials = {
     server: "",
-    paConfig: ""
+    paConfig: "",
 }
 
 export const blinkIdIos = ""
+export const blinkIdAndroid = ""
