@@ -40,10 +40,11 @@ export type WDOVerificationState =
 /** 
  * Show the verification introduction screen where the user can start the activation. 
  * 
- * The next step should be calling the `consentGet()`.
+ * The next step should be calling the `start`.
  */
 export interface WDOIntroState {
     type: WDOVerificationStateType.intro,
+    /** Indicates whether the user consent is required to proceed */
     consentRequired: boolean
 }
 
@@ -135,7 +136,7 @@ export enum WDOVerificationStateType {
     /** 
      * Show the verification introduction screen where the user can start the activation. 
      * 
-     * The next step should be calling the `consentGet()`.
+     * The next step should be calling the `start()`.
      */
     intro = "intro",
     /**

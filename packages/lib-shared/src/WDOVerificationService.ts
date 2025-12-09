@@ -202,7 +202,7 @@ export abstract class WDOBaseVerificationService {
             case WDOConsentResponse.declined:
                 WDOLogger.info("User declined consent - returning to intro state")
                 await this.handleError(this.api.verificationResolveConsent(pid, false))
-                return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true })
+                return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true }) // TODO: ok to assume true?
             case WDOConsentResponse.notRequired:
                 WDOLogger.info("Consent not required - proceeding")
         }

@@ -1464,8 +1464,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 1.0.0
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=60ba81&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/a05e674f5155784117e0a994812fcd9088955f95484604ee67174c909985252ffc95c0b70586984922af49c2f27e86c5cfb612d439c085c819e589af17cf6fec
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=e6fdd2&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/45f376b09eaf62923abd788eb5573da57ae4d76bd430b6406e7eb7d74fdb671710181268bba4aa2772c6fa97a67b6d3076bb5c3e4aabad5df0e298b3160d3b13
   languageName: node
   linkType: hard
 
