@@ -257,7 +257,7 @@ async function simulateActivation() {
         }
 
         // retrieve license key for BlinkID
-        const licenseKey = initResult.attributes["license-key"]
+        const licenseKey = initResult.blinkIDKey
         console.log(`Retrieved BlinkID license key: ${licenseKey}`)
         console.log("Using hardcoded BlinkID iOS license key for testing...")
 

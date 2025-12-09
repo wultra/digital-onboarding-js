@@ -340,6 +340,15 @@ Since the document scanning itself is not provided by this library but by a 3rd 
 
 If your chosen scanning SDK requires such a step, use this function to retrieve necessary data from the server.
 
+Example:
+
+```typescript
+const verification: WDOVerificationService // configured instance
+const challengeFromSDK = "..." // optional challenge from the scanning SDK
+const initResult = await verification.documentsInitSDK(challengeFromSDK)
+// use the `initResult` to initialize the scanning SDK
+```
+
 ## Scanning a document
 
 When the state of the process is `scanDocument` with the `WDOVerificationScanProcess` parameter, you need to present a document scan UI to the user. This UI needs

@@ -218,10 +218,12 @@ export abstract class WDOBaseVerificationService {
      * 
      * @param challenge Optional challenge provided by the scanning SDK.
      */
-    async documentsInitSDK(challenge?: string): Promise<any> {
+    async documentsInitSDK(challenge?: string): Promise<{ blinkIDKey?: string, zenIDToken?: string }> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationInitScanSDK(pid, challenge ?? "-")) // TODO: is "-" acceptable?
-        return response
+        const blinkID = response.attributes["license-key"]
+        const zenId = response.attributes["zenid-sdk-init-response"]
+        return { blinkIDKey: blinkID, zenIDToken: zenId }
     }
 
     /**
@@ -254,7 +256,7 @@ export abstract class WDOBaseVerificationService {
         const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
 
             return {
-                filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`, // TODO: OK?
+                filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
                 type: WDOCreateDocumentSubmitFileType(f.type),
                 side: WDOCreateDocumentSubmitFileSide(f.side),
                 originalDocumentId: f.originalDocumentId,
@@ -269,7 +271,7 @@ export abstract class WDOBaseVerificationService {
     /**
      * Initiates the presence check. This returns attributes that are needed to start the 3rd party SDK (if needed).
      */
-    async presenceCheckInit(): Promise<any> { // TODO: proper return type?
+    async presenceCheckInit(): Promise<{ iProovVerificationToken?: string }> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationPresenceCheckInit(pid))
         return this.processSuccess(response.sessionAttributes)
