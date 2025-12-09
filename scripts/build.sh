@@ -5,7 +5,7 @@ SCRIPT_FOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # This script builds the lib-cordova package. 
 # If the -dev argument is provided, it continuously watches for changes and rebuilds the package, while also syncing the native files as symlinks for easier development.
 
-cd "${SCRIPT_FOLDER}/.."
+pushd "${SCRIPT_FOLDER}/.."
 
 if [[ "$1" == "-dev" ]]; then
 
@@ -42,3 +42,5 @@ else
     # Build the package once (TS -> JS)
     rollup -c "rollup.config.lib.js"
 fi
+
+popd
