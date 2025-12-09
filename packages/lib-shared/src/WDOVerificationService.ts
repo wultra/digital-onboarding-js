@@ -32,6 +32,16 @@ export interface WDOVerificationServiceListener {
     verificationStatusChanged(sender: WDOBaseVerificationService, status: WDOVerificationState): void
 }
 
+/** Possible results of the user consent. */
+export enum WDOConsentResponse {
+    /** User approved the consent. */
+    approved,
+    /** User declined the consent. */
+    declined,
+    /** Consent is not required. */
+    notRequired
+}
+
 /**
  * Service that can verify previously activated PowerAuth instance.
  * 
@@ -84,6 +94,7 @@ export abstract class WDOBaseVerificationService {
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
+            response.consentRequired = response.consentRequired ?? false // when undefined, assume false
             WDOLogger.info("Verification status successfully retrieved.")
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
 
@@ -106,7 +117,7 @@ export abstract class WDOBaseVerificationService {
 
             switch (vf.nextStep) {
                 case WDONextStep.intro:
-                    return this.processSuccess({ type: WDOVerificationStateType.intro })
+                    return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: response.consentRequired })
                 case WDONextStep.documentScan:
                     WDOLogger.debug("Verifying documents status")
                     const docsResponse = await this.api.verificationDocumentsStatus(response.processId)
@@ -170,18 +181,32 @@ export abstract class WDOBaseVerificationService {
      * 
      * Consent text explains how the service will handle his document photos or selfie scans.
      */
-    async consentGet(): Promise<WDOVerificationState> {
+    async consentGet(): Promise<string> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationGetConsentText(pid))
-        return this.processSuccess({ type: WDOVerificationStateType.consent, body: response.consentText })
+        return response.consentText
     }
     
     /**
-     * Approves the consent for this process and starts the activation.
+     * Start the identity verification after user approved the consent (if required)
+     * 
+     * @param consentApprovedByUser Response of the user to the consent. The hint can be obtained in the `status()` call (`consentRequired` property when the result is `intro`).
      */
-    async consentApprove(): Promise<WDOVerificationState> {
+    async start(consentApprovedByUser: WDOConsentResponse): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
-        const response = await this.handleError(this.api.verificationResolveConsent(pid, true))
+        switch (consentApprovedByUser) {
+            case WDOConsentResponse.approved:
+                WDOLogger.info("User approved consent - resolving on server")
+                await this.handleError(this.api.verificationResolveConsent(pid, true))
+                break
+            case WDOConsentResponse.declined:
+                WDOLogger.info("User declined consent - returning to intro state")
+                await this.handleError(this.api.verificationResolveConsent(pid, false))
+                return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true }) // TODO: ok to assume true?
+            case WDOConsentResponse.notRequired:
+                WDOLogger.info("Consent not required - proceeding")
+        }
+
         await this.handleError(this.api.verificationStart(pid))
         return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
     }
@@ -193,10 +218,12 @@ export abstract class WDOBaseVerificationService {
      * 
      * @param challenge Optional challenge provided by the scanning SDK.
      */
-    async documentsInitSDK(challenge?: string): Promise<any> {
+    async documentsInitSDK(challenge?: string): Promise<{ blinkIDKey?: string, zenIDToken?: string }> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationInitScanSDK(pid, challenge ?? "-")) // TODO: is "-" acceptable?
-        return response
+        const blinkID = response.attributes["license-key"]
+        const zenId = response.attributes["zenid-sdk-init-response"]
+        return { blinkIDKey: blinkID, zenIDToken: zenId }
     }
 
     /**
@@ -229,7 +256,7 @@ export abstract class WDOBaseVerificationService {
         const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
 
             return {
-                filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`, // TODO: OK?
+                filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
                 type: WDOCreateDocumentSubmitFileType(f.type),
                 side: WDOCreateDocumentSubmitFileSide(f.side),
                 originalDocumentId: f.originalDocumentId,
@@ -237,42 +264,14 @@ export abstract class WDOBaseVerificationService {
             }
         })
 
-        await this.handleError(this.api.verificationSubmitDocumentsV2(pid, resubmit, submitFiles))
-        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
-    }
-
-    /**
-     * @internal
-     * Upload document files to the server. The order of the documents is up to you. 
-     * Make sure that uploaded document are reasonable size so you're not uploading large files.
-     * 
-     * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
-     * 
-     * @param files Document files to upload.
-     */
-    private async documentsSubmitDemo(files: WDODocumentFile[], zipFolderNameDemo: string, base64zipDemo: string): Promise<WDOVerificationState> {
-        const pid = this.verifyHasActiveProcess()
-
-        const resubmit = files.some(f => f.originalDocumentId != undefined)
-
-        const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
-
-            return {
-                filename: `${zipFolderNameDemo}/${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
-                type: WDOCreateDocumentSubmitFileType(f.type),
-                side: WDOCreateDocumentSubmitFileSide(f.side),
-                originalDocumentId: f.originalDocumentId
-            }
-        })
-
-        await this.handleError(this.api.verificationSubmitDocuments(pid, base64zipDemo, resubmit, submitFiles))
+        await this.handleError(this.api.verificationSubmitDocuments(pid, resubmit, submitFiles))
         return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
     }
 
     /**
      * Initiates the presence check. This returns attributes that are needed to start the 3rd party SDK (if needed).
      */
-    async presenceCheckInit(): Promise<any> { // TODO: proper return type?
+    async presenceCheckInit(): Promise<{ iProovVerificationToken?: string }> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationPresenceCheckInit(pid))
         return this.processSuccess(response.sessionAttributes)
@@ -295,7 +294,8 @@ export abstract class WDOBaseVerificationService {
         await this.handleError(this.api.verificationCleanup(pid))
         this.cachedProcess = undefined
         WDOLogger.info("Verification process restarted.")
-        return this.processSuccess({ type: WDOVerificationStateType.intro })
+        // return new status
+        return await this.status()
     }
 
     /**

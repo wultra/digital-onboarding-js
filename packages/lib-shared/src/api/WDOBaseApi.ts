@@ -70,21 +70,21 @@ export abstract class WDOBaseApi {
     }
 
     verificationGetConsentText(processId: string): Promise<{ consentText: string }> {
-        const requestObject = { processId: processId, consentType: "GDPR" } // TODO: hardcoded type
+        const requestObject = { processId: processId, consentType: "GDPR" }
         return this.callApi(requestObject, WDOVerificationEndpoints.consentText)
     }
 
     verificationResolveConsent(processId: string, approved: boolean): Promise<void> {
-        const requestObject = { processId: processId, approved: approved, consentType: "GDPR" } // TODO: hardcoded type
+        const requestObject = { processId: processId, approved: approved, consentType: "GDPR" }
         return this.callApi(requestObject, WDOVerificationEndpoints.consentApprove)
     }
 
-    verificationInitScanSDK(processId: string, challenge: string): Promise<any> { // TODO: proper return type?
+    verificationInitScanSDK(processId: string, challenge: string): Promise<any> {
         const requestObject = { processId: processId, attributes: { 'sdk-init-token': challenge }} 
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 
-    verificationSubmitDocumentsV2(processId: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
+    verificationSubmitDocuments(processId: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
         const requestObject = { 
             processId: processId, 
             resubmit: resubmit, 
@@ -92,12 +92,6 @@ export abstract class WDOBaseApi {
         }
         // TODO: there should be longer timeout!
         return this.callApi(requestObject, WDOVerificationEndpoints.v2submitDocuments)
-    }
-
-    verificationSubmitDocuments(processId: string, data: string, resubmit: boolean, documents: WDODocumentSubmitFile[]): Promise<void> {
-        const requestObject = { processId: processId, data: data, resubmit: resubmit, documents: documents }
-        // TODO: there should be longer timeout!
-        return this.callApi(requestObject, WDOVerificationEndpoints.submitDocuments)
     }
 
     verificationDocumentsStatus(processId: string): Promise<WDODocumentStatusResponse> {

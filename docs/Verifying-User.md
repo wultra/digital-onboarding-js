@@ -58,14 +58,6 @@ declare enum WDOVerificationStateType {
      */
     intro = "intro",
     /**
-     * Show approve/cancel user consent.
-     *
-     * The content of the text depends on the server configuration and might be plain text or HTML.
-     *
-     * The next step should be calling the `consentApprove`.
-     */
-    consent = "consent",
-    /**
      * Show document selection to the user. Which documents are available and how many
      * can the user select is up to your backend configuration.
      *
@@ -119,6 +111,117 @@ declare enum WDOVerificationStateType {
 }
 ```
 
+Based on the type value, additional data is provided in the union type `WDOVerificationState`.
+
+Available data per state type:
+
+```typescript
+export type WDOVerificationState =
+    | WDOIntroState
+    | WDODocumentsToScanSelectState
+    | WDOScanDocumentState
+    | WDOProcessingState
+    | WDOPresenceCheckState
+    | WDOOtpState
+    | WDOFailedState
+    | WDOEndStateState
+    | WDOSuccessState
+
+/** 
+ * Show the verification introduction screen where the user can start the activation. 
+ * 
+ * The next step should be calling the `start`.
+ */
+export interface WDOIntroState {
+    type: WDOVerificationStateType.intro,
+    /** Indicates whether the user consent is required to proceed */
+    consentRequired: boolean
+}
+
+/**
+ * Show document selection to the user. Which documents are available and how many
+ * can the user select is up to your backend configuration.
+ * 
+ * The next step should be calling the `documentsSetSelectedTypes`.
+ */
+export interface WDODocumentsToScanSelectState {
+    type: WDOVerificationStateType.documentsToScanSelect
+}
+
+/**
+ * User should scan documents - display UI for the user to scan all necessary documents.
+ * 
+ * The next step should be calling the `documentsSubmit`.
+ */
+export interface WDOScanDocumentState {
+    type: WDOVerificationStateType.scanDocument
+    /** Scanning process that helps with the document scanning */
+    process: WDOVerificationScanProcess
+}
+
+/** 
+ * The system is processing data - show loading with text hint from provided `WDOStatusCheckReason`.
+ * 
+ * The next step should be calling the `status`.
+ */
+export interface WDOProcessingState {
+    type: WDOVerificationStateType.processing
+    /** Reason for the current processing state */
+    item: WDOStatusCheckReason
+}
+
+/** 
+ * The user should be presented with a presence check.
+ * Presence check is handled by third-party SDK based on the project setup.
+ * 
+ * The next step should be calling the `presenceCheckInit` to start the check and `presenceCheckSubmit` to
+ * mark it finished.  Note that these methods won't change the status and it's up to the app to handle the process of the presence check.
+ */
+export interface WDOPresenceCheckState {
+    type: WDOVerificationStateType.presenceCheck
+}
+
+/**
+ * Show enter OTP screen with resend button.
+ * 
+ * The next step should be calling the `verifyOTP` with user-entered OTP.
+ * The OTP is usually SMS or email.
+ */
+export interface WDOOtpState {
+    type: WDOVerificationStateType.otp
+    /** Number of remaining attempts to enter the correct OTP */
+    remainingAttempts?: number
+}
+
+/**
+ * Verification failed and can be restarted
+ * 
+ * The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
+ * the user's decision if he wants to try it again or cancel the process.
+ */
+export interface WDOFailedState {
+    type: WDOVerificationStateType.failed
+}
+
+/**
+ * Verification is canceled and the user needs to start again with a new PowerAuth activation.
+ * 
+ * The next step should be calling the `PowerAuth.removeActivationLocal()` and starting activation from scratch.
+ */
+export interface WDOEndStateState {
+    type: WDOVerificationStateType.endState
+    /** Reason for the end state */
+    reason: WDOEndStateReason
+}
+
+/**
+ * Verification was successfully ended. Continue into your app flow.
+ */
+export interface WDOSuccessState {
+    type: WDOVerificationStateType.success
+}
+```
+
 ## Creating an instance
 
 To create an instance you will need a `PowerAuth` instance that is __already activated__.
@@ -156,6 +259,16 @@ const verification: WDOVerificationService // configured instance
 try {
     const vfStatus = await verification.status()
     // handle `WDOVerificationState` state and navigate to the expected screen
+    if (vfStatus.type === WDOVerificationStateType.intro) {
+        // display intro screen
+        const consentRequired = vfStatus.consentRequired // accessible based on union type 'intro'
+        // show consent info if needed
+        verification.start(WDOConsentResponse.approved) // example of starting the process
+
+    } else if (vfStatus.type === WDOVerificationStateType.documentsToScanSelect) {
+        // display document selector
+    }
+    // ... other states
 } catch (error) {
     if (error.verificationState) {
         // show expected screen based on the state
@@ -165,37 +278,26 @@ try {
 }
 ```
 
-## Getting the user consent text
+## Starting the identity verification
 
-When the state is `intro`, the first step in the flow is to get the context text for the user to approve.
+When the state is `intro`, the first step in the flow is to start the verification process by calling `start` function.
 
 ```typescript
+const state: WDOVerificationState // we're assuming that the state is `intro` here (WDOIntroState)
 const verification: WDOVerificationService // configured instance
 try {
-    const consentTextResponse = await verification.consentGet()
-    // state will be in the `consent` case here - display the consent screen
-} catch (error) {
-    if (error.verificationState) {
-        // show expected screen based on the state
+    let consentResult: WDOConsentResponse
+    const introState = state as WDOIntroState
+    if (introState.consentRequired) {
+        const consentTextResponse = await verification.consentGet()
+        // show consent screen to the user and get his approval
+        // assuming user approved the consent here
+        consentResult = WDOConsentResponse.approved
     } else {
-        // navigate to error screen
+        consentResult = WDOConsentResponse.notRequired
     }
-}
-```
-
-## Approving the user consent
-
-When the state is `consent`, you should display the consent text to the user to approve or reject.
-
-If the user __rejects the consent__, just return him to the intro screen, there's no API call for reject.
-
-If the user chooses to accept the consent, call `consentApprove` function. If successful, `documentsToScanSelect` state will be returned.
-
-```typescript
-const verification: WDOVerificationService // configured instance
-try {
-    const approvalResult = await verification.consentApprove()
-    // state will be in the `documentsToScanSelect` case here - display the document selector
+    const startResult = await verification.start(consentResult)
+    // process the returned state, should be `documentsToScanSelect` now
 } catch (error) {
     if (error.verificationState) {
         // show expected screen based on the state
@@ -237,6 +339,15 @@ This step does not move the state of the process but is a "stand-alone" API call
 Since the document scanning itself is not provided by this library but by a 3rd party library, some of them need a server-side initialization.
 
 If your chosen scanning SDK requires such a step, use this function to retrieve necessary data from the server.
+
+Example:
+
+```typescript
+const verification: WDOVerificationService // configured instance
+const challengeFromSDK = "..." // optional challenge from the scanning SDK
+const initResult = await verification.documentsInitSDK(challengeFromSDK)
+// use the `initResult` to initialize the scanning SDK
+```
 
 ## Scanning a document
 

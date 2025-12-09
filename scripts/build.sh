@@ -12,8 +12,11 @@ if [[ "$1" == "-dev" ]]; then
     echo "Starting to continuously build cordova package..."
 
     # Start rollup (TS -> JS) in watch mode
-    rollup -c "rollup.config.js" -w &
-    ROLLUP_TASK_PID=$!
+    rollup -c "rollup.config.lib.js" -w &
+    ROLLUP_LIB_TASK_PID=$!
+
+    rollup -c "rollup.config.app.js" -w &
+    ROLLUP_APP_TASK_PID=$!
 
     # Start the script that updates the cordova app JS files
     node ./scripts/update-cordova-app-js.js &
@@ -21,10 +24,11 @@ if [[ "$1" == "-dev" ]]; then
 
     cleanup() {
         # Stop the rollup and update tasks
-        echo "Script is exiting, killing processes: ${ROLLUP_TASK_PID}, ${UPDATE_TASK_PID}"
-        kill -9 "${ROLLUP_TASK_PID}" 2>/dev/null
+        echo "Script is exiting, killing processes: ${ROLLUP_LIB_TASK_PID}, ${ROLLUP_APP_TASK_PID}, ${UPDATE_TASK_PID}"
+        kill -9 "${ROLLUP_LIB_TASK_PID}" 2>/dev/null
+        kill -9 "${ROLLUP_APP_TASK_PID}" 2>/dev/null
         kill -9 "${UPDATE_TASK_PID}" 2>/dev/null
-        wait "${ROLLUP_TASK_PID}" "${UPDATE_TASK_PID}" 2>/dev/null
+        wait "${ROLLUP_LIB_TASK_PID}" "${ROLLUP_APP_TASK_PID}" "${UPDATE_TASK_PID}" 2>/dev/null
     }
 
     # Trap EXIT
@@ -36,7 +40,7 @@ else
 
     echo "Building cordova package..."
     # Build the package once (TS -> JS)
-    rollup -c "rollup.config.js"
+    rollup -c "rollup.config.lib.js"
 fi
 
 popd

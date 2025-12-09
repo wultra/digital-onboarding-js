@@ -44,6 +44,7 @@ export interface WDOIdentityStatusResponse {
     identityVerificationStatus: WDOIdentityVerificationStatus
     identityVerificationPhase?: WDOIdentityVerificationPhase
     config: WDOIdentityConfig
+    consentRequired: boolean
 }
 
 /** Configuration for identity verification */
@@ -147,11 +148,11 @@ export interface WDODocumentSubmitFile {
     /** Type of the document */
     type: WDODocumentSubmitFileType
     /** Side of the document (for example front side of the ID card) */
-    side?: WDODocumentSubmitFileSide
+    side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
-    /** Base64 encoded data image. Optional for the v1 endpoint */
-    data?: Base64URLString
+    /** Base64 encoded data image. */
+    data: Base64URLString
 }
 
 /** Converts WDODocumentType to DocumentSubmitFileType */

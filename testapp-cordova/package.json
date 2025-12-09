@@ -13,6 +13,7 @@
   "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "blinkid-cordova-plugin": "^1.0.0",
     "cordova-android": "^14.0.1",
     "cordova-digital-onboarding": "file:../packages/lib-cordova",
     "cordova-ios": "^7.1.1",
@@ -26,8 +27,11 @@
       "android"
     ],
     "plugins": {
+      "iproov-cordova-plugin": {},
       "cordova-digital-onboarding": {},
-      "iproov-cordova-plugin": {}
+      "blinkid-cordova-plugin": {
+        "CAMERA_USAGE_DESCRIPTION": "This application requires camera access for document scanning."
+      }
     }
   }
 }
