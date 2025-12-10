@@ -17,21 +17,22 @@
     "cordova-android": "^14.0.1",
     "cordova-digital-onboarding": "file:../packages/lib-cordova",
     "cordova-ios": "^7.1.1",
-    "cordova-powerauth-mobile-sdk": "^4.1.0",
+    "cordova-powerauth-mobile-sdk": "file:../../react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv",
     "cordova-powerauth-networking": "^1.0.1",
     "iproov-cordova-plugin": "^1.0.1"
   },
   "cordova": {
     "platforms": [
-      "ios",
-      "android"
+      "android",
+      "ios"
     ],
     "plugins": {
       "iproov-cordova-plugin": {},
       "cordova-digital-onboarding": {},
       "blinkid-cordova-plugin": {
         "CAMERA_USAGE_DESCRIPTION": "This application requires camera access for document scanning."
-      }
+      },
+      "cordova-powerauth-mobile-sdk": {}
     }
   }
 }

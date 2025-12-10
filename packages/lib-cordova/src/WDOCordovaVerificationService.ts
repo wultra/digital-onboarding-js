@@ -61,4 +61,23 @@ export class WDOVerificationService extends WDOBaseVerificationService {
     protected override changeAcceptLanguageImpl(language: string): void {
         this.api.networking.acceptLanguage = language
     }
+
+    /* @internal */
+    protected override getPAInstanceId(): string {
+        return this.powerauth.instanceId
+    }
+
+    /* @internal */
+    protected override cacheData(key: string, data: string | undefined): Promise<any> {
+        if (data) {
+            return PowerAuthStorageUtils.setString(key, data, PowerAuthStorageType.SECURE)
+        } else {
+            return PowerAuthStorageUtils.remove(key, PowerAuthStorageType.SECURE)
+        }
+    }
+
+    /* @internal */
+    protected override async getCachedData(key: string): Promise<string | undefined> {
+        return PowerAuthStorageUtils.getString(key, PowerAuthStorageType.SECURE)
+    }
 }

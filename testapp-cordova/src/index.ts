@@ -11,7 +11,7 @@ import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSet
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
-declare var cordova: Cordova
+declare var cordova: any
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
@@ -49,7 +49,7 @@ async function simulateActivation() {
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
 
-    const verificationService = new WDOVerificationService(
+    let verificationService = new WDOVerificationService(
         powerAuth, 
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
@@ -253,7 +253,44 @@ async function simulateActivation() {
         guardState(docTypesResult.type, WDOVerificationStateType.scanDocument)
         console.log("Selected document types set.")
         if (docTypesResult.type == WDOVerificationStateType.scanDocument) {
+            
             console.log(`Documents to scan: ${JSON.stringify(docTypesResult.process.documents)}`)
+
+            // verify that all required document types are in the process
+            console.log("Verifying that all required document types are in the scanning process...")
+            const process = docTypesResult.process
+            documentTypesToScan.forEach(docType => {
+                if (!process.documents.find(d => d.type === docType.type)) {
+                    throw new Error(`Document type ${docType.type} not found in scanning process!`)
+                }
+            })
+        }
+
+        // now create new verification instance to verify that cached process is loaded correctly
+        console.log("Creating new verification service instance to verify cached scanning process...")
+        verificationService = new WDOVerificationService(
+            powerAuth, 
+            `${serverCredentials.server}/enrollment-server-onboarding/`
+        )
+
+        // get verification status again
+        console.log("Retrieving verification status from new service instance...")
+        const statusWithCachedProcess = await verificationService.status()
+        guardState(statusWithCachedProcess.type, WDOVerificationStateType.scanDocument)
+        console.log("Verification status with cached process retrieved.")
+        
+        if (statusWithCachedProcess.type == WDOVerificationStateType.scanDocument) {
+            
+            console.log(`Documents to scan: ${JSON.stringify(statusWithCachedProcess.process.documents)}`)
+
+            // verify that all required document types are in the process
+            console.log("Verifying that all required document types are in the scanning process...")
+            const process = statusWithCachedProcess.process
+            documentTypesToScan.forEach(docType => {
+                if (!process.documents.find(d => d.type === docType.type)) {
+                    throw new Error(`Document type ${docType.type} not found in scanning process!`)
+                }
+            })
         }
 
         // retrieve license key for BlinkID

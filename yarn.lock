@@ -619,13 +619,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"abbrev@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "abbrev@npm:4.0.0"
-  checksum: 10c0/b4cc16935235e80702fc90192e349e32f8ef0ed151ef506aa78c81a7c455ec18375c4125414b99f84b2e055199d66383e787675f0bcd87da7a4dbd59f9eac1d5
-  languageName: node
-  linkType: hard
-
 "accepts@npm:~1.3.8":
   version: 1.3.8
   resolution: "accepts@npm:1.3.8"
@@ -966,21 +959,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bplist-creator@npm:0.1.1":
-  version: 0.1.1
-  resolution: "bplist-creator@npm:0.1.1"
+"bplist-creator@npm:0.1.0":
+  version: 0.1.0
+  resolution: "bplist-creator@npm:0.1.0"
   dependencies:
     stream-buffers: "npm:2.2.x"
-  checksum: 10c0/427ec37263ce0e8c68a83f595fc9889a9cbf2e6fda2de18e1f8ef7f0c6ce68c0cdbb7c9c1f3bb3f2d217407af8cffbdf254bf0f71c99f2186175d07752f08a47
+  checksum: 10c0/86f5fe95f34abd369b381abf0f726e220ecebd60a3d932568ae94895ccf1989a87553e4aee9ab3cfb4f35e6f72319f52aa73028165eec82819ed39f15189d493
   languageName: node
   linkType: hard
 
-"bplist-parser@npm:0.3.2, bplist-parser@npm:^0.3.2":
-  version: 0.3.2
-  resolution: "bplist-parser@npm:0.3.2"
+"bplist-parser@npm:0.3.1":
+  version: 0.3.1
+  resolution: "bplist-parser@npm:0.3.1"
   dependencies:
     big-integer: "npm:1.6.x"
-  checksum: 10c0/4dc307c11d2511a01255e87e370d4ab6f1962b35fdc27605fd4ce9a557a259c2dc9f87822617ddb1f7aa062a71e30ef20d6103329ac7ce235628f637fb0ed763
+  checksum: 10c0/00940a60214e8f58246264d389db8817b7f7f968cd544ec4a5843e33f810c7a07294a92060fc507104a1a2921212c053fe8e941fb2129b9b4da5fbb12a08e95c
   languageName: node
   linkType: hard
 
@@ -988,6 +981,15 @@ __metadata:
   version: 0.0.6
   resolution: "bplist-parser@npm:0.0.6"
   checksum: 10c0/72901f983f716ab5afe1f726cbf675c9ab1e893aa1c67eb2d72f3fbc6c9b590cf0bfe8db82262bb66a55002fd0f3ed87af9f391ec3324870ffba3c0fb4aae2a9
+  languageName: node
+  linkType: hard
+
+"bplist-parser@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "bplist-parser@npm:0.3.2"
+  dependencies:
+    big-integer: "npm:1.6.x"
+  checksum: 10c0/4dc307c11d2511a01255e87e370d4ab6f1962b35fdc27605fd4ce9a557a259c2dc9f87822617ddb1f7aa062a71e30ef20d6103329ac7ce235628f637fb0ed763
   languageName: node
   linkType: hard
 
@@ -1267,7 +1269,7 @@ __metadata:
     cordova-android: "npm:^14.0.1"
     cordova-digital-onboarding: "file:../packages/lib-cordova"
     cordova-ios: "npm:^7.1.1"
-    cordova-powerauth-mobile-sdk: "npm:^4.1.0"
+    cordova-powerauth-mobile-sdk: "file:../../react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv"
     cordova-powerauth-networking: "npm:^1.0.1"
     iproov-cordova-plugin: "npm:^1.0.1"
   languageName: unknown
@@ -1464,8 +1466,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 1.0.0
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=111c03&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/d2cc2e152586f5dd367145aac9f11e5258d24df0c682f64700116647dec297129bdcf057f89f91e80bfb8c3543df02826f46ab76984efe17e03f6cbee8bf56b3
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=074b3f&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/f82f76afb0611e2326d7dfa299309d331ad30a3fba8e4506dde35509bc94cb7ba4b703346d2cef4246e418b03cd509844cdae9bf5d730006c9275804f0539bba
   languageName: node
   linkType: hard
 
@@ -1475,7 +1477,7 @@ __metadata:
   dependencies:
     clean-package: "npm:^2.2.0"
     cordova: "npm:^12.0.0"
-    cordova-powerauth-mobile-sdk: "npm:^4.1.0"
+    cordova-powerauth-mobile-sdk: "file:/Users/kober/dev/wultra/repos/react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv/"
     cordova-powerauth-networking: "npm:^1.0.1"
     typescript: "npm:^5.9.2"
   languageName: unknown
@@ -1538,10 +1540,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cordova-powerauth-mobile-sdk@npm:^4.1.0":
-  version: 4.1.3
-  resolution: "cordova-powerauth-mobile-sdk@npm:4.1.3"
-  checksum: 10c0/a66b8616c44049e50eacc9e2c9d51eaa760668258bdd7d6806259086569a4f89cb79c2030f60b9bc0ae4cb188504b02372c6390e1a9a40a39a4df92a8eda8b14
+"cordova-powerauth-mobile-sdk@file:../../react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
+  version: 4.2.0
+  resolution: "cordova-powerauth-mobile-sdk@file:../../react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv#../../react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv::hash=dfc608&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/b548a34e2750da59e3ac398654a56dc91f72dbcacd44d8bb06d614068b10808af07c6d2e2ebce808e14994e633418f442c093b20f8369e9a1a18743276ddf987
+  languageName: node
+  linkType: hard
+
+"cordova-powerauth-mobile-sdk@file:/Users/kober/dev/wultra/repos/react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv/::locator=cordova-digital-onboarding%40workspace%3Apackages%2Flib-cordova":
+  version: 4.2.0
+  resolution: "cordova-powerauth-mobile-sdk@file:/Users/kober/dev/wultra/repos/react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv/#/Users/kober/dev/wultra/repos/react-native-powerauth-mobile-sdk/packages/cordova-powerauth-mobile-sdk/build/cdv/::hash=dfc608&locator=cordova-digital-onboarding%40workspace%3Apackages%2Flib-cordova"
+  checksum: 10c0/b548a34e2750da59e3ac398654a56dc91f72dbcacd44d8bb06d614068b10808af07c6d2e2ebce808e14994e633418f442c093b20f8369e9a1a18743276ddf987
   languageName: node
   linkType: hard
 
@@ -2395,7 +2404,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^10.2.2, glob@npm:^13.0.0":
+"glob@npm:^10.2.2":
   version: 10.5.0
   resolution: "glob@npm:10.5.0"
   dependencies:
@@ -2411,7 +2420,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^7.0.0, glob@npm:^7.1.3, glob@npm:^7.1.4":
+"glob@npm:^13.0.0, glob@npm:^7.0.0, glob@npm:^7.1.3, glob@npm:^7.1.4":
   version: 7.2.3
   resolution: "glob@npm:7.2.3"
   dependencies:
@@ -3129,10 +3138,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0, lru-cache@npm:^11.1.0, lru-cache@npm:^11.2.1":
+"lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
+  languageName: node
+  linkType: hard
+
+"lru-cache@npm:^11.1.0, lru-cache@npm:^11.2.1":
+  version: 11.2.4
+  resolution: "lru-cache@npm:11.2.4"
+  checksum: 10c0/4a24f9b17537619f9144d7b8e42cd5a225efdfd7076ebe7b5e7dc02b860a818455201e67fbf000765233fe7e339d3c8229fc815e9b58ee6ede511e07608c19b2
   languageName: node
   linkType: hard
 
@@ -3616,7 +3632,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nopt@npm:1.0.9":
+"nopt@npm:1.0.9, nopt@npm:^9.0.0":
   version: 1.0.9
   resolution: "nopt@npm:1.0.9"
   dependencies:
@@ -3657,17 +3673,6 @@ __metadata:
   bin:
     nopt: bin/nopt.js
   checksum: 10c0/62e9ea70c7a3eb91d162d2c706b6606c041e4e7b547cbbb48f8b3695af457dd6479904d7ace600856bf923dd8d1ed0696f06195c8c20f02ac87c1da0e1d315ef
-  languageName: node
-  linkType: hard
-
-"nopt@npm:^9.0.0":
-  version: 9.0.0
-  resolution: "nopt@npm:9.0.0"
-  dependencies:
-    abbrev: "npm:^4.0.0"
-  bin:
-    nopt: bin/nopt.js
-  checksum: 10c0/1822eb6f9b020ef6f7a7516d7b64a8036e09666ea55ac40416c36e4b2b343122c3cff0e2f085675f53de1d2db99a2a89a60ccea1d120bcd6a5347bf6ceb4a7fd
   languageName: node
   linkType: hard
 
@@ -4892,13 +4897,13 @@ __metadata:
   linkType: hard
 
 "simple-plist@npm:^1.1.0":
-  version: 1.4.0
-  resolution: "simple-plist@npm:1.4.0"
+  version: 1.3.1
+  resolution: "simple-plist@npm:1.3.1"
   dependencies:
-    bplist-creator: "npm:0.1.1"
-    bplist-parser: "npm:0.3.2"
+    bplist-creator: "npm:0.1.0"
+    bplist-parser: "npm:0.3.1"
     plist: "npm:^3.0.5"
-  checksum: 10c0/226c283492d8518d715e4133d94bdbd15c0619561bcde583b4807b36cde106c0078c615b9b4e25c0e8758a4ae4e79ed5dd76e57cd528d8b7001ecab5ad35e343
+  checksum: 10c0/3d5adeb705815338b1f4615c52584d540b12575337a0e0688f0a2b19a6a4162769cd8a3a36e9eb2b0fc9e27d63dcba8b9088a13e93eabcb7cdec5fe90ec5b0a5
   languageName: node
   linkType: hard
 
@@ -5182,11 +5187,11 @@ __metadata:
   linkType: hard
 
 "systeminformation@npm:^5.17.12":
-  version: 5.27.11
-  resolution: "systeminformation@npm:5.27.11"
+  version: 5.27.13
+  resolution: "systeminformation@npm:5.27.13"
   bin:
     systeminformation: lib/cli.js
-  checksum: 10c0/f0ef8cec7d2bead69060c5f1d45f9727d549e858f3132cf9e7ba4a8e9ae60bf30072fc7eb8a4269a8e5f293dca7bddd2b0261d7dc498e4a2cb9c0b66cbd46b16
+  checksum: 10c0/173ef2f175e6bcb875e46bfcc76afef222e2efec80212b5e7d07ad3ba4c111bf402ed649fe96d3e1f13178e42542d25c77f5d433d20065af357ea07dbebe9c3d
   conditions: (os=darwin | os=linux | os=win32 | os=freebsd | os=openbsd | os=netbsd | os=sunos | os=android)
   languageName: node
   linkType: hard
@@ -5590,7 +5595,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"which@npm:^2.0.1, which@npm:^2.0.2, which@npm:^6.0.0":
+"which@npm:^2.0.1, which@npm:^2.0.2":
   version: 2.0.2
   resolution: "which@npm:2.0.2"
   dependencies:
@@ -5612,7 +5617,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"which@npm:^4.0.0":
+"which@npm:^4.0.0, which@npm:^6.0.0":
   version: 4.0.0
   resolution: "which@npm:4.0.0"
   dependencies:

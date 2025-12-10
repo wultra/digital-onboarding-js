@@ -7,8 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
-import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
+import { WDODocument, WDODocumentSubmitFileSide, WDODocumentSubmitFileType } from "./api/WDONetworkingObjects"
+import { WDODocumentSide, WDODocumentType, WDODocumentTypeToSubmitType } from "./WDODocumentFile"
+import { WDOLogger } from "./WDOLogger"
 
 /** Describes the state of documents that need to be uploaded to the server. */
 export class WDOVerificationScanProcess {
@@ -26,7 +27,7 @@ export class WDOVerificationScanProcess {
 
     /* @internal */
     feedServerData(documents: WDODocument[]) {
-        const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
+        const groups = documents.reduce<Map<WDODocumentSubmitFileType, WDODocument[]>>((map, doc) => {
             const key = doc.type
             const group = map.get(key) ?? []
             group.push(doc)
@@ -35,9 +36,28 @@ export class WDOVerificationScanProcess {
         }, new Map())
 
         groups.forEach((docs, type) => {
-             // TODO: type mismatch?
-            this.documents.find(d => d.type === type)?.processServerData(docs)
+            this.documents.find(d => WDODocumentTypeToSubmitType(d.type) === type)?.processServerData(docs)
         })
+    }
+
+    /* @internal */
+    static fromCachedData(data: string): WDOVerificationScanProcess | undefined {
+        const split = data.split(":")
+        if (split.length != 2) {
+            WDOLogger.error("WDOVerificationScanProcess.fromCachedData: invalid cached data format")
+            return undefined
+        }
+        if (split[0] !== "v1") {
+            WDOLogger.error("WDOVerificationScanProcess.fromCachedData: unsupported cached data version")
+            return undefined
+        }
+        const types = split[1].split(",").map(s => s as WDODocumentType)
+        return new WDOVerificationScanProcess(types)
+    }
+
+    /* @internal */
+    dataForCache(): string {
+        return `v1:${this.documents.map(d => { return d.type }).join(",")}`
     }
 }
 

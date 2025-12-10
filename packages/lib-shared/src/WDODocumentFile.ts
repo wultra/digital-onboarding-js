@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDODocumentSubmitFileSide, WDODocumentSubmitFileType } from "./api/WDONetworkingObjects"
 import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 
 /** String that contains a Base64 encoded JPEG image */
@@ -101,4 +102,26 @@ export enum WDODocumentSide {
     front = "front",
     /** Back side of a document */
     back = "back"
+}
+
+/** Converts WDODocumentType to WDODocumentSubmitFileType */
+export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentSubmitFileType {
+    switch (type) {
+        case WDODocumentType.idCard:
+            return WDODocumentSubmitFileType.idCard
+        case WDODocumentType.passport:
+            return WDODocumentSubmitFileType.passport
+        case WDODocumentType.driversLicense:
+            return WDODocumentSubmitFileType.driversLicense
+    }
+}
+
+/** Converts WDODocumentSide to DocumentSubmitFileSide */
+export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
+    switch (side) {
+        case WDODocumentSide.front:
+            return WDODocumentSubmitFileSide.front
+        case WDODocumentSide.back:
+            return WDODocumentSubmitFileSide.back
+    }
 }
