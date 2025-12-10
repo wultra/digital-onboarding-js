@@ -35,7 +35,7 @@ if [[ "$1" == "-dev" ]]; then
     trap cleanup EXIT
 
     # Wait for both background tasks to finish (they won't, until killed)
-    wait "${ROLLUP_TASK_PID}" "${UPDATE_TASK_PID}"
+    wait "${ROLLUP_LIB_TASK_PID}" "${ROLLUP_APP_TASK_PID}" "${UPDATE_TASK_PID}"
 else
 
     echo "Building cordova package..."
