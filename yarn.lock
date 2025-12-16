@@ -1464,8 +1464,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 1.0.0
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=111c03&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/d2cc2e152586f5dd367145aac9f11e5258d24df0c682f64700116647dec297129bdcf057f89f91e80bfb8c3543df02826f46ab76984efe17e03f6cbee8bf56b3
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=8c8f8f&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/5a817e4361ba9b64e88582b7e9eab489b6ea43c83c3ef24e7fa1bfcee265764eb4f4d58da97ed874c42babc6071865791d4b381d720c6def6f317dfd7ff292ca
   languageName: node
   linkType: hard
 
@@ -5182,11 +5182,11 @@ __metadata:
   linkType: hard
 
 "systeminformation@npm:^5.17.12":
-  version: 5.27.11
-  resolution: "systeminformation@npm:5.27.11"
+  version: 5.27.14
+  resolution: "systeminformation@npm:5.27.14"
   bin:
     systeminformation: lib/cli.js
-  checksum: 10c0/f0ef8cec7d2bead69060c5f1d45f9727d549e858f3132cf9e7ba4a8e9ae60bf30072fc7eb8a4269a8e5f293dca7bddd2b0261d7dc498e4a2cb9c0b66cbd46b16
+  checksum: 10c0/dd2887c19d46ae378cd916a25a6e8e323a86e5c20f456c724b6b954e8f0b78c0bd536e6a988482b1b70ce712c07c4146a471a712a650eefae13312c6ca06aebf
   conditions: (os=darwin | os=linux | os=win32 | os=freebsd | os=openbsd | os=netbsd | os=sunos | os=android)
   languageName: node
   linkType: hard
