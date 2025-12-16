@@ -10,7 +10,8 @@
 import { WDOBaseApi } from './api/WDOBaseApi'
 import { WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
-import { WDOError } from './WDOError'
+import { WDOError, WDOErrorReason } from './WDOError'
+import { WDODefaultCache } from './WDOCache'
 
 /** Duck-typed PowerAuthActivationResult for WDO space */
 export interface WDOPowerAuthActivationResult {
@@ -18,6 +19,11 @@ export interface WDOPowerAuthActivationResult {
     activationFingerprint: string
     /** When available, contents of this object depends of your enrollment server configuration. */
     customAttributes?: any
+}
+
+interface WDOActivationProcessData {
+    processId: string
+    activationCode?: string
 }
 
 /**
@@ -38,6 +44,8 @@ export abstract class WDOBaseActivationService {
     protected abstract activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult>
     /* @internal */
     protected abstract changeAcceptLanguageImpl(language: string): void
+    /* @internal */
+    protected abstract getPAInstanceId(): string
 
     /** 
      * If the activation process is in progress. 
@@ -45,7 +53,7 @@ export abstract class WDOBaseActivationService {
      * Note that even if this property is `true` it can be already discontinued on the server.
      * Calling `status()` for example after the app is launched in this case is recommended.
      */
-    public get hasActiveProcess(): boolean { return !!this.processData }
+    public async hasActiveProcess(): Promise<boolean> { return !!(await this.getCachedProcessData()) }
 
     /** 
      * Accept language for the outgoing requests headers.
@@ -60,9 +68,24 @@ export abstract class WDOBaseActivationService {
     }
     
     /* @internal  */
-    private processData: { processId: string, activationCode?: string } | undefined // TODO: Cache process ID?
+    private cacheKey(): string { return `wdopd_${this.getPAInstanceId()}` }
+    
     /* @internal  */
-    private get processId(): string | undefined { return this.processData?.processId }
+    private async setCachedProcessData(data: WDOActivationProcessData | undefined): Promise<void> {
+        await WDODefaultCache.instance.set(this.cacheKey(), JSON.stringify(data))
+    }
+
+    /* @internal  */
+    private async getCachedProcessData(): Promise<WDOActivationProcessData | undefined> {
+        const data = await WDODefaultCache.instance.get(this.cacheKey())
+        if (!data) {
+            return undefined
+        }
+        return JSON.parse(data) as WDOActivationProcessData
+    }
+
+    /* @internal  */
+    private async processId(): Promise<string | undefined> { return (await this.getCachedProcessData())?.processId }
 
     // PUBLIC API
 
@@ -72,9 +95,9 @@ export abstract class WDOBaseActivationService {
      * @return Promise resolved with onboarding status.
      */
     async status(): Promise<WDOOnboardingStatus> {
-        WDOLogger.debug(`Getting activation status for processId=${this.processId}`)
+        WDOLogger.debug(`Getting activation status for processId=${await this.processId()}`)
         await this.verifyCanStartActivation()
-        const pid = this.verifyHasActiveProcess()
+        const pid = await this.verifyHasActiveProcess()
         const result = await this.api.activationGetStatus(pid)
         return result.onboardingStatus
     }
@@ -94,14 +117,14 @@ export abstract class WDOBaseActivationService {
      */
     async start(credentials: any, processType?: string): Promise<void> {
         WDOLogger.debug(`Starting activation with credentials: ${JSON.stringify(credentials)}`)
-        if (this.processId) {
-            throw new WDOError("Cannot start the process - processId already obtained, cancel first.")
+        if (await this.processId()) {
+            throw new WDOError(WDOErrorReason.processAlreadyInProgress, "Cannot start the process - processId already obtained, cancel first.")
         }
         await this.verifyCanStartActivation()
         const result = await this.api.activationStart(credentials, processType)
         WDOLogger.info("WDOActivationService.start success")
         WDOLogger.debug(` - processId: ${result.processId}`)
-        this.processData = { processId: result.processId, activationCode: result.activationCode }
+        await this.setCachedProcessData({ processId: result.processId, activationCode: result.activationCode })
     }
 
     /**
@@ -110,17 +133,17 @@ export abstract class WDOBaseActivationService {
      * @param forceCancel When true, the process will be canceled in the SDK even when fails on backend. `true` by default.
      */
     async cancel(forceCancel: boolean = true): Promise<void> {
-        WDOLogger.debug(`Canceling activation for processId=${this.processId}, forceCancel=${forceCancel}`)
-        const pid = this.verifyHasActiveProcess()
+        WDOLogger.debug(`Canceling activation for processId=${await this.processId()}, forceCancel=${forceCancel}`)
+        const pid = await this.verifyHasActiveProcess()
         try {
             await this.api.activationCancel(pid)
-            this.processData = undefined
+            await this.setCachedProcessData(undefined)
             WDOLogger.info("WDOActivationService.cancel success")
         } catch (error) {
             if (forceCancel) {
                 // pretend it was successful and just log the error
                 WDOLogger.debug(`Process canceled (but the request failed) - ${error}.`)
-                this.processData = undefined
+                await this.setCachedProcessData(undefined)
             } else {
                 throw error // rethrow
             }
@@ -128,8 +151,8 @@ export abstract class WDOBaseActivationService {
     }
 
     /** Clear the stored data (without networking call). */
-    clear() {
-        this.processData = undefined
+    async clear(): Promise<void> {
+        await this.setCachedProcessData(undefined)
     }
 
     /** 
@@ -140,7 +163,7 @@ export abstract class WDOBaseActivationService {
      */
     async resendOTP(): Promise<void> {
         WDOLogger.debug("Activation: resending OTP")
-        const pid = this.verifyHasActiveProcess()
+        const pid = await this.verifyHasActiveProcess()
         await this.verifyCanStartActivation()
         await this.api.activationResendOTP(pid)
     }
@@ -153,7 +176,7 @@ export abstract class WDOBaseActivationService {
      */
     private async getOTP(): Promise<String> {
         WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
-        const pid = this.verifyHasActiveProcess()
+        const pid = await this.verifyHasActiveProcess()
         return (await this.api.activationGetOTP(pid, "ACTIVATION")).otpCode
     }
 
@@ -167,9 +190,12 @@ export abstract class WDOBaseActivationService {
     async activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult> {
         WDOLogger.debug(`Activating the PowerAuth with activation name '${activationName}'`)
         await this.verifyCanStartActivation()
-        const pid = this.verifyHasActiveProcess()
-        const code = this.processData?.activationCode
+        const pid = await this.verifyHasActiveProcess()
+        const code = (await this.getCachedProcessData())?.activationCode
         let result: WDOPowerAuthActivationResult
+        // TODO: catch possible errors and wrap then into WDOError with proper reason
+        // also, check if "remainingAttempts" are available in case of OTP failure
+        // and provide `onboardingOtpRemainingAttempts` and `allowOnboardingOtpRetry`
         if (code) {
             WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
             result = await this.activatePowerAuthWithCode(code, otp, activationName)
@@ -179,7 +205,7 @@ export abstract class WDOBaseActivationService {
             result = await this.activatePowerAuth(identityAttributes, activationName)
         }
         // Clear process ID after activation attempt
-        this.processData = undefined
+        await this.setCachedProcessData(undefined)
         return result
     }
 
@@ -189,19 +215,18 @@ export abstract class WDOBaseActivationService {
     private async verifyCanStartActivation(): Promise<void> {
         if (!(await this.api.canStartActivation())) {
             WDOLogger.error("PowerAuth is already activated - Activation cannot be started/processed.")
-            this.processData = undefined
-            throw new WDOError("PowerAuth is already activated")
+            await this.setCachedProcessData(undefined)
+            throw new WDOError(WDOErrorReason.powerauthAlreadyActivated, "PowerAuth is already activated")
         }
     }
 
     /* @internal */
-    private verifyHasActiveProcess(): string {
-        const pid = this.processId
+    private async verifyHasActiveProcess(): Promise<string> {
+        const pid = await this.processId()
         if (!pid) {
             WDOLogger.warn("Cannot proceed (processId not available).")
-            throw new WDOError("No active activation process")
+            throw new WDOError(WDOErrorReason.processNotInProgress, "No active activation process")
         }
         return pid
     }
-        
 }

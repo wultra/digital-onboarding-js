@@ -10,11 +10,12 @@
 import { WDOBaseApi } from './api/WDOBaseApi'
 import { WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
-import { WDOError } from './WDOError'
+import { WDOError, WDOErrorReason } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
 import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType, WDODocumentTypeToSubmitType } from './WDODocumentFile'
 import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from './WDOPowerAuthActivationStatus'
+import { WDODefaultCache } from './WDOCache'
 
 /**
  * Listener of the Verification Service that can listen on Verification Status and PowerAuth Status changes.
@@ -60,10 +61,6 @@ export abstract class WDOBaseVerificationService {
     protected abstract fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
     /* @internal */
     protected abstract getPAInstanceId(): string
-    /* @internal */
-    protected abstract cacheData(key: string, data: string | undefined): Promise<void>
-    /* @internal */
-    protected abstract getCachedData(key: string): Promise<string | undefined>
 
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
@@ -71,11 +68,11 @@ export abstract class WDOBaseVerificationService {
     private cacheKey(): string { return `wdocp_${this.getPAInstanceId()}` }
 
     private async setCachedProcess(process: WDOVerificationScanProcess | undefined): Promise<void> {
-        await this.cacheData(this.cacheKey(), process?.dataForCache())
+        await WDODefaultCache.instance.set(this.cacheKey(), process?.dataForCache())
     }
 
     private async getCachedProcess(): Promise<WDOVerificationScanProcess | undefined> {
-        const data = await this.getCachedData(this.cacheKey())
+        const data = await WDODefaultCache.instance.get(this.cacheKey())
         if (!data) {
             return undefined
         }
@@ -344,7 +341,7 @@ export abstract class WDOBaseVerificationService {
                 return this.processSuccess({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
             } else {
                 WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
-                throw this.processError(new WDOError("OTP verification failed, no remaining attempts or OTP expired"))
+                throw this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
             }
         }
     }
@@ -378,7 +375,7 @@ export abstract class WDOBaseVerificationService {
         const pid = this.lastStatus?.processId
         if (!pid) {
             WDOLogger.error("Process id not available - did you start the verification process and fetched the status?")
-            throw new WDOError("Process id not available - did you start the verification process and fetched the status?")
+            throw new WDOError(WDOErrorReason.processNotInProgress, "Process id not available - did you start the verification process and fetched the status?")
         }
         return pid
     }
@@ -406,7 +403,7 @@ export abstract class WDOBaseVerificationService {
                 if (status.state !== WDOPowerAuthActivationState.ACTIVE) {
                     WDOLogger.error(`PowerAuth status is not active (status${status.state}) - notifying the delegate and returning and error.`)
                     this.listener?.powerAuthActivationStatusChanged(this, status)
-                    return new WDOError("PowerAuth activation is not active anymore")
+                    return new WDOError(WDOErrorReason.powerauthNotActivated, "PowerAuth activation is not active anymore")
                 }
             } catch {
                 // no-op

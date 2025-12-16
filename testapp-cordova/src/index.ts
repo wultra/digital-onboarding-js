@@ -44,7 +44,7 @@ async function simulateActivation() {
         baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
     })
     
-    const activationService = new WDOActivationService(
+    let activationService = new WDOActivationService(
         powerAuth,
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
@@ -140,6 +140,19 @@ async function simulateActivation() {
             console.log("OTP resent.")
         } else {
             console.log("OTP for identification is not required, skipping resend.")
+        }
+
+        // now create new activation instance to verify that cached process is loaded correctly
+        console.log("Creating new activation service instance to verify cached process...")
+        activationService = new WDOActivationService(
+            powerAuth, 
+            `${serverCredentials.server}/enrollment-server-onboarding/`
+        )
+
+        const statusAfterChange = await activationService.status()
+        console.log(`Activation status after new service instance: ${statusAfterChange}`)
+        if (statusAfterChange !== status) {
+            throw new Error("Activation status after creating new service instance does not match the previous status!")
         }
 
         console.log("Cancelling activation...")
@@ -429,7 +442,7 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
     
     let repeatedStatus = await verificationService.status()
 
-    console.log(`Initial status verification: ${repeatedStatus.type}`)
+    console.log(`Waiting until processing ends (if in progress): ${repeatedStatus.type}`)
 
     while(repeatedStatus.type === WDOVerificationStateType.processing) {
         console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)
