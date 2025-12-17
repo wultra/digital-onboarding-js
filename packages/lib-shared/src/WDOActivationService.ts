@@ -196,13 +196,17 @@ export abstract class WDOBaseActivationService {
         // TODO: catch possible errors and wrap then into WDOError with proper reason
         // also, check if "remainingAttempts" are available in case of OTP failure
         // and provide `onboardingOtpRemainingAttempts` and `allowOnboardingOtpRetry`
-        if (code) {
-            WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
-            result = await this.activatePowerAuthWithCode(code, otp, activationName)
-        } else {
-            WDOLogger.info("Activating PowerAuth using identity attributes from the onboarding process")
-            const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
-            result = await this.activatePowerAuth(identityAttributes, activationName)
+        try {
+            if (code) {
+                WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
+                result = await this.activatePowerAuthWithCode(code, otp, activationName)
+            } else {
+                WDOLogger.info("Activating PowerAuth using identity attributes from the onboarding process")
+                const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
+                result = await this.activatePowerAuth(identityAttributes, activationName)
+            }
+        } catch (error) {
+            throw new WDOError(WDOErrorReason.activationFailed, "Activation failed", error)
         }
         // Clear process ID after activation attempt
         await this.setCachedProcessData(undefined)

@@ -16,6 +16,7 @@ export * from '../../lib-shared/src/WDOVerificationScanProcess'
 export * from '../../lib-shared/src/WDODocumentFile'
 export * from '../../lib-shared/src/WDOLogger'
 export * from '../../lib-shared/src/api/WDONetworkingObjects'
+export * from '../../lib-shared/src/WDOError'
 
 // setup default cache implementation
 import { WDOCordovaCache } from './WDOCordovaCache'

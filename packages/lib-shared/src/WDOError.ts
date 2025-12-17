@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDOLogger } from "./WDOLogger"
+
 /** Represent error thrown from a WDO library */
 export class WDOError {
 
@@ -28,12 +30,41 @@ export class WDOError {
         this.message = message
         this.additionalInfo = additionalInfo
     }
+
+    /** 
+     * Whether retrying OTP is allowed based on remaining attempts.
+     * 
+     * This may be filled only when the error reason is `WDOErrorReason.activationFailed`.
+     */
+    get allowOnboardingOtpRetry(): boolean { return this.onboardingOtpRemainingAttempts !== undefined && this.onboardingOtpRemainingAttempts > 0 }
+
+    /**
+     * Number of remaining OTP attempts during onboarding
+     * 
+     * This may be filled only when the error reason is `WDOErrorReason.activationFailed`.
+     */
+    get onboardingOtpRemainingAttempts(): number | undefined {
+        if (this.additionalInfo?.originalException?.userInfo?.responseBody) {
+            try {
+                const parsedResponse = JSON.parse(this.additionalInfo.originalException.userInfo.responseBody)
+                return parsedResponse.remainingAttempts ?? undefined
+            } catch {
+                WDOLogger.error("WDOError.onboardingOtpRemainingAttempts: failed to parse response body")
+                return undefined
+            }
+        } else {
+            return undefined
+        }
+    }
 }
 
 /** Reasons for WDO errors */
 export enum WDOErrorReason {
     /** Network error occurred */
     networkError = "NETWORK_ERROR",
+
+    /** Activation failed */
+    activationFailed = "ACTIVATION_FAILED",
 
     /** Process is already in progress - happens when start() is called twice */
     processAlreadyInProgress = "PROCESS_ALREADY_IN_PROGRESS",

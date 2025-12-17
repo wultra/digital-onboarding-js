@@ -4,7 +4,7 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse } from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -75,7 +75,7 @@ async function simulateActivation() {
 
         // DEFAULT SETUP AND CONFIGURATION
 
-        const processType: string | undefined = "onboarding"
+        const processType: string | undefined = undefined // "onboarding"
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
@@ -128,11 +128,29 @@ async function simulateActivation() {
 
         console.log(`Starting onboarding process (process type: ${processType})...`)
         await activationService.start(getRandomAttributes(), processType)
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         console.log("Getting activation status...")
         const status = await activationService.status()
         console.log(`Activation status after start: ${status}`)
+
+        if (config.otpForIdentification) {
+            console.log("Wrong OTP on purpose to test failure...")
+            let thrownError = false
+            try {
+                await activationService.activate("my-test-activation", "wrong-otp")
+                console.log("Activation should have failed with wrong OTP but it didn't.")
+            } catch (error) {
+                console.log(`Activation failed as expected with wrong OTP.`)
+                if (error instanceof WDOError) {
+                    console.log(`Remaining OTP attempts: ${error.onboardingOtpRemainingAttempts}`)
+                    thrownError = error.allowOnboardingOtpRetry
+                }
+            }
+            if (!thrownError) {
+                throw new Error("Activation did not fail with wrong OTP as expected!")
+            }
+        }
         
         if (config.otpForIdentification) {
             console.log("Resending OTP...")
@@ -159,14 +177,14 @@ async function simulateActivation() {
         await activationService.cancel(false)
         console.log("Activation process canceled.")
 
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         // SECOND ACTIVATION PROCESS WITHOUT CANCEL
 
         // start onboarding
         console.log(`Starting second onboarding process with onboarding type: ${processType}...`)
         await activationService.start(getRandomAttributes(), processType)
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         // get onboarding status
         console.log("Getting activation status...")
@@ -188,7 +206,7 @@ async function simulateActivation() {
                 await activationService.activate("my-test-activation", "wrong-otp")
                 console.error("Activation should have failed with wrong OTP but it didn't.")
             } catch (error) {
-                console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`)
+                console.log(`Activation failed as expected with wrong OTP.`)
             }
         } else {
             console.log("OTP for identification is not required, skipping OTP retrieval.")
