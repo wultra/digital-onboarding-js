@@ -8,13 +8,14 @@
  */
 
 import { WDOBaseApi } from './api/WDOBaseApi'
-import { WDOCreateDocumentSubmitFileSide, WDOCreateDocumentSubmitFileType, WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
+import { WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
-import { WDOError } from './WDOError'
+import { WDOError, WDOErrorReason } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
-import { WDODocumentFile, WDODocumentType } from './WDODocumentFile'
+import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType, WDODocumentTypeToSubmitType } from './WDODocumentFile'
 import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from './WDOPowerAuthActivationStatus'
+import { WDODefaultCache } from './WDOCache'
 
 /**
  * Listener of the Verification Service that can listen on Verification Status and PowerAuth Status changes.
@@ -58,11 +59,28 @@ export abstract class WDOBaseVerificationService {
     protected abstract changeAcceptLanguageImpl(language: string): void
     /* @internal */
     protected abstract fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
+    /* @internal */
+    protected abstract getPAInstanceId(): string
 
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
+
     /* @internal */
-    private cachedProcess: WDOVerificationScanProcess | undefined = undefined // TODO: persistence?
+    private cacheKey(): string { return `wdocp_${this.getPAInstanceId()}` }
+
+    /* @internal */
+    private async setCachedProcess(process: WDOVerificationScanProcess | undefined): Promise<void> {
+        await WDODefaultCache.instance.set(this.cacheKey(), process?.dataForCache())
+    }
+
+    /* @internal */
+    private async getCachedProcess(): Promise<WDOVerificationScanProcess | undefined> {
+        const data = await WDODefaultCache.instance.get(this.cacheKey())
+        if (!data) {
+            return undefined
+        }
+        return WDOVerificationScanProcess.fromCachedData(data)
+    }
 
     // PUBLIC API
 
@@ -104,7 +122,7 @@ export abstract class WDOBaseVerificationService {
                 case WDOIdentityVerificationStatus.notInitialized:
                 case WDOIdentityVerificationStatus.accepted:
                     WDOLogger.debug(`Status ${response.identityVerificationStatus} - clearing cache`)
-                    this.cachedProcess = undefined
+                    await this.setCachedProcess(undefined)
                     break
                 default:
                     // no-op
@@ -126,7 +144,7 @@ export abstract class WDOBaseVerificationService {
 
                     const documents = docsResponse.documents
 
-                    const cachedProcess = this.cachedProcess
+                    const cachedProcess = await this.getCachedProcess()
 
                     if (cachedProcess) {
                         
@@ -236,7 +254,7 @@ export abstract class WDOBaseVerificationService {
     async documentsSetSelectedTypes(types: WDODocumentType[]): Promise<WDOVerificationState> {
         WDOLogger.debug(`Submitting selected document types: ${types}`)
         const process = new WDOVerificationScanProcess(types)
-        this.cachedProcess = process
+        await this.setCachedProcess(process)
         return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: process })
     }
 
@@ -257,7 +275,7 @@ export abstract class WDOBaseVerificationService {
 
             return {
                 filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
-                type: WDOCreateDocumentSubmitFileType(f.type),
+                type: WDODocumentTypeToSubmitType(f.type),
                 side: WDOCreateDocumentSubmitFileSide(f.side),
                 originalDocumentId: f.originalDocumentId,
                 data: f.data
@@ -292,7 +310,7 @@ export abstract class WDOBaseVerificationService {
     async restartVerification(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         await this.handleError(this.api.verificationCleanup(pid))
-        this.cachedProcess = undefined
+        await this.setCachedProcess(undefined)
         WDOLogger.info("Verification process restarted.")
         // return new status
         return await this.status()
@@ -305,7 +323,7 @@ export abstract class WDOBaseVerificationService {
     async cancelWholeProcess(): Promise<void> {
         const pid = this.verifyHasActiveProcess()
         await this.handleError(this.api.verificationCleanup(pid))
-        this.cachedProcess = undefined
+        await this.setCachedProcess(undefined)
         WDOLogger.info("Verification process canceled.")
     }
 
@@ -326,7 +344,7 @@ export abstract class WDOBaseVerificationService {
                 return this.processSuccess({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
             } else {
                 WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
-                throw this.processError(new WDOError("OTP verification failed, no remaining attempts or OTP expired"))
+                throw this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
             }
         }
     }
@@ -360,7 +378,7 @@ export abstract class WDOBaseVerificationService {
         const pid = this.lastStatus?.processId
         if (!pid) {
             WDOLogger.error("Process id not available - did you start the verification process and fetched the status?")
-            throw new WDOError("Process id not available - did you start the verification process and fetched the status?")
+            throw new WDOError(WDOErrorReason.processNotInProgress, "Process id not available - did you start the verification process and fetched the status?")
         }
         return pid
     }
@@ -388,7 +406,7 @@ export abstract class WDOBaseVerificationService {
                 if (status.state !== WDOPowerAuthActivationState.ACTIVE) {
                     WDOLogger.error(`PowerAuth status is not active (status${status.state}) - notifying the delegate and returning and error.`)
                     this.listener?.powerAuthActivationStatusChanged(this, status)
-                    return new WDOError("PowerAuth activation is not active anymore")
+                    return new WDOError(WDOErrorReason.powerauthNotActivated, "PowerAuth activation is not active anymore")
                 }
             } catch {
                 // no-op

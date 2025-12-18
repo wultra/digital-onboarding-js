@@ -61,4 +61,9 @@ export class WDOVerificationService extends WDOBaseVerificationService {
     protected override changeAcceptLanguageImpl(language: string): void {
         this.api.networking.acceptLanguage = language
     }
+
+    /* @internal */
+    protected override getPAInstanceId(): string {
+        return this.powerauth.instanceId
+    }
 }

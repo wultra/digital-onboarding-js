@@ -7,8 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocumentSide, WDODocumentType } from "../WDODocumentFile"
-
 /** For request that needs to identify the current process. */
 export interface WDOProcessRequest {
     processId: string
@@ -153,28 +151,6 @@ export interface WDODocumentSubmitFile {
     originalDocumentId?: string
     /** Base64 encoded data image. */
     data: Base64URLString
-}
-
-/** Converts WDODocumentType to DocumentSubmitFileType */
-export function WDOCreateDocumentSubmitFileType(type: WDODocumentType): WDODocumentSubmitFileType {
-    switch (type) {
-        case WDODocumentType.idCard:
-            return WDODocumentSubmitFileType.idCard
-        case WDODocumentType.passport:
-            return WDODocumentSubmitFileType.passport
-        case WDODocumentType.driversLicense:
-            return WDODocumentSubmitFileType.driversLicense
-    }
-}
-
-/** Converts WDODocumentSide to DocumentSubmitFileSide */
-export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
-    switch (side) {
-        case WDODocumentSide.front:
-            return WDODocumentSubmitFileSide.front
-        case WDODocumentSide.back:
-            return WDODocumentSubmitFileSide.back
-    }
 }
 
 /** Status of the documents */

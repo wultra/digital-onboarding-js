@@ -9,7 +9,7 @@
 
 import { WDOBaseApi } from '../../lib-shared/src/api/WDOBaseApi'
 import { WDOEndpoint } from '../../lib-shared/src/api/WDOEndpoints'
-import { WDOError } from '../../lib-shared/src/WDOError'
+import { WDOError, WDOErrorReason } from '../../lib-shared/src/WDOError'
 import { WPNE2EEConfiguration, WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 import "cordova-powerauth-mobile-sdk"
 
@@ -36,12 +36,12 @@ export class WDOApi extends WDOBaseApi {
             if (result.responseObject) {
                 return result.responseObject as TResponse
             } else if (result.responseError) {
-                throw new WDOError(`Server API error: ${result.responseError.code}, ${result.responseError.message}`, result.responseError)
+                throw new WDOError(WDOErrorReason.networkError, `Server API error: ${result.responseError.code}, ${result.responseError.message}`, result.responseError)
             } else if (!endpoint.returnsData) {
                 // for void responses
                 return {} as TResponse
             } else {
-                throw new WDOError(`Failed to retrieve activation data`)
+                throw new WDOError(WDOErrorReason.networkError, `Failed to retrieve server data`)
             }
         })
     }

@@ -4,14 +4,14 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse } from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
-declare var cordova: Cordova
+declare var cordova: any
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
@@ -44,12 +44,12 @@ async function simulateActivation() {
         baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
     })
     
-    const activationService = new WDOActivationService(
+    let activationService = new WDOActivationService(
         powerAuth,
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
 
-    const verificationService = new WDOVerificationService(
+    let verificationService = new WDOVerificationService(
         powerAuth, 
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
@@ -75,7 +75,7 @@ async function simulateActivation() {
 
         // DEFAULT SETUP AND CONFIGURATION
 
-        const processType: string | undefined = "onboarding"
+        const processType: string | undefined = undefined // "onboarding"
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
@@ -128,11 +128,29 @@ async function simulateActivation() {
 
         console.log(`Starting onboarding process (process type: ${processType})...`)
         await activationService.start(getRandomAttributes(), processType)
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         console.log("Getting activation status...")
         const status = await activationService.status()
         console.log(`Activation status after start: ${status}`)
+
+        if (config.otpForIdentification) {
+            console.log("Wrong OTP on purpose to test failure...")
+            let thrownError = false
+            try {
+                await activationService.activate("my-test-activation", "wrong-otp")
+                console.log("Activation should have failed with wrong OTP but it didn't.")
+            } catch (error) {
+                console.log(`Activation failed as expected with wrong OTP.`)
+                if (error instanceof WDOError) {
+                    console.log(`Remaining OTP attempts: ${error.onboardingOtpRemainingAttempts}`)
+                    thrownError = error.allowOnboardingOtpRetry
+                }
+            }
+            if (!thrownError) {
+                throw new Error("Activation did not fail with wrong OTP as expected!")
+            }
+        }
         
         if (config.otpForIdentification) {
             console.log("Resending OTP...")
@@ -142,18 +160,31 @@ async function simulateActivation() {
             console.log("OTP for identification is not required, skipping resend.")
         }
 
+        // now create new activation instance to verify that cached process is loaded correctly
+        console.log("Creating new activation service instance to verify cached process...")
+        activationService = new WDOActivationService(
+            powerAuth, 
+            `${serverCredentials.server}/enrollment-server-onboarding/`
+        )
+
+        const statusAfterChange = await activationService.status()
+        console.log(`Activation status after new service instance: ${statusAfterChange}`)
+        if (statusAfterChange !== status) {
+            throw new Error("Activation status after creating new service instance does not match the previous status!")
+        }
+
         console.log("Cancelling activation...")
         await activationService.cancel(false)
         console.log("Activation process canceled.")
 
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         // SECOND ACTIVATION PROCESS WITHOUT CANCEL
 
         // start onboarding
         console.log(`Starting second onboarding process with onboarding type: ${processType}...`)
         await activationService.start(getRandomAttributes(), processType)
-        console.log(`Activation started:  ${activationService.hasActiveProcess ? "yes" : "no"}`)
+        console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         // get onboarding status
         console.log("Getting activation status...")
@@ -175,7 +206,7 @@ async function simulateActivation() {
                 await activationService.activate("my-test-activation", "wrong-otp")
                 console.error("Activation should have failed with wrong OTP but it didn't.")
             } catch (error) {
-                console.log(`Activation failed as expected with wrong OTP. ${JSON.stringify(error)}`)
+                console.log(`Activation failed as expected with wrong OTP.`)
             }
         } else {
             console.log("OTP for identification is not required, skipping OTP retrieval.")
@@ -253,7 +284,44 @@ async function simulateActivation() {
         guardState(docTypesResult.type, WDOVerificationStateType.scanDocument)
         console.log("Selected document types set.")
         if (docTypesResult.type == WDOVerificationStateType.scanDocument) {
+            
             console.log(`Documents to scan: ${JSON.stringify(docTypesResult.process.documents)}`)
+
+            // verify that all required document types are in the process
+            console.log("Verifying that all required document types are in the scanning process...")
+            const process = docTypesResult.process
+            documentTypesToScan.forEach(docType => {
+                if (!process.documents.find(d => d.type === docType.type)) {
+                    throw new Error(`Document type ${docType.type} not found in scanning process!`)
+                }
+            })
+        }
+
+        // now create new verification instance to verify that cached process is loaded correctly
+        console.log("Creating new verification service instance to verify cached scanning process...")
+        verificationService = new WDOVerificationService(
+            powerAuth, 
+            `${serverCredentials.server}/enrollment-server-onboarding/`
+        )
+
+        // get verification status again
+        console.log("Retrieving verification status from new service instance...")
+        const statusWithCachedProcess = await verificationService.status()
+        guardState(statusWithCachedProcess.type, WDOVerificationStateType.scanDocument)
+        console.log("Verification status with cached process retrieved.")
+        
+        if (statusWithCachedProcess.type == WDOVerificationStateType.scanDocument) {
+            
+            console.log(`Documents to scan: ${JSON.stringify(statusWithCachedProcess.process.documents)}`)
+
+            // verify that all required document types are in the process
+            console.log("Verifying that all required document types are in the scanning process...")
+            const process = statusWithCachedProcess.process
+            documentTypesToScan.forEach(docType => {
+                if (!process.documents.find(d => d.type === docType.type)) {
+                    throw new Error(`Document type ${docType.type} not found in scanning process!`)
+                }
+            })
         }
 
         // retrieve license key for BlinkID
@@ -392,7 +460,7 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
     
     let repeatedStatus = await verificationService.status()
 
-    console.log(`Initial status verification: ${repeatedStatus.type}`)
+    console.log(`Waiting until processing ends (if in progress): ${repeatedStatus.type}`)
 
     while(repeatedStatus.type === WDOVerificationStateType.processing) {
         console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)
