@@ -65,12 +65,15 @@ export abstract class WDOBaseVerificationService {
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
 
+    /* @internal */
     private cacheKey(): string { return `wdocp_${this.getPAInstanceId()}` }
 
+    /* @internal */
     private async setCachedProcess(process: WDOVerificationScanProcess | undefined): Promise<void> {
         await WDODefaultCache.instance.set(this.cacheKey(), process?.dataForCache())
     }
 
+    /* @internal */
     private async getCachedProcess(): Promise<WDOVerificationScanProcess | undefined> {
         const data = await WDODefaultCache.instance.get(this.cacheKey())
         if (!data) {

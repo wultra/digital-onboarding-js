@@ -193,9 +193,6 @@ export abstract class WDOBaseActivationService {
         const pid = await this.verifyHasActiveProcess()
         const code = (await this.getCachedProcessData())?.activationCode
         let result: WDOPowerAuthActivationResult
-        // TODO: catch possible errors and wrap then into WDOError with proper reason
-        // also, check if "remainingAttempts" are available in case of OTP failure
-        // and provide `onboardingOtpRemainingAttempts` and `allowOnboardingOtpRetry`
         try {
             if (code) {
                 WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
