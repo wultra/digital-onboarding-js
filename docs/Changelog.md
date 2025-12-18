@@ -12,6 +12,12 @@
    - `hasActiveProcess()` now returns Promise<boolean> instead of boolean. 
    - `clear()` is now asynchronous and returns Promise<void>.
 - `WDOActivaitonService` changes:
+   - removed `consent` state
+   - replaced `consentApprove` with `start` method with a `consent` argument.
+   - `consentGet` now returns Promise<string> instead of the verification state.
+   - `documentsInitSDK` method now returns strongly typed response.
+   - `presenceCheckInit` method now returns strongly typed response.
+   - `intro` state now contains `consentRequired: boolean` property in the corresponding union type.
 
 ## 1.0.0 (Nov, 2025)
 

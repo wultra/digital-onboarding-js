@@ -148,9 +148,9 @@ class MyUserService {
             // the PIN keyboard to finish the PowerAuthSDK initialization.
             // For more information, follow the PowerAuthSDK documentation.
         } catch (error) {
-            if (allowOnboardingOtpRetry(error)) {
+            if (error instanceof WDOError && error.allowOnboardingOtpRetry) {
                 // User entered the wrong OTP, prompt for a new one.
-                // Remaining OTP attempts count: onboardingOtpRemainingAttempts(error)
+                // Remaining OTP attempts count: error.onboardingOtpRemainingAttempts
             } else {
                 // show error UI
             }
