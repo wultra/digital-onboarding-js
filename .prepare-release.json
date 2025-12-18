@@ -24,6 +24,12 @@
             "path": "packages/lib-cordova/plugin.xml",
             "type": "version_replace",
             "match": "id=\"cordova-digital-onboarding\" version=\"%VERSION%\""
+        },
+        {
+            "description": "Changelog",
+            "path": "docs/Changelog.md",
+            "type": "version_verify",
+            "match": "## %VERSION%"
         }
     ]
 }
