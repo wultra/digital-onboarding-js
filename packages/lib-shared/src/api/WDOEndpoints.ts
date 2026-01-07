@@ -126,4 +126,11 @@ export class WDOVerificationEndpoints {
         e2eeScope: "ACTIVATION",
         returnsData: true
     }
+
+    static readonly finishActivation: WDOEndpoint = {
+        path: "/api/identity/activation",
+        uriId: "/api/identity/activation",
+        e2eeScope: "ACTIVATION",
+        returnsData: true
+    }
 }

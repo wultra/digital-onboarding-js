@@ -25,13 +25,20 @@ export class WDOApi extends WDOBaseApi {
         this.powerauth = powerauth
     }
 
-    protected override callApi<TRequest, TResponse>(requestObject: TRequest, endpoint: WDOEndpoint): Promise<TResponse> {
+    protected override callApi<TRequest, TResponse>(requestObject: TRequest, endpoint: WDOEndpoint, authObject?: any): Promise<TResponse> {
+
+        if (authObject && !(authObject instanceof PowerAuthAuthentication)) {
+            throw new WDOError(WDOErrorReason.invalidParameter, "The authObject parameter must be of type PowerAuthAuthentication.")
+        }
+
+        // set authentication to given authObject or to possession if endpoint is "signed"
+        const authentication = authObject || (endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined)
 
         return this.networking.call(
             // construct 
             this.constructEndpoint(endpoint),
             { requestObject: requestObject },
-            endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined // if signed, use possession auth
+            authentication
         ).then(result => {
             if (result.responseObject) {
                 return result.responseObject as TResponse

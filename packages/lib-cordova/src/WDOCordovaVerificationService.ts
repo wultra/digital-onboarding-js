@@ -7,8 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WDOError, WDOErrorReason } from '../../lib-shared/src/WDOError'
 import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from '../../lib-shared/src/WDOPowerAuthActivationStatus'
 import { WDOBaseVerificationService } from '../../lib-shared/src/WDOVerificationService'
+import { WDOVerificationState } from '../../lib-shared/src/WDOVerificationState'
 import { WDOApi } from './WDOCordovaApi'
 import "cordova-powerauth-mobile-sdk"
 
@@ -43,6 +45,38 @@ export class WDOVerificationService extends WDOBaseVerificationService {
         super()
         this.api = new WDOApi(powerauth, baseUrl)
         this.powerauth = powerauth
+    }
+
+    async finishActivation(password: PowerAuthPassword, newPowerAuthInstance: PowerAuth, newActivationName: string, userIdentification?: any): Promise<WDOVerificationState> {
+
+        if ((password as any).destroyOnUse) { // TODO: ok? maybe make this property public in PowerAuthPassword?
+            throw new WDOError(WDOErrorReason.invalidParameter, "The provided PowerAuthPassword is configured to be destroyed on use, which is not supported in finishActivation.")
+        }
+
+        if (await newPowerAuthInstance.canStartActivation() == false) {
+            throw new WDOError(WDOErrorReason.powerauthAlreadyActivated, "The provided PowerAuth instance is already activated.")
+        }
+
+        return await this.finishActivationInternal(
+            PowerAuthAuthentication.password(password),
+            userIdentification,
+            async (activationCode: string) => {
+                try {
+                    const activation = PowerAuthActivation.createWithActivationCode(activationCode, newActivationName)
+                    await newPowerAuthInstance.createActivation(activation)
+                    await newPowerAuthInstance.persistActivation(PowerAuthAuthentication.persistWithPassword(password))
+                } catch (e) {
+                    // In case of failure, ensure no partial activation remains
+                    if (await newPowerAuthInstance.canStartActivation() == false) {
+                        await newPowerAuthInstance.removeActivationLocal()
+                    }
+                    
+                    throw e // rethrow
+                } finally {
+                    await password.clear() // destroy the password after use
+                }
+            }
+        )
     }
 
     /* @internal */

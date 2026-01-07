@@ -7,7 +7,7 @@ import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType
     WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
-import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
+import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
@@ -43,6 +43,12 @@ async function simulateActivation() {
         configuration: serverCredentials.paConfig,
         baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
     })
+
+    const powerAuth2 = new PowerAuth(generateRandomNumericString())
+    powerAuth2.configure({
+        configuration: serverCredentials.paConfig,
+        baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
+    })
     
     let activationService = new WDOActivationService(
         powerAuth,
@@ -75,7 +81,7 @@ async function simulateActivation() {
 
         // DEFAULT SETUP AND CONFIGURATION
 
-        const processType: string | undefined = undefined // "onboarding"
+        const processType: string | undefined = "onboarding" // undefined
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
@@ -336,12 +342,15 @@ async function simulateActivation() {
         sessionSettings.scanningSettings.returnInputImages = true
         sessionSettings.scanningSettings.croppedImageSettings = new CroppedImageSettings()
         sessionSettings.scanningSettings.croppedImageSettings.returnDocumentImage = true
+        const uxSettings = new BlinkIdScanningUxSettings()
+        uxSettings.showHelpButton = false
+        uxSettings.showOnboardingDialog = false
 
         let blinkIDUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
         
         for (const doc of documentTypesToScan) {
             console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
-            const result = await BlinkID.performScan(sdkSettings, sessionSettings)
+            const result = await BlinkID.performScan(sdkSettings, sessionSettings, uxSettings)
         
             const image1 = result.firstInputImage
             if (!image1) {
@@ -420,11 +429,45 @@ async function simulateActivation() {
             console.log("OTP for identity verification is not required, skipping OTP retrieval and submission.")
         }
 
-        // wait for final status
-        const finalStatus = await waitForStatusChange(verificationService)
-        console.log(`Verification status after presence check processing: ${finalStatus.type}`)
-        guardState(finalStatus.type, WDOVerificationStateType.success)
+        // wait for another status
+        let anotherStatus = await waitForStatusChange(verificationService)
+        console.log(`Verification status after presence check/otp processing: ${anotherStatus.type}`)
 
+        // lets check if we need to finish activation
+        if (anotherStatus.type === WDOVerificationStateType.finishActivation) {
+
+            // verify that PowerAuth 2 instance has no activation yet
+            if (await powerAuth2.hasValidActivation()) {
+                throw new Error("PowerAuth2 instance already has an active activation before finishActivation!")
+            }
+
+            // finish activation
+            console.log("Finishing activation...")
+            anotherStatus = await verificationService.finishActivation(
+                await PowerAuthPassword.fromString(pin, false), // destroyOnUse: false
+                powerAuth2,
+                "onboarding-activation"
+            )
+            // on success, the state should be processing
+            guardState(anotherStatus.type, WDOVerificationStateType.processing)
+            console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
+
+            // powerauth now should have active activation
+            if (await powerAuth2.hasValidActivation() == false) {
+                throw new Error("PowerAuth2 instance does not have an active activation after finishActivation!")
+            }
+
+            // verify that activation is active
+            const pa2Status = await powerAuth2.fetchActivationStatus()
+            if (pa2Status.state !== PowerAuthActivationState.ACTIVE) {
+                throw new Error(`PowerAuth2 instance activation is not active after finishActivation: ${pa2Status.state}`)
+            }
+
+            anotherStatus = await waitForStatusChange(verificationService)
+            console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
+        }
+
+        guardState(anotherStatus.type, WDOVerificationStateType.success)
         console.log("Onboarding process completed successfully.")
 
         console.log("Fetching PowerAuth SDK activation status...")

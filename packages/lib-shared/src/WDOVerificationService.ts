@@ -53,6 +53,8 @@ export enum WDOConsentResponse {
  */
 export abstract class WDOBaseVerificationService {
 
+    // -- ABSTRACT PROPERTIES AND METHODS THAT NEED TO BE IMPLEMENTED IN PLATFORM-SPECIFIC SUBCLASSES --
+
     /* @internal */
     protected abstract api: WDOBaseApi
     /* @internal */
@@ -61,6 +63,8 @@ export abstract class WDOBaseVerificationService {
     protected abstract fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
     /* @internal */
     protected abstract getPAInstanceId(): string
+
+    // --
 
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
@@ -185,6 +189,9 @@ export abstract class WDOBaseVerificationService {
                     return this.processSuccess({ type: WDOVerificationStateType.endState, reason: WDOEndStateReason.rejected })
                 case WDONextStep.success:
                     return this.processSuccess({ type: WDOVerificationStateType.success })
+                case WDONextStep.finishActivation:
+                    return this.processSuccess({ type: WDOVerificationStateType.finishActivation })
+
             }
 
         } catch (error) {
@@ -347,6 +354,14 @@ export abstract class WDOBaseVerificationService {
                 throw this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
             }
         }
+    }
+
+    /* @internal */
+    protected async finishActivationInternal(authObject: any, userIdentification: any | undefined, activateNewInstance: (activationCode: string) => Promise<void>): Promise<WDOVerificationState> {
+        const pid = this.verifyHasActiveProcess()
+        const response = await this.handleError(this.api.verificationFinishActivation(authObject, pid, userIdentification))
+        await activateNewInstance(response.activationCode)
+        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
     }
 
     /**
@@ -573,6 +588,9 @@ class WDOVerificationStatus {
                 default:
                     break
             }
+        } else if (phase === WDOIdentityVerificationPhase.activationFinish) {
+            // TODO: handle status?
+            nextStep = WDONextStep.finishActivation
         }
 
         if (nextStep == undefined) {
@@ -600,6 +618,7 @@ enum WDONextStep {
     statusCheck = "statusCheck",
     presenceCheck = "presenceCheck",
     otp = "otp",
+    finishActivation = "finishActivation",
     failed = "failed",
     rejected = "rejected",
     success = "success"

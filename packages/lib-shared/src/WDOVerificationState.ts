@@ -33,6 +33,7 @@ export type WDOVerificationState =
     | WDOProcessingState
     | WDOPresenceCheckState
     | WDOOtpState
+    | WDOFinishActivation
     | WDOFailedState
     | WDOEndStateState
     | WDOSuccessState
@@ -101,6 +102,15 @@ export interface WDOOtpState {
     type: WDOVerificationStateType.otp
     /** Number of remaining attempts to enter the correct OTP */
     remainingAttempts?: number
+}
+
+/**
+ * Show "finish activation" with PIN prompt screen.
+ * 
+ * The next step should be calling the `finishActivation` with user entered PIN.
+ */
+export interface WDOFinishActivation {
+    type: WDOVerificationStateType.finishActivation
 }
 
 /**
@@ -173,6 +183,12 @@ export enum WDOVerificationStateType {
      * The OTP is usually SMS or email.
      */
     otp = "otp",
+    /**
+     * Show "finish activation" with PIN prompt screen.
+     * 
+     * The next step should be calling the `finishActivation` with user entered PIN.
+     */
+    finishActivation = "finishActivation",
     /**
      * Verification failed and can be restarted
      * 

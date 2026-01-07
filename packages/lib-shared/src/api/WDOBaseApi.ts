@@ -7,14 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocumentStatusResponse, WDODocumentSubmitFile, WDOProcessResponse, WDOVerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse } from './WDONetworkingObjects'
+import { WDODocumentStatusResponse, WDODocumentSubmitFile, WDOProcessResponse, WDOVerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse, WDOFinishActivationResponse } from './WDONetworkingObjects'
 import { WDOEndpoint, WDOActivationEndpoints, WDOVerificationEndpoints } from './WDOEndpoints'
 
 export abstract class WDOBaseApi {
 
     // Abstract API call method to be implemented in subclasses
 
-    protected abstract callApi<T>(requestObject: any, endpoint: WDOEndpoint): Promise<T>
+    protected abstract callApi<T>(requestObject: any, endpoint: WDOEndpoint, authObject?: any): Promise<T>
 
     abstract canStartActivation(): Promise<boolean>
 
@@ -118,5 +118,10 @@ export abstract class WDOBaseApi {
     verifyOTP(processId: string, otp: string): Promise<WDOVerifyOTPResponse> {
         const requestObject = { processId: processId, otpCode: otp }
         return this.callApi(requestObject, WDOVerificationEndpoints.verifyOTP)
+    }
+    
+    verificationFinishActivation(authObject: any, processId: string, userIdentification?: any): Promise<WDOFinishActivationResponse> {
+        const requestObject = { processId: processId, identification: userIdentification }
+        return this.callApi(requestObject, WDOVerificationEndpoints.finishActivation, authObject)
     }
 }

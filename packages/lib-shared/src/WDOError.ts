@@ -75,10 +75,16 @@ export enum WDOErrorReason {
     /** The PowerAuth instance is already activated when trying to activate it again */
     powerauthAlreadyActivated = "POWERAUTH_ALREADY_ACTIVATED",
 
+    /** The PowerAuth instance is not configured properly */
+    powerAuthNotConfigured = "POWERAUTH_NOT_CONFIGURED",
+
     /** The PowerAuth instance is not activated when trying to use it */
     powerauthNotActivated = "POWERAUTH_NOT_ACTIVATED",
 
     /** OTP verification failed */
-    otpFailed = "OTP_FAILED"
+    otpFailed = "OTP_FAILED",
+
+    /** Invalid parameter */
+    invalidParameter = "INVALID_PARAMETER",
     
 }

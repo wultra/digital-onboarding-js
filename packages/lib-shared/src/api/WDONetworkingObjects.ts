@@ -82,7 +82,9 @@ export enum WDOIdentityVerificationPhase {
     /** OTP verification needed */
     otp = "OTP_VERIFICATION",
     /** Completed */
-    completed = "COMPLETED"
+    completed = "COMPLETED",
+    /** Exchanging the temporary activation for the permanent one. */
+    activationFinish = "ACTIVATION_FINISH"
 }
 
 /** Types of available documents */ 
@@ -200,4 +202,10 @@ export interface WDOConfigurationResponse {
         /** List of documents */
         items: Array<WDOConfigurationDocument>
     }
+}
+
+/** Response of the finish activation call */
+export interface WDOFinishActivationResponse {
+    /** Activation code to be used for PowerAuth activation */
+    activationCode: string
 }
