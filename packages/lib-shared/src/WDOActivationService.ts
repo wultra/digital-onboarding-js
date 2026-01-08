@@ -160,7 +160,7 @@ export abstract class WDOBaseActivationService {
      * 
      * This is intended to be displayed for the user to use in case of the OTP is not received.
      * For example, when the user does not receive SMS after some time, there should be a button to "send again".
-     * There is a server-side rate limit applied to this operation to prevent abuse, it's a good practice to disable the button before enabled.
+     * There is a server-side rate limit applied to this operation to prevent abuse; it is good practice to disable the button temporarily while the OTP is being sent.
      */
     async resendOTP(): Promise<void> {
         WDOLogger.debug("Activation: resending OTP")
