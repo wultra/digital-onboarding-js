@@ -178,9 +178,9 @@ export interface WDOVerifyOTPResponse {
 /** Configuration for a document */
 export interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string,
+    type: string
     /** Is the document mandatory */
-    mandatory: boolean,
+    mandatory: boolean
     /** Number of sides the document has */
     sideCount: number
 }
@@ -188,15 +188,15 @@ export interface WDOConfigurationDocument {
 /** Configuration for the onboarding process */
 export interface WDOConfigurationResponse {
     /** Is the onboarding process enabled */
-    enabled: boolean,
+    enabled: boolean
     /** Is OTP required for the first part - identification/activation. */
-    otpForIdentification: boolean,
+    otpForIdentification: boolean
     /** Is OTP required for the second part - identity verification. */
-    otpForIdentityVerification: boolean,
+    otpForIdentityVerification: boolean
     /** Documents required for identity verification. */
     documents: {
         /** Number of required documents */
-        requiredDocumentsCount: number,
+        requiredDocumentsCount: number
         /** List of documents */
         items: Array<WDOConfigurationDocument>
     }

@@ -13,18 +13,21 @@ PowerAuth enrolled in such a way will need [further user verification](Verifying
 To create an instance you will need a `PowerAuth` instance that is __ready to be activated__.
 
 <!-- begin box info -->
-[Documentation for `PowerAuth Mobile JS SDK`](https://developers.wultra.com/components/react-native-powerauth-mobile-sdk/). 
+[Documentation for the `PowerAuth Mobile JS SDK`](https://developers.wultra.com/components/react-native-powerauth-mobile-sdk/). 
 <!-- end -->
 
 
 Example with `PowerAuth` instance:
 
 ```typescript
+// create and configure PowerAuth instance
 const powerAuth = new PowerAuth("my-pa-instance")
-powerAuth.configure({
+await powerAuth.configure({
     configuration: "ARCB+...jg==", // base64 PowerAuth configuration
     baseEndpointUrl: "https://my-server-deployment.com/enrollment-server/"
 })
+
+// create activation service
 const activationService = new WDOActivationService(
     powerAuth,
     "https://my-server-deployment.com/enrollment-server-onboarding/"
@@ -36,13 +39,13 @@ const activationService = new WDOActivationService(
 To figure out if the activation process was already started and what is the status, you can use `hasActiveProcess`.
 
 ```typescript
-/**
- * If the activation process is in progress.
- *
+/** 
+ * If the activation process is in progress. 
+ * 
  * Note that even if this property is `true` it can be already discontinued on the server.
- * Calling `status()` for example after the app is launched in this case is recommended.
+ * Calling `status()` after the app is launched is recommended.
  */
-get hasActiveProcess(): boolean;
+hasActiveProcess(): Promise<boolean>
 ```
 
 If the process was started, you can verify its status by calling the `status` function. You can show an appropriate UI to the user based on this status.
@@ -53,7 +56,7 @@ If the process was started, you can verify its status by calling the `status` fu
  *
  * @return Promise resolved with onboarding status.
  */
-status(): Promise<WDOOnboardingStatus>;
+status(): Promise<WDOOnboardingStatus>
 ```
 
 `WDOOnboardingStatus` possible values.
@@ -75,30 +78,29 @@ declare enum WDOOnboardingStatus {
 
 To start the activation process, you can use any credentials that are sufficient to you that can identify the user.
 
-Often, such data are user email, phone number, or userID. The definition of such data is up to your server implementation and requirements.
+Often, such data are user email, phone number, or user ID. The definition of such data is up to your server implementation and requirements.
 
 To start the activation, use the `start` function.
 
 ```typescript
 /**
-     * Start onboarding activation with user credentials.
-     *
-     * For example, when you require email, your object would look like this:
-     * ```
-     * {
-     *   email: "<user_email>"
-     * }
-     * ```
-     * @param credentials Object with credentials. Which credentials are needed should be provided by a system/backend provider.
-     * @param processType The process type identification. If not specified, the default process type will be used.
-     */
-    start(credentials: any, processType?: string): Promise<void>;
+ * Start onboarding activation with user credentials.
+ *
+ * For example, when you require email, your object would look like this:
+ * ```
+ * {
+ *   email: "<user_email>"
+ * }
+ * ```
+ * @param credentials Object with credentials. Which credentials are needed should be provided by a system/backend provider.
+ * @param processType The process type identification. If not specified, the default process type will be used.
+ */
+start(credentials: any, processType?: string): Promise<void>
 ```
 
 ### Example
 
 ```typescript
-
 class MyUserService {
     // prepared service
     private activationService: WDOActivationService
@@ -106,9 +108,9 @@ class MyUserService {
     async startActivation(id: string) {
         const data = { userId: id}
         try {
-            await this.activationService.start(data)
-            // success, continue with `activate()`
-            // at this moment, the `hasActiveProcess` starts return true
+            await this.activationService.start(data, "onboarding")
+            // success, continue with the flow
+            // at this moment, the `hasActiveProcess` starts returning true
         } catch (error) {
             // show error to the user
         }
@@ -118,7 +120,7 @@ class MyUserService {
 
 ## Creating the activation
 
-To activate the user (activating the `PowerAuth` instance), data retrieved from the process start can be used with optional `OTP`. The OTP is usually sent via SMS, email, or other channel. To decide if the OTP is needed, you can use the [Configuration API](Process-Configuration.md) or have it hardcoded.
+To activate the user (activating the `PowerAuth` instance), data retrieved from the process start can be used with optional `OTP`. The OTP is usually sent via SMS, email, or other channel. To decide if the OTP is needed, you can use the [Configuration API](Process-Configuration.md) or have it hard-coded.
 
 Use the `activate` function to create the activation.
 
@@ -130,7 +132,7 @@ Use the `activate` function to create the activation.
  * @param otp OTP code received by the user (via SMS or email). Optional when not required.
  * @return Promise resolved with activation result.
  */
-activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult>;
+activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult>
 ```
 
 Example implementation:
@@ -169,14 +171,14 @@ To cancel the process, just call the `cancel` function.
  *
  * @param forceCancel When true, the process will be canceled in the SDK even when fails on backend. `true` by default.
  */
-cancel(forceCancel?: boolean): Promise<void>;
+cancel(forceCancel?: boolean): Promise<void>
 ```
 
 ## OTP resend
 
 In some cases, you need to resent the OTP:  
- - OTP was not received by the user (for example when the email ends in the spam folder).  
- - OTP expired. 
+ - OTP was not received by the user (for example when the email ends in the spam folder) 
+ - OTP expired 
 
  For such cases, use `resendOTP` function.
  
@@ -186,9 +188,11 @@ In some cases, you need to resent the OTP:
 *
 * This is intended to be displayed for the user to use in case of the OTP is not received.
 * For example, when the user does not receive SMS after some time, there should be a button to "send again".
+* There is a server-side rate limit applied to this operation to prevent abuse, it's a good practice to disable the button before enabled.
 */
-resendOTP(): Promise<void>;
+resendOTP(): Promise<void>
  ```
 
 ## Read next
-- [Verifying User With Document Scan And Genuine Presence Check](Verifying-User.md)
+
+- [Verifying the User](Verifying-User.md)

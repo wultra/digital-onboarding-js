@@ -186,7 +186,6 @@ export enum WDOVerificationStateType {
      * The next step should be calling the `PowerAuth.removeActivationLocal()` and starting activation from scratch.
      */
     endState = "endState",
-
     /**
      * Verification was successfully ended. Continue into your app flow.
      */

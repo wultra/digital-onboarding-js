@@ -1,14 +1,16 @@
 # Verifying user
 
-If your PowerAuthSDK instance was activated with the `WDOActivationService`, it will be in the state that needs additional verification. Without such verification, it won't be able to properly sign requests.
+If your `PowerAuth` instance was activated via the `WDOActivationService`, it will be in the state that needs additional verification. Without such verification, it won't be able to properly sign requests.
 
-Additional verification means that the user will need to scan his face and documents like ID and/or passport.
+Additional verification requires the user to scan their face and provide documents such as an ID card or passport.
 
 ## When is the verification needed?
 
 Verification is needed if the `activationFlags` in the `PowerAuthActivationStatus` contains `VERIFICATION_PENDING` or `VERIFICATION_IN_PROGRESS` value.
 
+<!-- begin box info -->
 To simplify this check, you can use the `WDOVerificationService.isVerificationRequired` method that returns a boolean indicating whether verification is required.
+<!-- end -->
 
 Example:
 
@@ -42,65 +44,71 @@ The final flow (which screens come after another) is controlled by the backend.
 - The screen that should be displayed is driven by the state on the server "session".   
 - At the beginning of the verification process, you will call the status which will tell you what to display to the user and which function to call next.
 - Each API call returns a result and a next screen to display.
-- This repeats until the process is finished or an "endstate state" is presented which terminates the process.
+- This repeats until the process is finished or an "end state" is presented which terminates the process.
 
 ## Possible state values
 
-State is defined by the `WDOVerificationStateType` enum with the following possibilities:
+State is defined by the `WDOVerificationStateType` with the following possibilities:
 
 ```typescript
 /** Types of the verification state */
-declare enum WDOVerificationStateType {
-    /**
-     * Show the verification introduction screen where the user can start the activation.
-     *
-     * The next step should be calling the `consentGet()`.
+enum WDOVerificationStateType {
+    /** 
+     * Show the verification introduction screen where the user can start the activation. 
+     * 
+     * The next step should be calling the `start()`.
      */
     intro = "intro",
     /**
      * Show document selection to the user. Which documents are available and how many
      * can the user select is up to your backend configuration.
-     *
+     * 
      * The next step should be calling the `documentsSetSelectedTypes`.
      */
     documentsToScanSelect = "documentsToScanSelect",
     /**
      * User should scan documents - display UI for the user to scan all necessary documents.
-     *
+     * 
      * The next step should be calling the `documentsSubmit`.
      */
     scanDocument = "scanDocument",
-    /**
+    /** 
      * The system is processing data - show loading with text hint from provided `WDOStatusCheckReason`.
-     *
+     * 
      * The next step should be calling the `status`.
      */
     processing = "processing",
-    /**
+    /** 
      * The user should be presented with a presence check.
      * Presence check is handled by third-party SDK based on the project setup.
-     *
+     * 
      * The next step should be calling the `presenceCheckInit` to start the check and `presenceCheckSubmit` to
      * mark it finished.  Note that these methods won't change the status and it's up to the app to handle the process of the presence check.
      */
     presenceCheck = "presenceCheck",
     /**
      * Show enter OTP screen with resend button.
-     *
+     * 
      * The next step should be calling the `verifyOTP` with user-entered OTP.
      * The OTP is usually SMS or email.
      */
     otp = "otp",
     /**
+     * Show "finish activation" with PIN prompt screen.
+     * 
+     * The next step should be calling the `finishActivation` with user entered PIN.
+     */
+    finishActivation = "finishActivation",
+    /**
      * Verification failed and can be restarted
-     *
+     * 
      * The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
      * the user's decision if he wants to try it again or cancel the process.
      */
     failed = "failed",
     /**
      * Verification is canceled and the user needs to start again with a new PowerAuth activation.
-     *
+     * 
      * The next step should be calling the `PowerAuth.removeActivationLocal()` and starting activation from scratch.
      */
     endState = "endState",
@@ -123,6 +131,7 @@ export type WDOVerificationState =
     | WDOProcessingState
     | WDOPresenceCheckState
     | WDOOtpState
+    | WDOFinishActivation
     | WDOFailedState
     | WDOEndStateState
     | WDOSuccessState
@@ -194,6 +203,15 @@ export interface WDOOtpState {
 }
 
 /**
+ * Show "finish activation" with PIN prompt screen.
+ * 
+ * The next step should be calling the `finishActivation` with user entered PIN.
+ */
+export interface WDOFinishActivation {
+    type: WDOVerificationStateType.finishActivation
+}
+
+/**
  * Verification failed and can be restarted
  * 
  * The next step should be calling the `restartVerification` or `cancelWholeProcess` based on
@@ -233,11 +251,14 @@ To create an instance you will need a `PowerAuth` instance that is __already act
 
 Example:
 ```typescript
+// create and configure PowerAuth instance
 const powerAuth = new PowerAuth("my-pa-instance")
-powerAuth.configure({
+await powerAuth.configure({
     configuration: "ARCB+...jg==", // base64 PowerAuth configuration
     baseEndpointUrl: "https://my-server-deployment.com/enrollment-server/"
 })
+
+// create activation service
 const verification = new WDOVerificationService(
     powerAuth,
     "https://my-server-deployment.com/enrollment-server-onboarding/"
@@ -246,11 +267,11 @@ const verification = new WDOVerificationService(
 
 ## Getting the verification status
 
-When entering the verification flow for the first time (for example fresh app start), you need to retrieve the state of the verification.
+When starting the verification flow for the first time (such as after a fresh app launch), you should retrieve the current verification state.
 
-The same needs to be done after some operation fails and it's not sure what is the next step in the verification process.
+You should also retrieve the state after any operation fails, or whenever you are unsure about the next step in the verification process.
 
-Most verification functions return the result and also the state for your convenience of "what next".
+Most verification functions return both the result and the updated state, making it easier to determine what action to take next.
 
 Getting the state directly:
 
@@ -261,10 +282,6 @@ try {
     // handle `WDOVerificationState` state and navigate to the expected screen
     if (vfStatus.type === WDOVerificationStateType.intro) {
         // display intro screen
-        const consentRequired = vfStatus.consentRequired // accessible based on union type 'intro'
-        // show consent info if needed
-        verification.start(WDOConsentResponse.approved) // example of starting the process
-
     } else if (vfStatus.type === WDOVerificationStateType.documentsToScanSelect) {
         // display document selector
     }
@@ -309,13 +326,14 @@ try {
 
 ## Set document types to scan
 
-After the user approves the consent, present a document selector for documents which will be scanned. The number and types of documents (or other rules like 1 type required) are completely dependent on your backend system integration. You can retrieve the list of available document types from the [configuration service](Process-Configuration.md).
+After the user approves the consent, present a document selector for documents which will be scanned. The number and types of documents (or other rules like 1 type required) are completely dependent on your backend system integration. You can retrieve the list of available document types from the [configuration service](Process-Configuration.md) or have it hard-coded.
 
 For example, your system might require a national ID and one additional document like a driver's license, passport, or any other government-issued personal document.
 
 ```typescript
 const verification: WDOVerificationService // configured instance
 try {
+    // assuming user selected ID card and driver's license
     const docTypesResult = await verification.documentsSetSelectedTypes([
         WDODocumentType.idCard,
         WDODocumentType.driversLicense
@@ -338,7 +356,7 @@ This step does not move the state of the process but is a "stand-alone" API call
 
 Since the document scanning itself is not provided by this library but by a 3rd party library, some of them need a server-side initialization.
 
-If your chosen scanning SDK requires such a step, use this function to retrieve necessary data from the server.
+If your chosen "document scan SDK" requires such a step, use this function to retrieve necessary data from the server.
 
 Example:
 
@@ -367,7 +385,7 @@ for your implementation.
 When a document is scanned (both sides when required), it needs to be uploaded to the server.
 
 <!-- begin box warning -->
-__Images of the document should not be bigger than 1MB. Files that are too big will take longer time to upload and process on the server.__
+__Images of the document should not be bigger than hundreds of kilobytes. Files that are too big will take longer time to upload and process on the server.__
 <!-- end -->
 
 To upload a document, use `documentsSubmit` function. Each side of a document is a single `WDODocumentFile` instance.
@@ -381,8 +399,8 @@ const passportToUpload = WDODocumentFile(
     "BASE64_ENCODED_IMAGE_DATA", // raw image data from the document scanning library/photo camera
     WDODocumentType.passport,
     WDODocumentSide.front, // passport has only front side
-    undefined, // use only when re-uploading the file (for example when first upload was rejected because of a blur)
-    undefined // optional, use when provided by the document scanning library
+    undefined, // original id, optional (use only when re-uploading the file - for example when first upload was rejected because of a blur)
+    undefined // signature, optional (use when provided by the document scanning library)
 )
 try {
     const result = await verification.documentsSubmit([passportToUpload])
@@ -469,6 +487,33 @@ const verification: WDOVerificationService // configured instance
 try {
     const otpStatus = await verificationService.verifyOTP("123456")
     // React to a new state returned in the result
+} catch (error) {
+    // handle error
+}
+```
+
+## Finalizing the verification (optional)
+
+When the state `finishActivation` is received, prompt the user for a PIN code. 
+
+This PIN code is then used to activate a new `PowerAuth` object that will be used for signing requests.
+
+Once the new `PowerAuth` instance is activated, the verification process is finished, and the user can proceed to the main app flow *with the new `PowerAuth` instance*.
+
+<!-- begin box info -->
+The `PowerAuthPassword` passed to the `finishActivation` needs to be reusable (`destroyOnUse` set to false - `new PowerAuthPassword(false)`).
+<!-- end -->
+
+Example:
+
+```typescript
+const verification: WDOVerificationService // configured instance
+const newPaInstance: PowerAuth // new PowerAuth instance to be activated and then used in the app
+try {
+    const auth = await PowerAuthPassword.fromString("user-password", false) // reusable password
+    const finishResult = await verification.finishActivation(auth, newPaInstance, "my--newactivation-name")
+    // when here, the newPaInstance is activated and ready to use (to sign requests and so on)
+    // you can still check the status on the verification object to get the `success` state, but it's not necessary
 } catch (error) {
     // handle error
 }

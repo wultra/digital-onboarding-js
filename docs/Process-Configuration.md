@@ -9,18 +9,20 @@ To retrieve the configuration, create an instance of `WDOConfigurationService` a
 Example:
 
 ```typescript
-
+// create and configure PowerAuth instance
 const powerAuth = new PowerAuth("my-pa-instance")
-powerAuth.configure({
+await powerAuth.configure({
     configuration: "ARCB+...jg==", // base64 PowerAuth configuration
     baseEndpointUrl: "https://my-server-deployment.com/enrollment-server/"
 })
+
+// create configuration service
 const configurationService = new WDOConfigurationService(
     powerAuth,
     "https://my-server-deployment.com/enrollment-server-onboarding/"
 )
 
-const procesType = "onboarding" // defined on your server
+const procesType = "onboarding" // defined on your server (can be undefined for default process type)
 const config = await configurationService.getConfiguration(procesType)
 console.log("Configuration:", config)
 ```
@@ -31,27 +33,27 @@ console.log("Configuration:", config)
 /** Configuration for the onboarding process */
 interface WDOConfigurationResponse {
     /** Is the onboarding process enabled */
-    enabled: boolean;
+    enabled: boolean
     /** Is OTP required for the first part - identification/activation. */
-    otpForIdentification: boolean;
+    otpForIdentification: boolean
     /** Is OTP required for the second part - identity verification. */
-    otpForIdentityVerification: boolean;
+    otpForIdentityVerification: boolean
     /** Documents required for identity verification. */
     documents: {
         /** Number of required documents */
-        requiredDocumentsCount: number;
+        requiredDocumentsCount: number
         /** List of documents */
-        items: Array<WDOConfigurationDocument>;
+        items: Array<WDOConfigurationDocument>
     }
 }
 /** Configuration for a document */
 interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string;
+    type: string
     /** Is the document mandatory */
-    mandatory: boolean;
+    mandatory: boolean
     /** Number of sides the document has */
-    sideCount: number;
+    sideCount: number
 }
 ```
 
