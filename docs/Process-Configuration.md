@@ -31,27 +31,34 @@ console.log("Configuration:", config)
 /** Configuration for the onboarding process */
 interface WDOConfigurationResponse {
     /** Is the onboarding process enabled */
-    enabled: boolean;
+    enabled: boolean
     /** Is OTP required for the first part - identification/activation. */
-    otpForIdentification: boolean;
+    otpForIdentification: boolean
     /** Is OTP required for the second part - identity verification. */
-    otpForIdentityVerification: boolean;
+    otpForIdentityVerification: boolean
     /** Documents required for identity verification. */
     documents: {
-        /** Number of required documents */
-        requiredDocumentsCount: number;
-        /** List of documents */
-        items: Array<WDOConfigurationDocument>;
+        /** Number of total required documents */
+        totalRequiredDocumentsCount: number
+        /** Groups of documents */
+        groups: Array<WDOConfigurationDocumentGroup>
     }
 }
+
+/** Group of documents in the configuration */
+interface WDOConfigurationDocumentGroup {
+    /** Number of required documents in the group */
+    requiredDocumentsCount: number
+    /** Documents in the group */
+    items: Array<WDOConfigurationDocument>
+}
+
 /** Configuration for a document */
 interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string;
-    /** Is the document mandatory */
-    mandatory: boolean;
+    type: string,
     /** Number of sides the document has */
-    sideCount: number;
+    sideCount: number
 }
 ```
 
