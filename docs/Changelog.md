@@ -1,6 +1,10 @@
 # Changelog
 
-## TBA (Dec, 2025)
+## X.X.X
+
+- Changed configuration endpoint response to include document groups instead of a flat list of documents.
+
+## 1.1.0 (Dec, 2025)
 
 - PowerAuth Cordova SDK dependency now requires v. `4.2.0`.
 - Process cache is now persistent across app restarts.
