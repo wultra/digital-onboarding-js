@@ -56,7 +56,7 @@ interface WDOConfigurationDocumentGroup {
 /** Configuration for a document */
 interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string,
+    type: string
     /** Number of sides the document has */
     sideCount: number
 }

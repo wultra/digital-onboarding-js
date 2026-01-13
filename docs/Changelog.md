@@ -2,7 +2,7 @@
 
 ## X.X.X
 
-- Changed configuration endpoint response to include document groups instead of a flat list of documents.
+- **Breaking:** Changed configuration endpoint response to include document groups instead of a flat list of documents.
 
 ## 1.1.0 (Dec, 2025)
 

@@ -178,7 +178,7 @@ export interface WDOVerifyOTPResponse {
 /** Configuration for a document */
 export interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string,
+    type: string
     /** Number of sides the document has */
     sideCount: number
 }
