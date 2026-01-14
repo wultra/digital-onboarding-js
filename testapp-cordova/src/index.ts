@@ -75,20 +75,24 @@ async function simulateActivation() {
 
         // DEFAULT SETUP AND CONFIGURATION
 
-        const processType: string | undefined = undefined // "onboarding"
+        const processType: string | undefined = "onboarding" // undefined
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
             otpForIdentityVerification: true,
             documents: {
-                requiredDocumentsCount: 1,
-                items: [
+                totalRequiredDocumentsCount: 1,
+                groups: [
                     {
-                        type: "ID_CARD",
-                        mandatory: true,
-                        sideCount: 2
+                        requiredDocumentsCount: 1,
+                        items: [
+                            {
+                                type: "ID_CARD",
+                                sideCount: 2
+                            }
+                        ]
                     }
-                ]
+                ],
             }
         }
 
@@ -99,26 +103,52 @@ async function simulateActivation() {
             console.log("Fetching configuration from the server...")
             config = await configurationService.getConfiguration(processType)
             console.log(`Configuration fetched: ${JSON.stringify(config)}`)
+            if (!config.enabled) {
+                throw new Error("Onboarding process is not enabled on the server!")
+            }
+            if (!config.documents || config.documents.groups.length === 0 || config.documents.groups[0].items.length === 0) {
+                throw new Error("No documents configured for onboarding process on the server!")
+            }
         } else {
             console.log("No process type specified, skipping configuration fetch.")
             config = defaultConfig
         }
 
         // PREPARE DOCUMENT TYPES FOR SCANNING BASED ON CONFIGURATION
-        const documentTypesToScan: { type: WDODocumentType, sideCount: number }[] = []
-        // first add mandatory documents
-        const mandatoryDocs = config.documents.items.filter(doc => doc.mandatory).map(doc => configDocToDocType(doc))
-        console.log(`Adding mandatory documents from configuration: ${JSON.stringify(mandatoryDocs)}`)
-        documentTypesToScan.push(...mandatoryDocs)
+        type DocumentTypeToScan = { type: WDODocumentType, sideCount: number }
+        const documentTypesToScan: DocumentTypeToScan[] = []
 
-        // then add non-mandatory documents if needed
-        if (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
-            const nonMandatoryDocs = config.documents.items.filter(doc => !doc.mandatory).map(doc => configDocToDocType(doc))
-            let idx = 0
-            while (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
-                console.log(`Adding non-mandatory document from configuration: ${nonMandatoryDocs[idx]}`)
-                documentTypesToScan.push(nonMandatoryDocs[idx])
-                idx++
+        // first go-through to add mandatory documents from all groups
+        for (const group of config.documents.groups) {
+            for (let i = 0; i < group.requiredDocumentsCount; i++) {
+                const docType = configDocToDocType(group.items[i])
+                console.log(`Adding mandatory document from configuration group: ${docType.type}`)
+                documentTypesToScan.push(docType)
+            }
+        }
+
+        const hasRequiredDocCount = (documentTypesToScan: DocumentTypeToScan[]): boolean => { 
+            return documentTypesToScan.length >= config.documents.totalRequiredDocumentsCount 
+        }
+
+        if (!hasRequiredDocCount(documentTypesToScan)) {
+            // second go-through to add non-mandatory documents from all groups to fulfill required count
+            for (const group of config.documents.groups) {
+                
+                if (hasRequiredDocCount(documentTypesToScan)) {
+                    break
+                }
+
+                for (const item of group.items) {
+                    const docType = configDocToDocType(item)
+                    if (!documentTypesToScan.find(d => d.type === docType.type)) {
+                        console.log(`Adding non-mandatory document from configuration group: ${docType.type}`)
+                        documentTypesToScan.push(docType)
+                        if (hasRequiredDocCount(documentTypesToScan)) {
+                            break
+                        }
+                    }
+                }
             }
         }
 
