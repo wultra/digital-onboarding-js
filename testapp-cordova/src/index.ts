@@ -115,7 +115,8 @@ async function simulateActivation() {
         }
 
         // PREPARE DOCUMENT TYPES FOR SCANNING BASED ON CONFIGURATION
-        const documentTypesToScan: { type: WDODocumentType, sideCount: number }[] = []
+        type DocumentTypeToScan = { type: WDODocumentType, sideCount: number }
+        const documentTypesToScan: DocumentTypeToScan[] = []
 
         // first go-through to add mandatory documents from all groups
         for (const group of config.documents.groups) {
@@ -126,20 +127,24 @@ async function simulateActivation() {
             }
         }
 
-        if (documentTypesToScan.length < config.documents.totalRequiredDocumentsCount) {
+        const hasRequiredDocCount = (documentTypesToScan: DocumentTypeToScan[]): boolean => { 
+            return documentTypesToScan.length >= config.documents.totalRequiredDocumentsCount 
+        }
+
+        if (!hasRequiredDocCount(documentTypesToScan)) {
             // second go-through to add non-mandatory documents from all groups to fulfill required count
             for (const group of config.documents.groups) {
-
-                if (documentTypesToScan.length >= config.documents.totalRequiredDocumentsCount) {
+                
+                if (hasRequiredDocCount(documentTypesToScan)) {
                     break
                 }
 
-                for (let i = 0; i < group.items.length; i++) {
-                    const docType = configDocToDocType(group.items[i])
+                for (const item of group.items) {
+                    const docType = configDocToDocType(item)
                     if (!documentTypesToScan.find(d => d.type === docType.type)) {
                         console.log(`Adding non-mandatory document from configuration group: ${docType.type}`)
                         documentTypesToScan.push(docType)
-                        if (documentTypesToScan.length >= config.documents.totalRequiredDocumentsCount) {
+                        if (hasRequiredDocCount(documentTypesToScan)) {
                             break
                         }
                     }
