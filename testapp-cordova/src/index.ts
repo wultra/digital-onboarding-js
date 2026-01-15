@@ -4,7 +4,8 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError, 
+    WDOFinishActivationPassword} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -477,9 +478,11 @@ async function simulateActivation() {
             // finish activation
             console.log("Finishing activation...")
             anotherStatus = await verificationService.finishActivation(
-                await PowerAuthPassword.fromString(pin, false), // destroyOnUse: false
                 powerAuth2,
-                "onboarding-activation"
+                "onboarding-activation",
+                new WDOFinishActivationPassword(
+                    await PowerAuthPassword.fromString(pin, false)
+                )
             )
             // on success, the state should be processing
             guardState(anotherStatus.type, WDOVerificationStateType.processing) // TODO: this should be changed probably as the activation is now invalid

@@ -361,11 +361,11 @@ export abstract class WDOBaseVerificationService {
     }
 
     /* @internal */
-    protected async finishActivationInternal(authObject: any, userIdentification: any | undefined, activateNewInstance: (activationCode: string) => Promise<void>): Promise<WDOVerificationState> {
+    protected async finishActivationInternal(userIdentification: any | undefined, activateNewInstance: (activationCode: string) => Promise<void>): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
         await activateNewInstance(response.activationCode)
-        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
+        return this.processSuccess({ type: WDOVerificationStateType.success })
     }
 
     /**
