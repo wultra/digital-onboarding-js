@@ -116,9 +116,13 @@ export abstract class WDOBaseVerificationService {
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
-            response.consentRequired = response.consentRequired ?? false // when undefined, assume false
             WDOLogger.info("Verification status successfully retrieved.")
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
+
+            if (response.consentRequired == undefined) {
+                WDOLogger.debug("Consent required flag not present in the response, assuming false")
+                response.consentRequired = false
+            }
 
             switch (response.identityVerificationStatus) {
                 case WDOIdentityVerificationStatus.failed:
@@ -359,7 +363,7 @@ export abstract class WDOBaseVerificationService {
     /* @internal */
     protected async finishActivationInternal(authObject: any, userIdentification: any | undefined, activateNewInstance: (activationCode: string) => Promise<void>): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
-        const response = await this.handleError(this.api.verificationFinishActivation(authObject, pid, userIdentification))
+        const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
         await activateNewInstance(response.activationCode)
         return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
     }

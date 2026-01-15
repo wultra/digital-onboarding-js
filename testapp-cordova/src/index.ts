@@ -8,25 +8,33 @@ import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
+import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
 declare var cordova: any
 
 function onDeviceReady() {
-    // Cordova is now initialized. Have fun!
 
     document.getElementById('deviceready')?.classList.add('ready')
     document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
     const outputElem = document.getElementById('output') as HTMLTextAreaElement
+
+    // SETUP LOGGING
+
+    WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+    WDOLogger.logLevel = WDOLogLevel.DEBUG
+    const isInAppLoggerEnabled = false
 
     // Override console.log to also output to textarea
     const originalConsoleLog = console.log
     console.log = function(message?: any, ...optionalParams: any[]) {
         const now = new Date()
         const messageWithTime = `[${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:${now.getMilliseconds()}] ${message}`
-        outputElem.value += messageWithTime + ' ' + optionalParams.join(' ') + '\n'
-        outputElem.scrollTop = outputElem.scrollHeight
+        if (isInAppLoggerEnabled) {
+            outputElem.value += messageWithTime + ' ' + optionalParams.join(' ') + '\n'
+            outputElem.scrollTop = outputElem.scrollHeight
+        }
         originalConsoleLog.apply(console, [messageWithTime, ...optionalParams])
     }
 
@@ -73,11 +81,6 @@ async function simulateActivation() {
     }
 
     try {
-
-        // SETUP LOGGING
-
-        // WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
-        WDOLogger.logLevel = WDOLogLevel.DEBUG
 
         // DEFAULT SETUP AND CONFIGURATION
 
@@ -479,30 +482,41 @@ async function simulateActivation() {
                 "onboarding-activation"
             )
             // on success, the state should be processing
-            guardState(anotherStatus.type, WDOVerificationStateType.processing)
+            guardState(anotherStatus.type, WDOVerificationStateType.processing) // TODO: this should be changed probably as the activation is now invalid
             console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
 
             // powerauth now should have active activation
-            if (await powerAuth2.hasValidActivation() == false) {
-                throw new Error("PowerAuth2 instance does not have an active activation after finishActivation!")
+            if (await powerAuth2.hasValidActivation()) {
+                console.log("PowerAuth2 instance has valid activation after finishActivation.")
+            } else {
+                throw new Error("PowerAuth2 instance does not have a valid activation after finishActivation!")
             }
 
             // verify that activation is active
             const pa2Status = await powerAuth2.fetchActivationStatus()
-            if (pa2Status.state !== PowerAuthActivationState.ACTIVE) {
+            console.log(`PowerAuth2 SDK activation status: ${JSON.stringify(pa2Status)}`)
+            if (pa2Status.state == PowerAuthActivationState.ACTIVE) {
+                console.log("PowerAuth2 instance activation is active after finishActivation.")
+            } else {
                 throw new Error(`PowerAuth2 instance activation is not active after finishActivation: ${pa2Status.state}`)
             }
 
-            anotherStatus = await waitForStatusChange(verificationService)
-            console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
+            const removedStatus = await powerAuth.fetchActivationStatus()
+            console.log(`Fetched original PA status after finishActivation: ${JSON.stringify(removedStatus)}`)
+            if (removedStatus.state == PowerAuthActivationState.REMOVED) {
+                console.log("Original PowerAuth instance activation is removed after finishActivation.")
+            } else {
+                throw new Error(`Original PowerAuth instance activation is not removed after finishActivation: ${removedStatus.state}`)
+            }
+
+        } else {
+            guardState(anotherStatus.type, WDOVerificationStateType.success)
+            console.log("Onboarding process completed successfully.")
+
+            console.log("Fetching PowerAuth SDK activation status...")
+            const finalPaStatus = await powerAuth.fetchActivationStatus()
+            console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
         }
-
-        guardState(anotherStatus.type, WDOVerificationStateType.success)
-        console.log("Onboarding process completed successfully.")
-
-        console.log("Fetching PowerAuth SDK activation status...")
-        const finalPaStatus = await powerAuth.fetchActivationStatus()
-        console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
 
     } catch (error) {
         console.log(`Error during activation:`)

@@ -120,8 +120,8 @@ export abstract class WDOBaseApi {
         return this.callApi(requestObject, WDOVerificationEndpoints.verifyOTP)
     }
     
-    verificationFinishActivation(authObject: any, processId: string, userIdentification?: any): Promise<WDOFinishActivationResponse> {
+    verificationFinishActivation(processId: string, userIdentification?: any): Promise<WDOFinishActivationResponse> {
         const requestObject = { processId: processId, identification: userIdentification }
-        return this.callApi(requestObject, WDOVerificationEndpoints.finishActivation, authObject)
+        return this.callApi(requestObject, WDOVerificationEndpoints.finishActivation)
     }
 }
