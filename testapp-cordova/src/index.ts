@@ -24,8 +24,8 @@ function onDeviceReady() {
     // SETUP LOGGING
 
     WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
-    WDOLogger.logLevel = WDOLogLevel.DEBUG
-    const isInAppLoggerEnabled = false
+    //WDOLogger.logLevel = WDOLogLevel.DEBUG
+    const isInAppLoggerEnabled = true
 
     // Override console.log to also output to textarea
     const originalConsoleLog = console.log
@@ -480,9 +480,8 @@ async function simulateActivation() {
             anotherStatus = await verificationService.finishActivation(
                 powerAuth2,
                 "onboarding-activation",
-                new WDOFinishActivationPassword(
-                    await PowerAuthPassword.fromString(pin, false)
-                )
+                await PowerAuthPassword.fromString(pin, false),
+                true
             )
             // on success, the state should be processing
             guardState(anotherStatus.type, WDOVerificationStateType.processing) // TODO: this should be changed probably as the activation is now invalid

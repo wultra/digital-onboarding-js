@@ -9,7 +9,7 @@
 
 /**
  * ######################################
- * This file contains duck-typed representation of PowerAuthActivationStatus
+ * This file contains duck-typed representation of PowerAuth types
  * to avoid direct dependency on PowerAuth types in the shared library.
  * ######################################
  */
@@ -21,7 +21,7 @@ export interface WDOPowerAuthActivationStatus {
     /**
      * State of the activation.
      */
-    state: WDOPowerAuthActivationState
+    state: "CREATED" | "PENDING_COMMIT" | "ACTIVE" | "BLOCKED" | "REMOVED" | "DEADLOCK"
     /**
      * Number of failed authentication attempts in a row.
      */
@@ -40,35 +40,37 @@ export interface WDOPowerAuthActivationStatus {
     customObject?: any
 }
 
-/**
- * The `WDOPowerAuthActivationState` enum defines all possible states of activation.
- * The state is a part of information received together with the rest
- * of the `WDOPowerAuthActivationStatus` object.
- */
-export enum WDOPowerAuthActivationState {
-    /**
-     * The activation is just created.
-     */
-    CREATED = "CREATED",
-    /**
-     * The activation is not completed yet on the server.
-     */
-    PENDING_COMMIT = "PENDING_COMMIT",
-    /**
-     * The shared secure context is valid and active.
-     */
-    ACTIVE = "ACTIVE",
-    /**
-     * The activation is blocked.
-     */
-    BLOCKED = "BLOCKED",
-    /**
-     * The activation doesn't exist anymore.
-     */
-    REMOVED = "REMOVED",
-    /**
-     * The activation is technically blocked. You cannot use it anymore
-     * for the signature calculations.
-     */
-    DEADLOCK = "DEADLOCK"
+// - INTERNALS
+
+/* @internal */
+export interface WDOPowerAuth {
+    fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
+    validatePassword(password: WDOPowerAuthPassword | string): Promise<void>
+    createActivation(activation: WDOPowerAuthActivation): Promise<WDOPowerAuthCreateActivationResult>
+    persistActivation(authentication: WDOPowerAuthAuthentication): Promise<void>
+    canStartActivation(): Promise<boolean>
+    removeActivationLocal(): Promise<void>
+    get instanceId(): string
+}
+
+/* @internal */
+export interface WDOPowerAuthPassword {
+    clear(): Promise<void>
+}
+
+/* @internal */
+export interface WDOPowerAuthActivation {
+
+}
+
+/* @internal */
+export interface WDOPowerAuthAuthentication {
+
+}
+
+/* @internal */
+export interface WDOPowerAuthCreateActivationResult {
+    activationFingerprint: string;
+    customAttributes?: any;
+    //userInfo?: PowerAuthUserInfo;
 }
