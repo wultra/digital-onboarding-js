@@ -86,5 +86,4 @@ export enum WDOErrorReason {
 
     /** Invalid parameter */
     invalidParameter = "INVALID_PARAMETER",
-    
 }

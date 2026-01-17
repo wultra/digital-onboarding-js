@@ -19,10 +19,10 @@ import { WDOVerificationScanProcess } from "./WDOVerificationScanProcess"
  * Usage:
  * 
  * ```
- * const state = await verificationService.status();
+ * const state = await verificationService.status()
  * if (state.type === WDOVerificationStateType.scanDocument ) {
  *   // We are in the scan document state, access specific properties
- *   const process = state.process;
+ *   const process = state.process
  * }
  * ```
  */

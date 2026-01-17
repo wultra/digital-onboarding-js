@@ -76,23 +76,6 @@ export enum WDODocumentType {
     driversLicense = "driversLicense"
 }
 
-/** 
- * Available sides of the document
- * 
- * Front and back for ID card.
- * For passport and drivers license front only.
- */
-export function WDODocumentTypeSides(type: WDODocumentType): WDODocumentSide[] {
-    switch (type) {
-        case WDODocumentType.idCard:
-            return [WDODocumentSide.front, WDODocumentSide.back]
-        case WDODocumentType.passport:
-            return [WDODocumentSide.front]
-        case WDODocumentType.driversLicense:
-            return [WDODocumentSide.front]
-    }
-}
-
 /** Side of the document */ 
 export enum WDODocumentSide {
     /** Front side of a document. Usually the one with the picture.
@@ -104,7 +87,7 @@ export enum WDODocumentSide {
     back = "back"
 }
 
-/** Converts WDODocumentType to WDODocumentSubmitFileType */
+/* internal */
 export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentSubmitFileType {
     switch (type) {
         case WDODocumentType.idCard:
@@ -116,7 +99,7 @@ export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentS
     }
 }
 
-/** Converts WDODocumentSide to DocumentSubmitFileSide */
+/* internal */
 export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
     switch (side) {
         case WDODocumentSide.front:

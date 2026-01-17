@@ -9,14 +9,17 @@
 
 import { WDODocumentStatusResponse, WDODocumentSubmitFile, WDOProcessResponse, WDOVerifyOTPResponse, WDOConfigurationResponse, WDOIdentityStatusResponse, WDOFinishActivationResponse } from './WDONetworkingObjects'
 import { WDOEndpoint, WDOActivationEndpoints, WDOVerificationEndpoints } from './WDOEndpoints'
+import { WDOError, WDOErrorReason } from '../WDOError'
+import { WDOApiEndpoint, WDOE2EEConfiguration, WDONetworking, WDOPlatform, WDOPowerAuth } from '../WDOPlatform'
 
-export abstract class WDOBaseApi {
+export class WDOApi<TPowerAuth extends WDOPowerAuth> {
 
-    // Abstract API call method to be implemented in subclasses
+    readonly networking: WDONetworking
 
-    protected abstract callApi<T>(requestObject: any, endpoint: WDOEndpoint, authObject?: any): Promise<T>
-
-    abstract canStartActivation(): Promise<boolean>
+    constructor(powerauth: TPowerAuth, baseUrl: string) {
+        // TODO: additional configuration?
+        this.networking = WDOPlatform.networkingFactory.createNetworking(powerauth, baseUrl)
+    }
 
     // Configuration endpoints
 
@@ -123,5 +126,52 @@ export abstract class WDOBaseApi {
     verificationFinishActivation(processId: string, userIdentification?: any): Promise<WDOFinishActivationResponse> {
         const requestObject = { processId: processId, identification: userIdentification }
         return this.callApi(requestObject, WDOVerificationEndpoints.finishActivation)
+    }
+
+    private callApi<TRequest, TResponse>(requestObject: TRequest, endpoint: WDOEndpoint, authObject?: any): Promise<TResponse> {
+    
+        if (authObject && !(authObject instanceof PowerAuthAuthentication)) {
+            throw new WDOError(WDOErrorReason.invalidParameter, "The authObject parameter must be of type PowerAuthAuthentication.")
+        }
+
+        // set authentication to given authObject or to possession if endpoint is "signed"
+        const authentication = authObject || (endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined)
+
+        return this.networking.call(
+            // construct 
+            this.constructEndpoint(endpoint),
+            { requestObject: requestObject },
+            authentication
+        ).then(result => {
+            if (result.responseObject) {
+                return result.responseObject as TResponse
+            } else if (result.responseError) {
+                throw new WDOError(WDOErrorReason.networkError, `Server API error: ${result.responseError.code}, ${result.responseError.message}`, result.responseError)
+            } else if (!endpoint.returnsData) {
+                // for void responses
+                return {} as TResponse
+            } else {
+                throw new WDOError(WDOErrorReason.networkError, `Failed to retrieve server data`)
+            }
+        })
+    }
+    
+    private constructEndpoint<TRequest, TResponse>(endpoint: WDOEndpoint): WDOApiEndpoint<TRequest, TResponse> {
+        let scope: WDOE2EEConfiguration
+        if (endpoint.e2eeScope === "ACTIVATION") {
+            scope = 1
+        } else if (endpoint.e2eeScope === "APPLICATION") {
+            scope = 0
+        } else {
+            scope = 2
+        }
+        
+        if (endpoint.uriId) {
+            return WDOPlatform.networkingFactory.createSignedEndpoint(endpoint.path, endpoint.uriId, undefined, scope)
+        } else if (endpoint.tokenName) {
+            return WDOPlatform.networkingFactory.createSignedWithTokenEndpoint(endpoint.path, endpoint.tokenName, undefined, scope)
+        } else {
+            return WDOPlatform.networkingFactory.createUnsignedEndpoint(endpoint.path, undefined, scope)
+        }
     }
 }

@@ -7,12 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** For request that needs to identify the current process. */
-export interface WDOProcessRequest {
-    processId: string
-}
-
-/** Onboarding process response */
+/* @internal */
 export interface WDOProcessResponse {
     /** ID of the process */
     processId: string
@@ -37,6 +32,7 @@ export enum WDOOnboardingStatus {
     finished = "FINISHED"
 }
 
+/* @internal */
 export interface WDOIdentityStatusResponse {
     processId: string
     identityVerificationStatus: WDOIdentityVerificationStatus
@@ -45,13 +41,13 @@ export interface WDOIdentityStatusResponse {
     consentRequired: boolean
 }
 
-/** Configuration for identity verification */
+/* @internal */
 export interface WDOIdentityConfig {
     /** Period after which the OTP can be resent, in seconds */
     otpResendPeriodSeconds: number
 }
 
-/** Status of the current identity verification */
+/* @internal */
 export enum WDOIdentityVerificationStatus {
     /** Identity verification is waiting for initialization */
     notInitialized = "NOT_INITIALIZED",
@@ -67,7 +63,7 @@ export enum WDOIdentityVerificationStatus {
     rejected = "REJECTED"
 }
 
-/** Phase of the current identity verification */
+/* @internal */
 export enum WDOIdentityVerificationPhase {
     /** Document upload is in progress */
     documentUpload = "DOCUMENT_UPLOAD",
@@ -87,7 +83,7 @@ export enum WDOIdentityVerificationPhase {
     activationFinish = "ACTIVATION_FINISH"
 }
 
-/** Types of available documents */ 
+/* internal */
 export enum WDODocumentSubmitFileType {
     /** National ID card */
     idCard = "ID_CARD",
@@ -99,7 +95,7 @@ export enum WDODocumentSubmitFileType {
     selfiePhoto = "SELFIE_PHOTO"
 }
 
-/** Side of the file */
+/* internal */
 export enum WDODocumentSubmitFileSide {
     /** Front side of an document. Usually the one with the picture */
     front = "FRONT",
@@ -107,9 +103,9 @@ export enum WDODocumentSubmitFileSide {
     back = "BACK"
 }
 
-/** Submitted document metadata */
+/* @internal */
 export interface WDODocument {
-    /** Name of the file (with path within the submit ZIP file). */
+    /** Name of the file. */
     filename: string
     /** Unique ID of the file */
     id: string
@@ -123,7 +119,7 @@ export interface WDODocument {
     errors?: string[]
 }
 
-/** Status of the document */
+/* @internal */
 export enum WDODocumentStatus {
     /** Document was accepted */
     accepted = "ACCEPTED",
@@ -141,7 +137,7 @@ export enum WDODocumentStatus {
     failed = "FAILED"
 }
 
-/** Metadata for file inside ZIP (in `DocumentSubmitRequest.data`). */
+/* @internal */
 export interface WDODocumentSubmitFile {
     /** Name of the file (with path) */
     filename: string
@@ -155,7 +151,7 @@ export interface WDODocumentSubmitFile {
     data: Base64URLString
 }
 
-/** Status of the documents */
+/* @internal */
 export interface WDODocumentStatusResponse {
     /** Overall status */
     status: WDODocumentStatus
@@ -163,7 +159,7 @@ export interface WDODocumentStatusResponse {
     documents: WDODocument[]
 }
 
-/** Response of the OTP verify */
+/* @internal */
 export interface WDOVerifyOTPResponse {
     /** ID of the process */
     processId: string
@@ -180,37 +176,31 @@ export interface WDOVerifyOTPResponse {
 /** Configuration for a document */
 export interface WDOConfigurationDocument {
     /** Type of the document */
-    type: string
+    type: string,
+    /** Is the document mandatory */
+    mandatory: boolean,
     /** Number of sides the document has */
     sideCount: number
-}
-
-/** Group of documents in the configuration */
-export interface WDOConfigurationDocumentGroup {
-    /** Number of required documents in the group */
-    requiredDocumentsCount: number
-    /** Documents in the group */
-    items: Array<WDOConfigurationDocument>
 }
 
 /** Configuration for the onboarding process */
 export interface WDOConfigurationResponse {
     /** Is the onboarding process enabled */
-    enabled: boolean
+    enabled: boolean,
     /** Is OTP required for the first part - identification/activation. */
-    otpForIdentification: boolean
+    otpForIdentification: boolean,
     /** Is OTP required for the second part - identity verification. */
-    otpForIdentityVerification: boolean
+    otpForIdentityVerification: boolean,
     /** Documents required for identity verification. */
     documents: {
-        /** Number of total required documents */
-        totalRequiredDocumentsCount: number
-        /** Groups of documents */
-        groups: Array<WDOConfigurationDocumentGroup>
+        /** Number of required documents */
+        requiredDocumentsCount: number,
+        /** List of documents */
+        items: Array<WDOConfigurationDocument>
     }
 }
 
-/** Response of the finish activation call */
+/* @internal */
 export interface WDOFinishActivationResponse {
     /** Activation code to be used for PowerAuth activation */
     activationCode: string

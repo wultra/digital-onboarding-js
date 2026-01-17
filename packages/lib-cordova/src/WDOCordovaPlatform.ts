@@ -1,0 +1,69 @@
+/**
+ * Copyright Wultra s.r.o.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license
+ * found in the LICENSE file in the root directory of this source tree.
+ * 
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import "cordova-powerauth-mobile-sdk"
+import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingFactory, WDOPowerAuth } from '../../lib-shared/src/WDOPlatform'
+import { WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
+
+export class WDOCordovaCache implements WDOCache {
+
+    set(key: string, value: string | undefined): Promise<void> {
+        if (value) {
+            return PowerAuthStorageUtils.setString(key, value, PowerAuthStorageType.SECURE)
+        } else {
+            return PowerAuthStorageUtils.remove(key, PowerAuthStorageType.SECURE).then(() => { /* no-op */ })
+        }
+    }
+
+    get(key: string): Promise<string | undefined> {
+        return PowerAuthStorageUtils.getString(key, PowerAuthStorageType.SECURE)
+    }
+
+    has(key: string): Promise<boolean> {
+        return PowerAuthStorageUtils.exists(key, PowerAuthStorageType.SECURE)
+    }
+}
+
+export class WDONetworkingFactoryCordova implements WDONetworkingFactory {
+
+    createSignedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: any, e2eeConfig?: any): WDOApiEndpoint<TRequest, TResponse> {
+        return WPNEndpoint.signed<TRequest, TResponse>(path, uriId, responseConfig, e2eeConfig)
+    }
+
+    createSignedWithTokenEndpoint<TRequest, TResponse>(path: string, tokenName: string, responseConfig?: any, e2eeConfig?: any): WDOApiEndpoint<TRequest, TResponse> {
+        return WPNEndpoint.signedWithToken<TRequest, TResponse>(path, tokenName, responseConfig, e2eeConfig)
+    }
+
+    createUnsignedEndpoint<TRequest, TResponse>(path: string, responseConfig?: any, e2eeConfig?: any): WDOApiEndpoint<TRequest, TResponse> {
+        return WPNEndpoint.unsigned<TRequest, TResponse>(path, responseConfig, e2eeConfig)
+    }
+
+    createNetworking(powerAuth: PowerAuth, baseUrl: string): WDONetworking {
+        return new WPNNetworking(powerAuth, baseUrl)
+    }
+}
+
+export class WDOPowerAuthFactoryCordova {
+
+    createPowerAuthActivationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): PowerAuthActivation {
+        const activation = PowerAuthActivation.createWithActivationCode(activationCode, activationName)
+        if (otp) {
+            activation.additionalActivationOtp = otp
+        }
+        return activation
+    }
+
+    createPowerAuthActivationWithIdentityAttributes(identityAttributes: any, activationName: string): PowerAuthActivation {
+        return PowerAuthActivation.createWithIdentityAttributes(identityAttributes, activationName)
+    }
+
+    createPowerAuthAuthenticationPassword(password: PowerAuthPassword): PowerAuthAuthentication {
+        return PowerAuthAuthentication.password(password)
+    }
+}

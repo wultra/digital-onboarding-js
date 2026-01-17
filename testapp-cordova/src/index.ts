@@ -4,8 +4,7 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse, WDOError, 
-    WDOFinishActivationPassword} from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -23,8 +22,8 @@ function onDeviceReady() {
 
     // SETUP LOGGING
 
-    WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
-    //WDOLogger.logLevel = WDOLogLevel.DEBUG
+    // WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+    WDOLogger.logLevel = WDOLogLevel.DEBUG
     const isInAppLoggerEnabled = true
 
     // Override console.log to also output to textarea
@@ -484,7 +483,7 @@ async function simulateActivation() {
                 true
             )
             // on success, the state should be processing
-            guardState(anotherStatus.type, WDOVerificationStateType.processing) // TODO: this should be changed probably as the activation is now invalid
+            guardState(anotherStatus.type, WDOVerificationStateType.success) // TODO: this should be changed probably as the activation is now invalid
             console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
 
             // powerauth now should have active activation
