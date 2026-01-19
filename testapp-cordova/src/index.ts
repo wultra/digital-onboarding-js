@@ -482,8 +482,8 @@ async function simulateActivation() {
                 await PowerAuthPassword.fromString(pin, false),
                 true
             )
-            // on success, the state should be processing
-            guardState(anotherStatus.type, WDOVerificationStateType.success) // TODO: this should be changed probably as the activation is now invalid
+            // on success, the state should be success
+            guardState(anotherStatus.type, WDOVerificationStateType.success)
             console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
 
             // powerauth now should have active activation

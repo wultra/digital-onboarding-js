@@ -22,19 +22,19 @@ export interface WDOCache {
 /* @internal */
 export interface WDONetworkingFactory {
     // Endpoint creation methods
-    createSignedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
-    createSignedWithTokenEndpoint<TRequest, TResponse>(path: string, tokenName: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
-    createUnsignedEndpoint<TRequest, TResponse>(path: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
+    signedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
+    signedWithTokenEndpoint<TRequest, TResponse>(path: string, tokenName: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
+    unsignedEndpoint<TRequest, TResponse>(path: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
 
     // Networking creation method
-    createNetworking(powerAuth: WDOPowerAuth, baseUrl: string): WDONetworking
+    networking(powerAuth: WDOPowerAuth, baseUrl: string): WDONetworking
 }
 
 /* @internal */
 export interface WDOPowerAuthFactory {
-    createPowerAuthActivationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): WDOPowerAuthActivation
-    createPowerAuthAuthenticationPassword(password: string | WDOPowerAuthPassword): WDOPowerAuthAuthentication
-    createPowerAuthActivationWithIdentityAttributes(identityAttributes: any, activationName: string): WDOPowerAuthActivation
+    activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): WDOPowerAuthActivation
+    authenticationWithPassword(password: string | WDOPowerAuthPassword): WDOPowerAuthAuthentication
+    activationWithIdentityAttributes(identityAttributes: any, activationName: string): WDOPowerAuthActivation
 }
 
 /* @internal */
@@ -52,7 +52,7 @@ export interface WDORRequestProcessor { }
 /* @internal */
 export interface WDONetworking {
     set acceptLanguage(value: string)
-    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: PowerAuthAuthentication | undefined, requestProcessor?: WDORRequestProcessor | undefined): Promise<WDOResponse<TResponse>>
+    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: WDOPowerAuthAuthentication | undefined, requestProcessor?: WDORRequestProcessor | undefined): Promise<WDOResponse<TResponse>>
 }
 
 /* @internal */

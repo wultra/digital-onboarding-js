@@ -380,10 +380,10 @@ export abstract class WDOBaseVerificationService<
      * Needs to be called when "activationFinish" next step is returned from the `status()` call.
      * 
      * The method verifies that the provided `password` is the same as used in the original activation
-     * (if `makeSurePasswordIsSameAsOriginal` is set to `true`), then it calls the server API to finish
+     * (if `validatePassword` is set to `true`), then it calls the server API to finish
      * the verification and obtain the activation code for the new activation. Finally, it creates
      * a new activation on `newPowerAuthInstance` using the obtained activation code and persists it
-     * with the provided `password`.
+     * with the provided `newPassword`.
      * 
      * After successful completion, the original PowerAuth instance becomes invalid (`REMOVED` state) and cannot be used anymore.
      * 
@@ -420,9 +420,9 @@ export abstract class WDOBaseVerificationService<
 
             const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
             try {
-                const activation = WDOPlatform.powerAuthFactory.createPowerAuthActivationWithActivationCode(response.activationCode, newActivationName, undefined)
+                const activation = WDOPlatform.powerAuthFactory.activationWithActivationCode(response.activationCode, newActivationName, undefined)
                 await newPowerAuthInstance.createActivation(activation)
-                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuthFactory.createPowerAuthAuthenticationPassword(newPassword))
+                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuthFactory.authenticationWithPassword(newPassword))
             } catch (e) {
                 // In case of failure, ensure no partial activation remains
                 if (await newPowerAuthInstance.canStartActivation() == false) {
@@ -437,14 +437,6 @@ export abstract class WDOBaseVerificationService<
             await newPassword.clear() // destroy the password after use
         }
 
-    }
-
-    /* @internal */
-    protected async finishActivationInternal(userIdentification: any | undefined, activateNewInstance: (activationCode: string) => Promise<void>): Promise<WDOVerificationState> {
-        const pid = this.verifyHasActiveProcess()
-        const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
-        await activateNewInstance(response.activationCode)
-        return this.processSuccess({ type: WDOVerificationStateType.success })
     }
 
     /**

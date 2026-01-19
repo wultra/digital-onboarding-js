@@ -18,7 +18,7 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
 
     constructor(powerauth: TPowerAuth, baseUrl: string) {
         // TODO: additional configuration?
-        this.networking = WDOPlatform.networkingFactory.createNetworking(powerauth, baseUrl)
+        this.networking = WDOPlatform.networkingFactory.networking(powerauth, baseUrl)
     }
 
     // Configuration endpoints
@@ -167,11 +167,11 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
         }
         
         if (endpoint.uriId) {
-            return WDOPlatform.networkingFactory.createSignedEndpoint(endpoint.path, endpoint.uriId, undefined, scope)
+            return WDOPlatform.networkingFactory.signedEndpoint(endpoint.path, endpoint.uriId, undefined, scope)
         } else if (endpoint.tokenName) {
-            return WDOPlatform.networkingFactory.createSignedWithTokenEndpoint(endpoint.path, endpoint.tokenName, undefined, scope)
+            return WDOPlatform.networkingFactory.signedWithTokenEndpoint(endpoint.path, endpoint.tokenName, undefined, scope)
         } else {
-            return WDOPlatform.networkingFactory.createUnsignedEndpoint(endpoint.path, undefined, scope)
+            return WDOPlatform.networkingFactory.unsignedEndpoint(endpoint.path, undefined, scope)
         }
     }
 }
