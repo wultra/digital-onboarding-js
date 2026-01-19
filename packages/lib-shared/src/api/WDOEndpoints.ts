@@ -126,4 +126,11 @@ export class WDOVerificationEndpoints {
         e2eeScope: "ACTIVATION",
         returnsData: true
     }
+
+    static readonly finishActivation: WDOEndpoint = {
+        path: "/api/identity/activation",
+        tokenName: "possession_universal",
+        e2eeScope: "ACTIVATION",
+        returnsData: true
+    }
 }

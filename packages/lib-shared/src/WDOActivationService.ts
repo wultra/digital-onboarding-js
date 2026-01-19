@@ -7,20 +7,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDOBaseApi } from './api/WDOBaseApi'
 import { WDOOnboardingStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError, WDOErrorReason } from './WDOError'
-import { WDODefaultCache } from './WDOCache'
+import { WDOPlatform, WDOPowerAuth, WDOPowerAuthCreateActivationResult } from './WDOPlatform'
+import { WDOApi } from './api/WDOApi'
 
-/** Duck-typed PowerAuthActivationResult for WDO space */
-export interface WDOPowerAuthActivationResult {
-    /** Decimalized fingerprint calculated from device's and server's public keys. */
-    activationFingerprint: string
-    /** When available, contents of this object depends of your enrollment server configuration. */
-    customAttributes?: any
-}
-
+/* @internal */
 interface WDOActivationProcessData {
     processId: string
     activationCode?: string
@@ -34,18 +27,46 @@ interface WDOActivationProcessData {
  * 
  * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
  */
-export abstract class WDOBaseActivationService {
+export abstract class WDOBaseActivationService<TPowerAuth extends WDOPowerAuth> {
+
+    /** PowerAuth instance */
+    public readonly powerauth: TPowerAuth
 
     /* @internal  */
-    protected abstract api: WDOBaseApi
+    private readonly api: WDOApi<TPowerAuth>
+    
     /* @internal  */
-    protected abstract activatePowerAuth(identityAttributes: any, activationName: string): Promise<WDOPowerAuthActivationResult>
+    private get cacheKey(): string { return `wdopd_${this.powerauth.instanceId}` }
+    
     /* @internal  */
-    protected abstract activatePowerAuthWithCode(activationCode: string, otp: string | undefined, activationName: string): Promise<WDOPowerAuthActivationResult>
-    /* @internal */
-    protected abstract changeAcceptLanguageImpl(language: string): void
-    /* @internal */
-    protected abstract getPAInstanceId(): string
+    private async setCachedProcessData(data: WDOActivationProcessData | undefined): Promise<void> {
+        await WDOPlatform.cache.set(this.cacheKey, JSON.stringify(data))
+    }
+
+    /* @internal  */
+    private async getCachedProcessData(): Promise<WDOActivationProcessData | undefined> {
+        const data = await WDOPlatform.cache.get(this.cacheKey)
+        if (!data) {
+            return undefined
+        }
+        return JSON.parse(data) as WDOActivationProcessData
+    }
+
+    /* @internal  */
+    private async processId(): Promise<string | undefined> { return (await this.getCachedProcessData())?.processId }
+
+    // PUBLIC API
+
+    /**
+     * Creates service instance
+     * 
+     * @param powerauth Configured PowerAuth instance. This instance needs to be without valid activation.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server. Usually ending with `/enrollment-onboarding-server`.
+     */
+    public constructor(powerauth: TPowerAuth, baseUrl: string) {
+        this.api = new WDOApi<TPowerAuth>(powerauth, baseUrl)
+        this.powerauth = powerauth
+    }
 
     /** 
      * If the activation process is in progress. 
@@ -64,30 +85,8 @@ export abstract class WDOBaseActivationService {
      * will return error texts and other in german (if available).
      */
     public changeAcceptLanguage(language: string) {
-        this.changeAcceptLanguageImpl(language)
+        this.api.networking.acceptLanguage = language
     }
-    
-    /* @internal  */
-    private cacheKey(): string { return `wdopd_${this.getPAInstanceId()}` }
-    
-    /* @internal  */
-    private async setCachedProcessData(data: WDOActivationProcessData | undefined): Promise<void> {
-        await WDODefaultCache.instance.set(this.cacheKey(), JSON.stringify(data))
-    }
-
-    /* @internal  */
-    private async getCachedProcessData(): Promise<WDOActivationProcessData | undefined> {
-        const data = await WDODefaultCache.instance.get(this.cacheKey())
-        if (!data) {
-            return undefined
-        }
-        return JSON.parse(data) as WDOActivationProcessData
-    }
-
-    /* @internal  */
-    private async processId(): Promise<string | undefined> { return (await this.getCachedProcessData())?.processId }
-
-    // PUBLIC API
 
     /**
      * Retrieves status of the onboarding activation.
@@ -187,20 +186,22 @@ export abstract class WDOBaseActivationService {
      * @param otp OTP code received by the user (via SMS or email). Optional when not required.
      * @return Promise resolved with activation result.
      */ 
-    async activate(activationName: string, otp?: string): Promise<WDOPowerAuthActivationResult> {
+    async activate(activationName: string, otp?: string): Promise<WDOPowerAuthCreateActivationResult> {
         WDOLogger.debug(`Activating the PowerAuth with activation name '${activationName}'`)
         await this.verifyCanStartActivation()
         const pid = await this.verifyHasActiveProcess()
         const code = (await this.getCachedProcessData())?.activationCode
-        let result: WDOPowerAuthActivationResult
+        let result: WDOPowerAuthCreateActivationResult
         try {
             if (code) {
                 WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
-                result = await this.activatePowerAuthWithCode(code, otp, activationName)
+                const activation = WDOPlatform.powerAuthFactory.activationWithActivationCode(code, activationName, otp)
+                result = await this.powerauth.createActivation(activation)
             } else {
                 WDOLogger.info("Activating PowerAuth using identity attributes from the onboarding process")
                 const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
-                result = await this.activatePowerAuth(identityAttributes, activationName)
+                const activation = WDOPlatform.powerAuthFactory.activationWithIdentityAttributes(identityAttributes, activationName)
+                result = await this.powerauth.createActivation(activation)
             }
         } catch (error) {
             throw new WDOError(WDOErrorReason.activationFailed, "Activation failed", error)
@@ -214,7 +215,7 @@ export abstract class WDOBaseActivationService {
 
     /* @internal */
     private async verifyCanStartActivation(): Promise<void> {
-        if (!(await this.api.canStartActivation())) {
+        if (!(await this.powerauth.canStartActivation())) {
             WDOLogger.error("PowerAuth is already activated - Activation cannot be started/processed.")
             await this.setCachedProcessData(undefined)
             throw new WDOError(WDOErrorReason.powerauthAlreadyActivated, "PowerAuth is already activated")

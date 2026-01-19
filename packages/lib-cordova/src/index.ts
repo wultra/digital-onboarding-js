@@ -7,9 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export * from './WDOCordovaActivationService'
-export * from './WDOCordovaVerificationService'
-export * from './WDOCordovaConfigurationService'
 export * from '../../lib-shared/src/WDOVerificationState'
 export { WDOVerificationServiceListener, WDOConsentResponse } from '../../lib-shared/src/WDOVerificationService'
 export * from '../../lib-shared/src/WDOVerificationScanProcess'
@@ -18,7 +15,41 @@ export * from '../../lib-shared/src/WDOLogger'
 export * from '../../lib-shared/src/api/WDONetworkingObjects'
 export * from '../../lib-shared/src/WDOError'
 
-// setup default cache implementation
-import { WDOCordovaCache } from './WDOCordovaCache'
-import { WDODefaultCache } from '../../lib-shared/src/WDOCache'
-WDODefaultCache.instance = new WDOCordovaCache()
+// setup platform specific implementations
+import { WDOCordovaCache, WDONetworkingFactoryCordova, WDOPowerAuthFactoryCordova } from './WDOCordovaPlatform'
+import { WDOPlatform } from '../../lib-shared/src/WDOPlatform'
+WDOPlatform.cache = new WDOCordovaCache()
+WDOPlatform.networkingFactory = new WDONetworkingFactoryCordova()
+WDOPlatform.powerAuthFactory = new WDOPowerAuthFactoryCordova()
+
+// services that depend on platform implementations
+import { WDOBaseActivationService } from '../../lib-shared/src/WDOActivationService'
+import { WDOBaseConfigurationService } from '../../lib-shared/src/WDOConfigurationService'
+import { WDOBaseVerificationService } from '../../lib-shared/src/WDOVerificationService'
+
+/**
+ * Service that can activate PowerAuth instance by user weak credentials (like his email, phone number or client ID) + optional SMS OTP.
+ * 
+ * When the PowerAuth is activated with this service, `WDOVerificationService.isVerificationRequired` will be `true`
+ * and you will need to verify the PowerAuth instance via `WDOVerificationService`.
+ * 
+ * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
+ */
+export class WDOActivationService extends WDOBaseActivationService<PowerAuth> { }
+
+/**
+ * Service that can verify previously activated PowerAuth instance.
+ * 
+ * When PowerAuth instance was activated with weak credentials via `WDOActivationService`, user needs to verify his genuine presence.
+ * 
+ * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
+ */
+export class WDOVerificationService extends WDOBaseVerificationService<PowerAuth, PowerAuthPassword> {
+    /** Checks if verification is required based on PowerAuth activation status */
+    public static isVerificationRequired(paStatus: PowerAuthActivationStatus): boolean {
+        return super.isVerificationRequiredInternal(paStatus)
+    }
+}
+
+/** Service that provides configuration for the Wultra Digital Onboarding SDK. */
+export class WDOConfigurationService extends WDOBaseConfigurationService<PowerAuth> { }

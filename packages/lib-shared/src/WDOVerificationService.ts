@@ -7,15 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDOBaseApi } from './api/WDOBaseApi'
+import { WDOApi } from './api/WDOApi'
 import { WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError, WDOErrorReason } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
 import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType, WDODocumentTypeToSubmitType } from './WDODocumentFile'
-import { WDOPowerAuthActivationState, WDOPowerAuthActivationStatus } from './WDOPowerAuthActivationStatus'
-import { WDODefaultCache } from './WDOCache'
+import { WDOPlatform, WDOPowerAuth, WDOPowerAuthActivationStatus, WDOPowerAuthPassword } from './WDOPlatform'
 
 /**
  * Listener of the Verification Service that can listen on Verification Status and PowerAuth Status changes.
@@ -27,10 +26,10 @@ export interface WDOVerificationServiceListener {
      *  Note that this happens only when error is returned in some of the Verification endpoints and this error indicates PowerAuth status change. For
      * example when the service finds out during the API call that the PowerAuth activation was removed or blocked on the server
      */
-    powerAuthActivationStatusChanged(sender: WDOBaseVerificationService, status: WDOPowerAuthActivationStatus): void
+    powerAuthActivationStatusChanged(senderService: any, status: WDOPowerAuthActivationStatus): void
 
     /** Called when state of the verification has changed. */
-    verificationStatusChanged(sender: WDOBaseVerificationService, status: WDOVerificationState): void
+    verificationStatusChanged(senderService: any, status: WDOVerificationState): void
 }
 
 /** Possible results of the user consent. */
@@ -51,31 +50,50 @@ export enum WDOConsentResponse {
  * 
  * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
  */
-export abstract class WDOBaseVerificationService {
+export abstract class WDOBaseVerificationService<
+    TPowerAuth extends WDOPowerAuth,
+    TPowerAuthPassword extends WDOPowerAuthPassword
+> {
 
-    /* @internal */
-    protected abstract api: WDOBaseApi
-    /* @internal */
-    protected abstract changeAcceptLanguageImpl(language: string): void
-    /* @internal */
-    protected abstract fetchActivationStatus(): Promise<WDOPowerAuthActivationStatus>
-    /* @internal */
-    protected abstract getPAInstanceId(): string
+    /** Checks if verification is required based on PowerAuth activation status */
+    protected static isVerificationRequiredInternal(paStatus: WDOPowerAuthActivationStatus): boolean {
+        const flags = paStatus.customObject?.activationFlags as Array<string> | undefined
+        return !!flags && flags.some(f => f === "VERIFICATION_PENDING" || f === "VERIFICATION_IN_PROGRESS")
+    }
+
+    /** PowerAuth instance */
+    readonly powerauth: TPowerAuth
+
+    // INTERNALS
+    private readonly api: WDOApi<TPowerAuth>
+
+    /**
+     * Creates service instance
+     * 
+     * @param powerauth Configured PowerAuth instance. This instance needs to be without valid activation.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server. Usually ending with `/enrollment-onboarding-server`.
+     */
+    constructor(powerauth: TPowerAuth, baseUrl: string) {
+        this.powerauth = powerauth
+        this.api = new WDOApi(powerauth, baseUrl)
+    }
+
+    // --
 
     /* @internal */
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
 
     /* @internal */
-    private cacheKey(): string { return `wdocp_${this.getPAInstanceId()}` }
+    private cacheKey(): string { return `wdocp_${this.powerauth.instanceId}` }
 
     /* @internal */
     private async setCachedProcess(process: WDOVerificationScanProcess | undefined): Promise<void> {
-        await WDODefaultCache.instance.set(this.cacheKey(), process?.dataForCache())
+        await WDOPlatform.cache.set(this.cacheKey(), process?.dataForCache())
     }
 
     /* @internal */
     private async getCachedProcess(): Promise<WDOVerificationScanProcess | undefined> {
-        const data = await WDODefaultCache.instance.get(this.cacheKey())
+        const data = await WDOPlatform.cache.get(this.cacheKey())
         if (!data) {
             return undefined
         }
@@ -93,7 +111,7 @@ export abstract class WDOBaseVerificationService {
      * will return error texts and other in german (if available).
      */
     public changeAcceptLanguage(language: string) {
-        this.changeAcceptLanguageImpl(language)
+        this.api.networking.acceptLanguage = language
     }
 
     /** Time in seconds that user needs to wait between OTP resend calls */
@@ -112,9 +130,13 @@ export abstract class WDOBaseVerificationService {
     async status(): Promise<WDOVerificationState> {
         try {
             const response = await this.api.verificationStatus()
-            response.consentRequired = response.consentRequired ?? false // when undefined, assume false
             WDOLogger.info("Verification status successfully retrieved.")
             WDOLogger.debug(`Verification status: ${JSON.stringify(response)}`)
+
+            if (response.consentRequired == undefined) {
+                WDOLogger.debug("Consent required flag not present in the response, assuming false")
+                response.consentRequired = false
+            }
 
             switch (response.identityVerificationStatus) {
                 case WDOIdentityVerificationStatus.failed:
@@ -185,6 +207,9 @@ export abstract class WDOBaseVerificationService {
                     return this.processSuccess({ type: WDOVerificationStateType.endState, reason: WDOEndStateReason.rejected })
                 case WDONextStep.success:
                     return this.processSuccess({ type: WDOVerificationStateType.success })
+                case WDONextStep.finishActivation:
+                    return this.processSuccess({ type: WDOVerificationStateType.finishActivation })
+
             }
 
         } catch (error) {
@@ -350,6 +375,71 @@ export abstract class WDOBaseVerificationService {
     }
 
     /**
+     * Finishes verification by creating a new PowerAuth activation on given `newPowerAuthInstance`.
+     * 
+     * Needs to be called when "activationFinish" next step is returned from the `status()` call.
+     * 
+     * The method verifies that the provided `password` is the same as used in the original activation
+     * (if `validatePassword` is set to `true`), then it calls the server API to finish
+     * the verification and obtain the activation code for the new activation. Finally, it creates
+     * a new activation on `newPowerAuthInstance` using the obtained activation code and persists it
+     * with the provided `newPassword`.
+     * 
+     * After successful completion, the original PowerAuth instance becomes invalid (`REMOVED` state) and cannot be used anymore.
+     * 
+     * @param newPowerAuthInstance PowerAuth instance where to create new activation. This instance must not have an existing activation.
+     * @param newActivationName Name of the new activation to be created on `newPowerAuthInstance`.
+     * @param newPassword Password to protect the new activation. In case `validatePassword` is `true`, this password must match the password of the original activation and must be reusable (not destroyed on use).
+     * @param validatePassword If set to `true`, the method verifies that the provided `newPassword` matches the password of the original activation.
+     * @param userIdentification Optional user identification object to be sent to the server during the finish activation process.
+     */
+    async finishActivation(
+        newPowerAuthInstance: TPowerAuth, 
+        newActivationName: string, 
+        newPassword: TPowerAuthPassword, 
+        validatePassword: boolean,
+        userIdentification?: any
+    ): Promise<WDOVerificationState> {
+
+        try {
+
+            const pid = this.verifyHasActiveProcess()
+
+            if (validatePassword) {
+
+                // password must be reusable
+                if ((newPassword as any).destroyOnUse) { // TODO: ok? maybe make this property public in PowerAuthPassword?
+                    throw new WDOError(
+                        WDOErrorReason.invalidParameter, 
+                        "The provided PowerAuthPassword is configured to be destroyed on use, which is not supported in finishActivation with validatePassword=true. Please provide a reusable PowerAuthPassword instance. (with destroyOnUse=false)"
+                    )
+                }
+                // validate password against original activation
+                await this.powerauth.validatePassword(newPassword)
+            }
+
+            const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
+            try {
+                const activation = WDOPlatform.powerAuthFactory.activationWithActivationCode(response.activationCode, newActivationName, undefined)
+                await newPowerAuthInstance.createActivation(activation)
+                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuthFactory.authenticationWithPassword(newPassword))
+            } catch (e) {
+                // In case of failure, ensure no partial activation remains
+                if (await newPowerAuthInstance.canStartActivation() == false) {
+                    await newPowerAuthInstance.removeActivationLocal()
+                }
+                
+                throw e // rethrow
+            }
+            return this.processSuccess({ type: WDOVerificationStateType.success })
+
+        } finally {
+            await newPassword.clear() // destroy the password after use
+        }
+
+    }
+
+    /**
      * Request OTP resend.
      * 
      * Since SMS or emails can fail to deliver, use this to send the OTP again.
@@ -402,8 +492,8 @@ export abstract class WDOBaseVerificationService {
     private async processError(error: any): Promise<any> {
         if (error.code === "AUTHENTICATION_ERROR") { // PowerAuth Authentication failure
             try {
-                const status = await this.fetchActivationStatus()
-                if (status.state !== WDOPowerAuthActivationState.ACTIVE) {
+                const status = await this.powerauth.fetchActivationStatus()
+                if (status.state !== "ACTIVE") {
                     WDOLogger.error(`PowerAuth status is not active (status${status.state}) - notifying the delegate and returning and error.`)
                     this.listener?.powerAuthActivationStatusChanged(this, status)
                     return new WDOError(WDOErrorReason.powerauthNotActivated, "PowerAuth activation is not active anymore")
@@ -573,6 +663,9 @@ class WDOVerificationStatus {
                 default:
                     break
             }
+        } else if (phase === WDOIdentityVerificationPhase.activationFinish) {
+            // TODO: handle status?
+            nextStep = WDONextStep.finishActivation
         }
 
         if (nextStep == undefined) {
@@ -593,6 +686,7 @@ class WDOVerificationStatus {
     }
 }
 
+
 /* @internal */
 enum WDONextStep {
     intro = "intro",
@@ -600,6 +694,7 @@ enum WDONextStep {
     statusCheck = "statusCheck",
     presenceCheck = "presenceCheck",
     otp = "otp",
+    finishActivation = "finishActivation",
     failed = "failed",
     rejected = "rejected",
     success = "success"
