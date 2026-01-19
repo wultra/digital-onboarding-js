@@ -7,14 +7,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDOBaseApi } from './api/WDOBaseApi'
+import { WDOApi } from './api/WDOApi'
 import { WDOConfigurationResponse } from './api/WDONetworkingObjects'
+import { WDOPowerAuth } from './WDOPlatform'
 
 /** Service that provides configuration for the Wultra Digital Onboarding SDK. */
-export abstract class WDOBaseConfigurationService {
+export abstract class WDOBaseConfigurationService<TPowerAuth extends WDOPowerAuth> {
 
     /* @internal */
-    protected abstract api: WDOBaseApi
+    private api: WDOApi<TPowerAuth>
+
+    /** PowerAuth instance */
+    public readonly powerauth: TPowerAuth
+
+    /**
+     * Creates service instance
+     * 
+     * @param powerauth Configured PowerAuth instance.
+     * @param baseUrl Base URL of the Wultra Digital Onboarding server. Usually ending with `/enrollment-onboarding-server`.
+     */
+    constructor(powerauth: TPowerAuth, baseUrl: string) {
+        this.api = new WDOApi(powerauth, baseUrl)
+        this.powerauth = powerauth
+    }
 
     /**
      * Fetches configuration for the given process type from the server.

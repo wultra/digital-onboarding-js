@@ -40,18 +40,25 @@ interface WDOConfigurationResponse {
     otpForIdentityVerification: boolean
     /** Documents required for identity verification. */
     documents: {
-        /** Number of required documents */
-        requiredDocumentsCount: number
-        /** List of documents */
-        items: Array<WDOConfigurationDocument>
+        /** Number of total required documents */
+        totalRequiredDocumentsCount: number
+        /** Groups of documents */
+        groups: Array<WDOConfigurationDocumentGroup>
     }
 }
+
+/** Group of documents in the configuration */
+interface WDOConfigurationDocumentGroup {
+    /** Number of required documents in the group */
+    requiredDocumentsCount: number
+    /** Documents in the group */
+    items: Array<WDOConfigurationDocument>
+}
+
 /** Configuration for a document */
 interface WDOConfigurationDocument {
     /** Type of the document */
     type: string
-    /** Is the document mandatory */
-    mandatory: boolean
     /** Number of sides the document has */
     sideCount: number
 }

@@ -7,26 +7,34 @@ import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType
     WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
-import { BlinkID, BlinkIdScanningSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
+import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
+import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking"
 
 document.addEventListener('deviceready', onDeviceReady, false)
 
 declare var cordova: any
 
 function onDeviceReady() {
-    // Cordova is now initialized. Have fun!
 
     document.getElementById('deviceready')?.classList.add('ready')
     document.getElementById('btn-simulate')?.addEventListener('click', simulateActivation)
     const outputElem = document.getElementById('output') as HTMLTextAreaElement
+
+    // SETUP LOGGING
+
+    // WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
+    WDOLogger.logLevel = WDOLogLevel.DEBUG
+    const isInAppLoggerEnabled = true
 
     // Override console.log to also output to textarea
     const originalConsoleLog = console.log
     console.log = function(message?: any, ...optionalParams: any[]) {
         const now = new Date()
         const messageWithTime = `[${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:${now.getMilliseconds()}] ${message}`
-        outputElem.value += messageWithTime + ' ' + optionalParams.join(' ') + '\n'
-        outputElem.scrollTop = outputElem.scrollHeight
+        if (isInAppLoggerEnabled) {
+            outputElem.value += messageWithTime + ' ' + optionalParams.join(' ') + '\n'
+            outputElem.scrollTop = outputElem.scrollHeight
+        }
         originalConsoleLog.apply(console, [messageWithTime, ...optionalParams])
     }
 
@@ -40,6 +48,12 @@ async function simulateActivation() {
     const pin = "1234"
     const powerAuth = new PowerAuth(generateRandomNumericString())
     powerAuth.configure({
+        configuration: serverCredentials.paConfig,
+        baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
+    })
+
+    const powerAuth2 = new PowerAuth(generateRandomNumericString())
+    powerAuth2.configure({
         configuration: serverCredentials.paConfig,
         baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
     })
@@ -68,27 +82,26 @@ async function simulateActivation() {
 
     try {
 
-        // SETUP LOGGING
-
-        // WPNLoggerConfig.verbosity = WPNLoggerVerbosity.DEBUG
-        WDOLogger.logLevel = WDOLogLevel.DEBUG
-
         // DEFAULT SETUP AND CONFIGURATION
 
-        const processType: string | undefined = undefined // "onboarding"
+        const processType: string | undefined = "onboarding" // undefined
         const defaultConfig: WDOConfigurationResponse = {
             enabled: true,
             otpForIdentification: true,
             otpForIdentityVerification: true,
             documents: {
-                requiredDocumentsCount: 1,
-                items: [
+                totalRequiredDocumentsCount: 1,
+                groups: [
                     {
-                        type: "ID_CARD",
-                        mandatory: true,
-                        sideCount: 2
+                        requiredDocumentsCount: 1,
+                        items: [
+                            {
+                                type: "ID_CARD",
+                                sideCount: 2
+                            }
+                        ]
                     }
-                ]
+                ],
             }
         }
 
@@ -99,26 +112,52 @@ async function simulateActivation() {
             console.log("Fetching configuration from the server...")
             config = await configurationService.getConfiguration(processType)
             console.log(`Configuration fetched: ${JSON.stringify(config)}`)
+            if (!config.enabled) {
+                throw new Error("Onboarding process is not enabled on the server!")
+            }
+            if (!config.documents || config.documents.groups.length === 0 || config.documents.groups[0].items.length === 0) {
+                throw new Error("No documents configured for onboarding process on the server!")
+            }
         } else {
             console.log("No process type specified, skipping configuration fetch.")
             config = defaultConfig
         }
 
         // PREPARE DOCUMENT TYPES FOR SCANNING BASED ON CONFIGURATION
-        const documentTypesToScan: { type: WDODocumentType, sideCount: number }[] = []
-        // first add mandatory documents
-        const mandatoryDocs = config.documents.items.filter(doc => doc.mandatory).map(doc => configDocToDocType(doc))
-        console.log(`Adding mandatory documents from configuration: ${JSON.stringify(mandatoryDocs)}`)
-        documentTypesToScan.push(...mandatoryDocs)
+        type DocumentTypeToScan = { type: WDODocumentType, sideCount: number }
+        const documentTypesToScan: DocumentTypeToScan[] = []
 
-        // then add non-mandatory documents if needed
-        if (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
-            const nonMandatoryDocs = config.documents.items.filter(doc => !doc.mandatory).map(doc => configDocToDocType(doc))
-            let idx = 0
-            while (documentTypesToScan.length < config.documents.requiredDocumentsCount) {
-                console.log(`Adding non-mandatory document from configuration: ${nonMandatoryDocs[idx]}`)
-                documentTypesToScan.push(nonMandatoryDocs[idx])
-                idx++
+        // first go-through to add mandatory documents from all groups
+        for (const group of config.documents.groups) {
+            for (let i = 0; i < group.requiredDocumentsCount; i++) {
+                const docType = configDocToDocType(group.items[i])
+                console.log(`Adding mandatory document from configuration group: ${docType.type}`)
+                documentTypesToScan.push(docType)
+            }
+        }
+
+        const hasRequiredDocCount = (documentTypesToScan: DocumentTypeToScan[]): boolean => { 
+            return documentTypesToScan.length >= config.documents.totalRequiredDocumentsCount 
+        }
+
+        if (!hasRequiredDocCount(documentTypesToScan)) {
+            // second go-through to add non-mandatory documents from all groups to fulfill required count
+            for (const group of config.documents.groups) {
+                
+                if (hasRequiredDocCount(documentTypesToScan)) {
+                    break
+                }
+
+                for (const item of group.items) {
+                    const docType = configDocToDocType(item)
+                    if (!documentTypesToScan.find(d => d.type === docType.type)) {
+                        console.log(`Adding non-mandatory document from configuration group: ${docType.type}`)
+                        documentTypesToScan.push(docType)
+                        if (hasRequiredDocCount(documentTypesToScan)) {
+                            break
+                        }
+                    }
+                }
             }
         }
 
@@ -336,12 +375,15 @@ async function simulateActivation() {
         sessionSettings.scanningSettings.returnInputImages = true
         sessionSettings.scanningSettings.croppedImageSettings = new CroppedImageSettings()
         sessionSettings.scanningSettings.croppedImageSettings.returnDocumentImage = true
+        const uxSettings = new BlinkIdScanningUxSettings()
+        uxSettings.showHelpButton = false
+        uxSettings.showOnboardingDialog = false
 
         let blinkIDUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
         
         for (const doc of documentTypesToScan) {
             console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
-            const result = await BlinkID.performScan(sdkSettings, sessionSettings)
+            const result = await BlinkID.performScan(sdkSettings, sessionSettings, uxSettings)
         
             const image1 = result.firstInputImage
             if (!image1) {
@@ -420,16 +462,62 @@ async function simulateActivation() {
             console.log("OTP for identity verification is not required, skipping OTP retrieval and submission.")
         }
 
-        // wait for final status
-        const finalStatus = await waitForStatusChange(verificationService)
-        console.log(`Verification status after presence check processing: ${finalStatus.type}`)
-        guardState(finalStatus.type, WDOVerificationStateType.success)
+        // wait for another status
+        let anotherStatus = await waitForStatusChange(verificationService)
+        console.log(`Verification status after presence check/otp processing: ${anotherStatus.type}`)
 
-        console.log("Onboarding process completed successfully.")
+        // lets check if we need to finish activation
+        if (anotherStatus.type === WDOVerificationStateType.finishActivation) {
 
-        console.log("Fetching PowerAuth SDK activation status...")
-        const finalPaStatus = await powerAuth.fetchActivationStatus()
-        console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
+            // verify that PowerAuth 2 instance has no activation yet
+            if (await powerAuth2.hasValidActivation()) {
+                throw new Error("PowerAuth2 instance already has an active activation before finishActivation!")
+            }
+
+            // finish activation
+            console.log("Finishing activation...")
+            anotherStatus = await verificationService.finishActivation(
+                powerAuth2,
+                "onboarding-activation",
+                await PowerAuthPassword.fromString(pin, false),
+                true
+            )
+            // on success, the state should be success
+            guardState(anotherStatus.type, WDOVerificationStateType.success)
+            console.log(`Verification status after activation finished is : ${anotherStatus.type}`)
+
+            // powerauth now should have active activation
+            if (await powerAuth2.hasValidActivation()) {
+                console.log("PowerAuth2 instance has valid activation after finishActivation.")
+            } else {
+                throw new Error("PowerAuth2 instance does not have a valid activation after finishActivation!")
+            }
+
+            // verify that activation is active
+            const pa2Status = await powerAuth2.fetchActivationStatus()
+            console.log(`PowerAuth2 SDK activation status: ${JSON.stringify(pa2Status)}`)
+            if (pa2Status.state == PowerAuthActivationState.ACTIVE) {
+                console.log("PowerAuth2 instance activation is active after finishActivation.")
+            } else {
+                throw new Error(`PowerAuth2 instance activation is not active after finishActivation: ${pa2Status.state}`)
+            }
+
+            const removedStatus = await powerAuth.fetchActivationStatus()
+            console.log(`Fetched original PA status after finishActivation: ${JSON.stringify(removedStatus)}`)
+            if (removedStatus.state == PowerAuthActivationState.REMOVED) {
+                console.log("Original PowerAuth instance activation is removed after finishActivation.")
+            } else {
+                throw new Error(`Original PowerAuth instance activation is not removed after finishActivation: ${removedStatus.state}`)
+            }
+
+        } else {
+            guardState(anotherStatus.type, WDOVerificationStateType.success)
+            console.log("Onboarding process completed successfully.")
+
+            console.log("Fetching PowerAuth SDK activation status...")
+            const finalPaStatus = await powerAuth.fetchActivationStatus()
+            console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
+        }
 
     } catch (error) {
         console.log(`Error during activation:`)
