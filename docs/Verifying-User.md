@@ -501,7 +501,9 @@ This PIN code is then used to activate a new `PowerAuth` object that will be use
 Once the new `PowerAuth` instance is activated, the verification process is finished, and the user can proceed to the main app flow *with the new `PowerAuth` instance*.
 
 <!-- begin box info -->
-The `PowerAuthPassword` passed to the `finishActivation` needs to be reusable (`destroyOnUse` set to false - `new PowerAuthPassword(false)`).
+If users PIN used for the original activation should be equal to the one used for the new activation, then:
+- Set the `validatePassword` parameter to `true` in the `finishActivation` call. 
+- The `PowerAuthPassword` passed to the `finishActivation` needs to be reusable (`destroyOnUse` set to false - `new PowerAuthPassword(false)`).
 <!-- end -->
 
 Example:
@@ -510,10 +512,10 @@ Example:
 const verification: WDOVerificationService // configured instance
 const newPaInstance: PowerAuth // new PowerAuth instance to be activated and then used in the app
 try {
-    const auth = await PowerAuthPassword.fromString("user-password", false) // reusable password
-    const finishResult = await verification.finishActivation(auth, newPaInstance, "my--newactivation-name")
-    // when here, the newPaInstance is activated and ready to use (to sign requests and so on)
-    // you can still check the status on the verification object to get the `success` state, but it's not necessary
+    const password = await PowerAuthPassword.fromString("user-password", false) // reusable password
+    const finishResult = await verification.finishActivation(newPaInstance, "my--newactivation-name", password, true)
+    // When here, the newPaInstance is activated and ready to use (to sign requests and so on).
+    // The original PowerAuth instance used for the verification will be in the `REMOVED` state and the `verification` instance can't be used anymore.
 } catch (error) {
     // handle error
 }
