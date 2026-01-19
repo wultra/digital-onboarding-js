@@ -1,6 +1,6 @@
 # Changelog
 
-## X.X.X
+## 1.2.0 (Jan, 2026)
 
 - **Breaking:** New `finishActivation` state in `WDOVerificationService` to complete the user verification process by activating a new PowerAuth instance.
   - New method must be called by the client when handling the `finishActivation` state in the verification flow, i.e. after all verification steps (identity, documents, presence, etc.) have succeeded but before the new `PowerAuth` instance is used anywhere else in the app: `finishActivation(newPaInstance: PowerAuth, activationName: string, password: WDOPowerAuthPassword, validatePassword: boolean)`.
