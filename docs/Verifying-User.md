@@ -501,7 +501,7 @@ This PIN code is then used to activate a new `PowerAuth` object that will be use
 Once the new `PowerAuth` instance is activated, the verification process is finished, and the user can proceed to the main app flow *with the new `PowerAuth` instance*.
 
 <!-- begin box info -->
-If users PIN used for the original activation should be equal to the one used for the new activation, then:
+If the user's PIN used for the original activation should be equal to the one used for the new activation, then:
 - Set the `validatePassword` parameter to `true` in the `finishActivation` call. 
 - The `PowerAuthPassword` passed to the `finishActivation` needs to be reusable (`destroyOnUse` set to false - `new PowerAuthPassword(false)`).
 <!-- end -->

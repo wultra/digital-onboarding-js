@@ -22,8 +22,8 @@ const configurationService = new WDOConfigurationService(
     "https://my-server-deployment.com/enrollment-server-onboarding/"
 )
 
-const procesType = "onboarding" // defined on your server (can be undefined for default process type)
-const config = await configurationService.getConfiguration(procesType)
+const processType = "onboarding" // defined on your server (can be undefined for default process type)
+const config = await configurationService.getConfiguration(processType)
 console.log("Configuration:", config)
 ```
 
