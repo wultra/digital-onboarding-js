@@ -2,6 +2,8 @@
 
 ## X.X.X
 
+- **Breaking:** New `finishActivation` state in `WDOVerificationService` to complete the user verification process by activating a new PowerAuth instance.
+  - New method must be called: `finishActivation(newPaInstance: PowerAuth, activationName: string, password: WDOPowerAuthPassword, validatePassword: boolean)
 - **Breaking:** Changed configuration endpoint response to include document groups instead of a flat list of documents.
 
 ## 1.1.0 (Dec, 2025)
