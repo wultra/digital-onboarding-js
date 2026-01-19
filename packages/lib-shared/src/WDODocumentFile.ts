@@ -87,7 +87,7 @@ export enum WDODocumentSide {
     back = "back"
 }
 
-/* internal */
+/* @internal */
 export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentSubmitFileType {
     switch (type) {
         case WDODocumentType.idCard:
@@ -99,7 +99,7 @@ export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentS
     }
 }
 
-/* internal */
+/* @internal */
 export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
     switch (side) {
         case WDODocumentSide.front:

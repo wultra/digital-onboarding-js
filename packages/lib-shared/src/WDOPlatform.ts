@@ -33,7 +33,7 @@ export interface WDONetworkingFactory {
 /* @internal */
 export interface WDOPowerAuthFactory {
     activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): WDOPowerAuthActivation
-    authenticationWithPassword(password: string | WDOPowerAuthPassword): WDOPowerAuthAuthentication
+    authenticationWithPassword(password: WDOPowerAuthPassword): WDOPowerAuthAuthentication
     activationWithIdentityAttributes(identityAttributes: any, activationName: string): WDOPowerAuthActivation
 }
 

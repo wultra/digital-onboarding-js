@@ -83,7 +83,7 @@ export enum WDOIdentityVerificationPhase {
     activationFinish = "ACTIVATION_FINISH"
 }
 
-/* internal */
+/* @internal */
 export enum WDODocumentSubmitFileType {
     /** National ID card */
     idCard = "ID_CARD",
@@ -95,7 +95,7 @@ export enum WDODocumentSubmitFileType {
     selfiePhoto = "SELFIE_PHOTO"
 }
 
-/* internal */
+/* @internal */
 export enum WDODocumentSubmitFileSide {
     /** Front side of an document. Usually the one with the picture */
     front = "FRONT",
