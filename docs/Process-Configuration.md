@@ -9,19 +9,21 @@ To retrieve the configuration, create an instance of `WDOConfigurationService` a
 Example:
 
 ```typescript
-
+// create and configure PowerAuth instance
 const powerAuth = new PowerAuth("my-pa-instance")
-powerAuth.configure({
+await powerAuth.configure({
     configuration: "ARCB+...jg==", // base64 PowerAuth configuration
     baseEndpointUrl: "https://my-server-deployment.com/enrollment-server/"
 })
+
+// create configuration service
 const configurationService = new WDOConfigurationService(
     powerAuth,
     "https://my-server-deployment.com/enrollment-server-onboarding/"
 )
 
-const procesType = "onboarding" // defined on your server
-const config = await configurationService.getConfiguration(procesType)
+const processType = "onboarding" // defined on your server (can be undefined for default process type)
+const config = await configurationService.getConfiguration(processType)
 console.log("Configuration:", config)
 ```
 
