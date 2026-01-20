@@ -234,12 +234,27 @@ export enum WDOEndStateReason {
  * and it would be frustrating to just show a generic loading indicator.
  */
 export enum WDOStatusCheckReason {
+    /** Unknown reason */
     unknown = "unknown",
+    /** Waiting for document to be uploaded to the OCR service */
     documentUpload = "documentUpload",
+    /** Waiting for document to be verified */
     documentVerification = "documentVerification",
+    /** Document was accepted, waiting to be cross-verified */
     documentAccepted = "documentAccepted",
+    /** Cross verification of documents is in progress */
     documentsCrossVerification = "documentsCrossVerification",
+    /** Client is being verified */
     clientVerification = "clientVerification",
+    /** Client was accepted */
     clientAccepted = "clientAccepted",
-    verifyingPresence = "verifyingPresence"
+    /** Verifying user presence */
+    verifyingPresence = "verifyingPresence",
+    /** 
+     * Waiting for the institution to approve the onboarding of the user.
+     *  
+     * This may take some time, depending on the institution's processes.
+     */
+    onboardingApproval = "onboardingApproval"
+
 }

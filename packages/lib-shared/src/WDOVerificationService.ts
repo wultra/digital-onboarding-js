@@ -666,6 +666,14 @@ class WDOVerificationStatus {
         } else if (phase === WDOIdentityVerificationPhase.activationFinish) {
             // TODO: handle status?
             nextStep = WDONextStep.finishActivation
+        } else if (phase === WDOIdentityVerificationPhase.onboardingApproval) {
+            if (status === WDOIdentityVerificationStatus.failed) {
+                WDOLogger.debug("Onboarding approval phase with failed status - moving to failed state")
+                nextStep = WDONextStep.failed
+            } else {
+                nextStep = WDONextStep.statusCheck
+                statusCheckReason = WDOStatusCheckReason.onboardingApproval
+            }
         }
 
         if (nextStep == undefined) {

@@ -79,6 +79,8 @@ export enum WDOIdentityVerificationPhase {
     otp = "OTP_VERIFICATION",
     /** Completed */
     completed = "COMPLETED",
+    /** Waiting for onboarding approval */
+    onboardingApproval = "ONBOARDING_APPROVAL",
     /** Exchanging the temporary activation for the permanent one. */
     activationFinish = "ACTIVATION_FINISH"
 }
