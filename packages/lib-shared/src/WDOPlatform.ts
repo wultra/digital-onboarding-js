@@ -9,8 +9,8 @@
 
 export class WDOPlatform {
     static cache: WDOCache
-    static networkingFactory: WDONetworkingFactory
-    static powerAuthFactory: WDOPowerAuthFactory
+    static networking: WDONetworkingIntegration
+    static powerAuth: WDOPowerAuthIntegration
 }
 
 export interface WDOCache {
@@ -20,7 +20,7 @@ export interface WDOCache {
 }
 
 /* @internal */
-export interface WDONetworkingFactory {
+export interface WDONetworkingIntegration {
     // Endpoint creation methods
     signedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
     signedWithTokenEndpoint<TRequest, TResponse>(path: string, tokenName: string, responseConfig?: WDOResponseConfig, e2eeConfig?: WDOE2EEConfiguration): WDOApiEndpoint<TRequest, TResponse>
@@ -31,10 +31,12 @@ export interface WDONetworkingFactory {
 }
 
 /* @internal */
-export interface WDOPowerAuthFactory {
+export interface WDOPowerAuthIntegration {
     activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): WDOPowerAuthActivation
     authenticationWithPassword(password: WDOPowerAuthPassword): WDOPowerAuthAuthentication
+    authenticationWithPossession(): WDOPowerAuthAuthentication
     activationWithIdentityAttributes(identityAttributes: any, activationName: string): WDOPowerAuthActivation
+    isPowerAuthAuthentication(authentication: any): boolean
 }
 
 /* @internal */

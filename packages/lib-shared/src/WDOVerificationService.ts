@@ -420,9 +420,9 @@ export abstract class WDOBaseVerificationService<
 
             const response = await this.handleError(this.api.verificationFinishActivation(pid, userIdentification))
             try {
-                const activation = WDOPlatform.powerAuthFactory.activationWithActivationCode(response.activationCode, newActivationName, undefined)
+                const activation = WDOPlatform.powerAuth.activationWithActivationCode(response.activationCode, newActivationName, undefined)
                 await newPowerAuthInstance.createActivation(activation)
-                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuthFactory.authenticationWithPassword(newPassword))
+                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuth.authenticationWithPassword(newPassword))
             } catch (e) {
                 // In case of failure, ensure no partial activation remains
                 if (await newPowerAuthInstance.canStartActivation() == false) {
@@ -667,14 +667,22 @@ class WDOVerificationStatus {
             // TODO: handle status?
             nextStep = WDONextStep.finishActivation
         } else if (phase === WDOIdentityVerificationPhase.onboardingApproval) {
-            if (status === WDOIdentityVerificationStatus.failed) {
-                WDOLogger.debug("Onboarding approval phase with failed status - moving to failed state")
-                nextStep = WDONextStep.failed
-            } else {
-                nextStep = WDONextStep.statusCheck
-                statusCheckReason = WDOStatusCheckReason.onboardingApproval
+            switch (status) {
+                case WDOIdentityVerificationStatus.failed:
+                    WDOLogger.debug("Onboarding approval phase with failed status - moving to failed state")
+                    nextStep = WDONextStep.failed
+                    break
+                case WDOIdentityVerificationStatus.rejected:
+                    nextStep = WDONextStep.rejected
+                    break
+                default:
+                    nextStep = WDONextStep.statusCheck
+                    statusCheckReason = WDOStatusCheckReason.onboardingApproval
+                    break
             }
         }
+
+        WDOLogger.info(`Translated backend phase/status ${phase ?? "nil"}/${status} to next step: ${nextStep ?? "nil"}`)
 
         if (nextStep == undefined) {
             WDOLogger.error(`Unknown phase/status combo: ${phase ?? "nil"}, ${status}`)

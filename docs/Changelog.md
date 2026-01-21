@@ -2,7 +2,7 @@
 
 ## X.X.X (TBA)
 
-- Added `onboardingApproval` phase to the identity verification process to handle waiting for user (manual) onboarding approval.
+- Added `onboardingApproval` to the `WDOStatusCheckReason` when the process is waiting for institution approval.
 
 ## 1.2.0 (Jan, 2026)
 

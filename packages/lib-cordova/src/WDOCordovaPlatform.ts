@@ -8,7 +8,7 @@
  */
 
 import "cordova-powerauth-mobile-sdk"
-import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingFactory } from '../../lib-shared/src/WDOPlatform'
+import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingIntegration } from '../../lib-shared/src/WDOPlatform'
 import { WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 
 export class WDOCordovaCache implements WDOCache {
@@ -30,7 +30,7 @@ export class WDOCordovaCache implements WDOCache {
     }
 }
 
-export class WDONetworkingFactoryCordova implements WDONetworkingFactory {
+export class WDONetworkingCordovaIntegration implements WDONetworkingIntegration {
 
     signedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: any, e2eeConfig?: any): WDOApiEndpoint<TRequest, TResponse> {
         return WPNEndpoint.signed<TRequest, TResponse>(path, uriId, responseConfig, e2eeConfig)
@@ -49,7 +49,7 @@ export class WDONetworkingFactoryCordova implements WDONetworkingFactory {
     }
 }
 
-export class WDOPowerAuthFactoryCordova {
+export class WDOPowerAuthCordovaIntegration {
 
     activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): PowerAuthActivation {
         const activation = PowerAuthActivation.createWithActivationCode(activationCode, activationName)
@@ -65,5 +65,13 @@ export class WDOPowerAuthFactoryCordova {
 
     authenticationWithPassword(password: PowerAuthPassword): PowerAuthAuthentication {
         return PowerAuthAuthentication.password(password)
+    }
+
+    authenticationWithPossession(): PowerAuthAuthentication {
+        return PowerAuthAuthentication.possession()
+    }
+
+    isPowerAuthAuthentication(authentication: any): boolean {
+        return authentication instanceof PowerAuthAuthentication
     }
 }
