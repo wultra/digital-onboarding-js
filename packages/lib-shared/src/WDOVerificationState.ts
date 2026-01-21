@@ -252,9 +252,8 @@ export enum WDOStatusCheckReason {
     verifyingPresence = "verifyingPresence",
     /** 
      * Waiting for the institution to approve the onboarding of the user.
-     *  
+     * 
      * This may take some time, depending on the institution's processes.
      */
     onboardingApproval = "onboardingApproval"
-
 }
