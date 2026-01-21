@@ -18,7 +18,7 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
 
     constructor(powerauth: TPowerAuth, baseUrl: string) {
         // TODO: additional configuration?
-        this.networking = WDOPlatform.networkingFactory.networking(powerauth, baseUrl)
+        this.networking = WDOPlatform.networking.networking(powerauth, baseUrl)
     }
 
     // Configuration endpoints
@@ -130,12 +130,12 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
 
     private callApi<TRequest, TResponse>(requestObject: TRequest, endpoint: WDOEndpoint, authObject?: any): Promise<TResponse> {
     
-        if (authObject && !(authObject instanceof PowerAuthAuthentication)) {
+        if (authObject && !WDOPlatform.powerAuth.isPowerAuthAuthentication(authObject)) {
             throw new WDOError(WDOErrorReason.invalidParameter, "The authObject parameter must be of type PowerAuthAuthentication.")
         }
 
         // set authentication to given authObject or to possession if endpoint is "signed"
-        const authentication = authObject || (endpoint.tokenName || endpoint.uriId ? PowerAuthAuthentication.possession() : undefined)
+        const authentication = authObject || (endpoint.tokenName || endpoint.uriId ? WDOPlatform.powerAuth.authenticationWithPossession() : undefined)
 
         return this.networking.call(
             // construct 
@@ -167,11 +167,11 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
         }
         
         if (endpoint.uriId) {
-            return WDOPlatform.networkingFactory.signedEndpoint(endpoint.path, endpoint.uriId, undefined, scope)
+            return WDOPlatform.networking.signedEndpoint(endpoint.path, endpoint.uriId, undefined, scope)
         } else if (endpoint.tokenName) {
-            return WDOPlatform.networkingFactory.signedWithTokenEndpoint(endpoint.path, endpoint.tokenName, undefined, scope)
+            return WDOPlatform.networking.signedWithTokenEndpoint(endpoint.path, endpoint.tokenName, undefined, scope)
         } else {
-            return WDOPlatform.networkingFactory.unsignedEndpoint(endpoint.path, undefined, scope)
+            return WDOPlatform.networking.unsignedEndpoint(endpoint.path, undefined, scope)
         }
     }
 }

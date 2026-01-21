@@ -80,6 +80,8 @@ async function simulateActivation() {
         }
     }
 
+    let testFinishedWithSuccess = false
+
     try {
 
         // DEFAULT SETUP AND CONFIGURATION
@@ -519,6 +521,7 @@ async function simulateActivation() {
             console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
         }
 
+        testFinishedWithSuccess = true
     } catch (error) {
         console.log(`Error during activation:`)
         console.log(`  - message: ${(error as any)?.message}`)
@@ -531,15 +534,19 @@ async function simulateActivation() {
         await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
         console.log("PowerAuth SDK activation removed.")
     }
+
+    console.log("-------------")
+    console.log(" !! TEST " + (testFinishedWithSuccess ? "PASSED" : "FAILED"))
+    console.log("-------------\n")
 }
 
 async function uploadDocumentsFromBlinkId(verificationService: WDOVerificationService, documents: WDODocumentFile[]): Promise<WDOVerificationState> {
-    console.log("Simulating document scanning by submitting blinkID images...")
+    console.log("Submitting blinkID images...")
     const scanResult = await verificationService.documentsSubmit(
         documents
     )
     guardState(scanResult.type, WDOVerificationStateType.processing)
-    console.log("Demo document scans submitted, fetching status.")
+    console.log("Document scans submitted, fetching status.")
 
     return await waitForStatusChange(verificationService)
 }

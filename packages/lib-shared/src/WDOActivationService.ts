@@ -196,12 +196,12 @@ export abstract class WDOBaseActivationService<TPowerAuth extends WDOPowerAuth> 
         try {
             if (code) {
                 WDOLogger.info("Activating PowerAuth using activation code from the onboarding process")
-                const activation = WDOPlatform.powerAuthFactory.activationWithActivationCode(code, activationName, otp)
+                const activation = WDOPlatform.powerAuth.activationWithActivationCode(code, activationName, otp)
                 result = await this.powerauth.createActivation(activation)
             } else {
                 WDOLogger.info("Activating PowerAuth using identity attributes from the onboarding process")
                 const identityAttributes = { processId: pid, otpCode: otp, credentialsType: "ONBOARDING" }
-                const activation = WDOPlatform.powerAuthFactory.activationWithIdentityAttributes(identityAttributes, activationName)
+                const activation = WDOPlatform.powerAuth.activationWithIdentityAttributes(identityAttributes, activationName)
                 result = await this.powerauth.createActivation(activation)
             }
         } catch (error) {
