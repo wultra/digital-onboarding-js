@@ -13,13 +13,23 @@ import { WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 
 /* @internal */
 export class WDOCordovaPlatformUtils implements WDOPlatformUtils {
+
+    private cachedEnvInfo: PowerAuthEnvironmentInfo | null = null
+
+    private async getEnvironmentInfo(): Promise<PowerAuthEnvironmentInfo> {
+        if (this.cachedEnvInfo === null) {
+            this.cachedEnvInfo = await PowerAuthUtils.getEnvironmentInfo()
+        }
+        return this.cachedEnvInfo
+    }
+
     crossPlatformName(): "cordova" | "react-native" {
         return "cordova"
     }
 
     async nativePlatformName(): Promise<"ios" | "android"> {
         // lets keep it simple for now
-        const systemName = (await PowerAuthUtils.getEnvironmentInfo()).systemName.toLowerCase()
+        const systemName = (await this.getEnvironmentInfo()).systemName.toLowerCase()
         if (systemName === "android") {
             return "android"
         } else {
@@ -28,7 +38,7 @@ export class WDOCordovaPlatformUtils implements WDOPlatformUtils {
     }
 
     async bundleId(): Promise<string | undefined> {
-        return (await PowerAuthUtils.getEnvironmentInfo()).applicationIdentifier
+        return (await this.getEnvironmentInfo()).applicationIdentifier
     }
 }
 
