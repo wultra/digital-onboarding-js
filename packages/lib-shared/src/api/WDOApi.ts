@@ -82,8 +82,8 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
         return this.callApi(requestObject, WDOVerificationEndpoints.consentApprove)
     }
 
-    verificationInitScanSDK(processId: string, challenge: string): Promise<any> {
-        const requestObject = { processId: processId, attributes: { 'sdk-init-token': challenge }} 
+    async verificationInitScanSDK(processId: string, challenge: string): Promise<any> {
+        const requestObject = { processId: processId, attributes: { 'sdk-init-token': challenge, platform: WDOPlatform.utils.nativePlatformName(), origin: await WDOPlatform.utils.bundleId() } } 
         return this.callApi(requestObject, WDOVerificationEndpoints.documentScanSdkInit)
     }
 

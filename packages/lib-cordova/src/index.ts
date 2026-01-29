@@ -16,11 +16,12 @@ export * from '../../lib-shared/src/api/WDONetworkingObjects'
 export * from '../../lib-shared/src/WDOError'
 
 // setup platform specific implementations
-import { WDOCordovaCache, WDONetworkingCordovaIntegration, WDOPowerAuthCordovaIntegration } from './WDOCordovaPlatform'
+import { WDOCordovaCache, WDOCordovaPlatformUtils, WDONetworkingCordovaIntegration, WDOPowerAuthCordovaIntegration } from './WDOCordovaPlatform'
 import { WDOPlatform } from '../../lib-shared/src/WDOPlatform'
 WDOPlatform.cache = new WDOCordovaCache()
 WDOPlatform.networking = new WDONetworkingCordovaIntegration()
 WDOPlatform.powerAuth = new WDOPowerAuthCordovaIntegration()
+WDOPlatform.utils = new WDOCordovaPlatformUtils()
 
 // services that depend on platform implementations
 import { WDOBaseActivationService } from '../../lib-shared/src/WDOActivationService'
