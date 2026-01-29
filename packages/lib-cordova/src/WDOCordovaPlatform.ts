@@ -11,19 +11,19 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingIntegration, WDOPlatformUtils } from '../../lib-shared/src/WDOPlatform'
 import { WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 
-declare var cordova: any
-
 /* @internal */
 export class WDOCordovaPlatformUtils implements WDOPlatformUtils {
     crossPlatformName(): "cordova" | "react-native" {
         return "cordova"
     }
 
-    nativePlatformName(): "ios" | "android" {
-        if (cordova.platformId === "ios") {
-            return "ios"
-        } else {
+    async nativePlatformName(): Promise<"ios" | "android"> {
+        // lets keep it simple for now
+        const systemName = (await PowerAuthUtils.getEnvironmentInfo()).systemName.toLowerCase()
+        if (systemName === "android") {
             return "android"
+        } else {
+            return "ios"
         }
     }
 

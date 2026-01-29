@@ -25,7 +25,7 @@ export interface WDOCache {
 /* @internal */
 export interface WDOPlatformUtils {
     crossPlatformName(): "cordova" | "react-native"
-    nativePlatformName(): "ios" | "android"
+    nativePlatformName(): Promise<"ios" | "android">
     bundleId(): Promise<string | undefined>
 }
 
