@@ -4,7 +4,8 @@ import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse, WDOError } from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError, 
+    WDOStatusCheckReason} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -558,6 +559,14 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
     console.log(`Waiting until processing ends (if in progress): ${repeatedStatus.type}`)
 
     while(repeatedStatus.type === WDOVerificationStateType.processing) {
+
+        if (repeatedStatus.item === WDOStatusCheckReason.onboardingApproval) {
+            console.log("Process is waiting for onboarding approval from institution...")
+            // simulate approval
+            await approveOnboarding((verificationService as any).lastStatus.processId)
+            console.log("Onboarding process approved.")
+        }
+
         console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)
         await new Promise(resolve => setTimeout(resolve, 3000))
        
@@ -593,5 +602,51 @@ function configDocToDocType(doc: WDOConfigurationDocument): { type: WDODocumentT
         return { type: WDODocumentType.passport, sideCount: doc.sideCount }
     } else {
         throw new Error(`Unsupported document type in configuration: ${doc.type}`)
+    }
+}
+
+async function approveOnboarding(processId: string): Promise<any> {
+
+    // first get verification id for the process
+
+    const myHeaders = new Headers()
+    myHeaders.append("Content-Type", "application/json")
+    myHeaders.append("Authorization", `Basic ${serverCredentials.authorization}`)
+
+    const requestOptions = {
+        method: "GET",
+        headers: myHeaders
+    }
+
+    const result = await fetch(`${serverCredentials.server}/enrollment-server-onboarding/api/private/test/process/${processId}/identityVerifications`, requestOptions)
+    const data = await result.json()
+    console.log(`Onboarding verifications for process ${processId}: ${JSON.stringify(data)}`)
+    const verificationId = data[0]
+
+    if (!Array.isArray(data) || data.length === 0) {
+        console.log(`No verification ID found for process ${processId}, cannot approve onboarding. Skipping approval.`)
+        return
+    }
+    
+    // now approve the verification
+
+    const raw = JSON.stringify({
+        "processId": processId,
+        "identityVerificationId": verificationId,
+        "userId": "foo",
+        "approvalResult": "OK"
+    })
+
+    const requestOptions2 = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw
+    }
+
+    const result2 = await fetch(`${serverCredentials.server}/enrollment-server-onboarding/api/private/client/approve`, requestOptions2)
+    console.log(`Onboarding approval response status for process ${processId} and verification ${verificationId}: ${result2.status}`)
+
+    if (!result2.ok) {
+        throw new Error("Failed to approve onboarding process") 
     }
 }
