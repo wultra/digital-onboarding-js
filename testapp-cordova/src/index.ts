@@ -560,7 +560,7 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
 
     while(repeatedStatus.type === WDOVerificationStateType.processing) {
 
-        if (repeatedStatus.item == WDOStatusCheckReason.onboardingApproval) {
+        if (repeatedStatus.item === WDOStatusCheckReason.onboardingApproval) {
             console.log("Process is waiting for onboarding approval from institution...")
             // simulate approval
             await approveOnboarding((verificationService as any).lastStatus.processId)
@@ -622,6 +622,11 @@ async function approveOnboarding(processId: string): Promise<any> {
     const data = await result.json()
     console.log(`Onboarding verifications for process ${processId}: ${JSON.stringify(data)}`)
     const verificationId = data[0]
+
+    if (!Array.isArray(data) || data.length === 0) {
+        console.log(`No verification ID found for process ${processId}, cannot approve onboarding. Skipping approval.`)
+        return
+    }
     
     // now approve the verification
 
@@ -642,6 +647,6 @@ async function approveOnboarding(processId: string): Promise<any> {
     console.log(`Onboarding approval response status for process ${processId} and verification ${verificationId}: ${result2.status}`)
 
     if (!result2.ok) {
-        throw "Failed to approve onboarding process"
+        throw new Error("Failed to approve onboarding process") 
     }
 }
