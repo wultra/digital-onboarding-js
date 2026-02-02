@@ -7,16 +7,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* @internal */
 export class WDOPlatform {
     static cache: WDOCache
     static networking: WDONetworkingIntegration
     static powerAuth: WDOPowerAuthIntegration
+    static utils: WDOPlatformUtils
 }
 
+/* @internal */
 export interface WDOCache {
     set(key: string, value: string | undefined): Promise<void>
     get(key: string): Promise<string | undefined>
     has(key: string): Promise<boolean>
+}
+
+/* @internal */
+export interface WDOPlatformUtils {
+    crossPlatformName(): "cordova" | "react-native"
+    nativePlatformName(): Promise<"ios" | "android">
+    bundleId(): Promise<string | undefined>
 }
 
 /* @internal */
