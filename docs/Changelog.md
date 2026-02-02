@@ -3,6 +3,7 @@
 ## X.X.X (TBA)
 
 - Added `onboardingApproval` to the `WDOStatusCheckReason` when the process is waiting for institution approval.
+- SDK now supports server that is configured to support multiple BlinkID applications (bundle IDs/Package Names). The `origin` parameter is now sent to the server to identify the application.
 
 ## 1.2.0 (Jan, 2026)
 

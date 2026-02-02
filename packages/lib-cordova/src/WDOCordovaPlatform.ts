@@ -8,9 +8,41 @@
  */
 
 import "cordova-powerauth-mobile-sdk"
-import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingIntegration } from '../../lib-shared/src/WDOPlatform'
+import { WDOApiEndpoint, WDOCache, WDONetworking, WDONetworkingIntegration, WDOPlatformUtils } from '../../lib-shared/src/WDOPlatform'
 import { WPNEndpoint, WPNNetworking } from "cordova-powerauth-networking"
 
+/* @internal */
+export class WDOCordovaPlatformUtils implements WDOPlatformUtils {
+
+    private cachedEnvInfo: PowerAuthEnvironmentInfo | null = null
+
+    private async getEnvironmentInfo(): Promise<PowerAuthEnvironmentInfo> {
+        if (this.cachedEnvInfo === null) {
+            this.cachedEnvInfo = await PowerAuthUtils.getEnvironmentInfo()
+        }
+        return this.cachedEnvInfo
+    }
+
+    crossPlatformName(): "cordova" | "react-native" {
+        return "cordova"
+    }
+
+    async nativePlatformName(): Promise<"ios" | "android"> {
+        // lets keep it simple for now
+        const systemName = (await this.getEnvironmentInfo()).systemName.toLowerCase()
+        if (systemName === "android") {
+            return "android"
+        } else {
+            return "ios"
+        }
+    }
+
+    async bundleId(): Promise<string | undefined> {
+        return (await this.getEnvironmentInfo()).applicationIdentifier
+    }
+}
+
+/* @internal */
 export class WDOCordovaCache implements WDOCache {
 
     set(key: string, value: string | undefined): Promise<void> {
@@ -30,6 +62,7 @@ export class WDOCordovaCache implements WDOCache {
     }
 }
 
+/* @internal */
 export class WDONetworkingCordovaIntegration implements WDONetworkingIntegration {
 
     signedEndpoint<TRequest, TResponse>(path: string, uriId: string, responseConfig?: any, e2eeConfig?: any): WDOApiEndpoint<TRequest, TResponse> {
@@ -49,6 +82,7 @@ export class WDONetworkingCordovaIntegration implements WDONetworkingIntegration
     }
 }
 
+/* @internal */
 export class WDOPowerAuthCordovaIntegration {
 
     activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): PowerAuthActivation {
