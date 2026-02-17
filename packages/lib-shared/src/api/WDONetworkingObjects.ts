@@ -3,11 +3,10 @@
  *
  * This source code is licensed under the Apache License, Version 2.0 license
  * found in the LICENSE file in the root directory of this source tree.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* @internal */
 export interface WDOProcessResponse {
     /** ID of the process */
     processId: string
@@ -86,18 +85,6 @@ export enum WDOIdentityVerificationPhase {
 }
 
 /* @internal */
-export enum WDODocumentSubmitFileType {
-    /** National ID card */
-    idCard = "ID_CARD",
-    /** Passport */
-    passport = "PASSPORT",
-    /** Driving license */
-    driversLicense = "DRIVING_LICENSE",
-    /** Selfie photo */
-    selfiePhoto = "SELFIE_PHOTO"
-}
-
-/* @internal */
 export enum WDODocumentSubmitFileSide {
     /** Front side of an document. Usually the one with the picture */
     front = "FRONT",
@@ -112,7 +99,7 @@ export interface WDODocument {
     /** Unique ID of the file */
     id: string
     /** Type of the file */
-    type: WDODocumentSubmitFileType
+    type: string
     /** Side of the file */
     side: WDODocumentSubmitFileSide
     /** Status of the processing */
@@ -144,7 +131,7 @@ export interface WDODocumentSubmitFile {
     /** Name of the file (with path) */
     filename: string
     /** Type of the document */
-    type: WDODocumentSubmitFileType
+    type: string
     /** Side of the document (for example front side of the ID card) */
     side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */

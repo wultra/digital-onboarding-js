@@ -7,11 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocumentSubmitFileSide, WDODocumentSubmitFileType } from "./api/WDONetworkingObjects"
+import { WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
 import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 
 /** String that contains a Base64 encoded JPEG image */
 export type Base64EncodedJPEG = string
+
+/** Type of the document. */
+export type WDODocumentType = "idCard" | "passport" | "driversLicense" | string
 
 /** Image of a document that can be sent to the backend for Identity Verification. */
 export class WDODocumentFile {
@@ -23,7 +26,12 @@ export class WDODocumentFile {
      * Optional, use only when the scan SDK supports this.
      */
     public dataSignature: string | undefined
-    /** Type of the document. */
+    /** Type of the document.
+     * Expected values like: `ID_CARD`, `PASSPORT`, `DRIVING_LICENSE`.
+     * All possible values can be found at backend implementation:
+     * https://github.com/wultra/enrollment-server/blob/develop/enrollment-server-onboarding-domain-model/src/main/java/com/wultra/app/enrollmentserver/model/enumeration/DocumentType.java
+     * Expected/possible values can be obtained from `WDOConfigurationService.getConfiguration()`.
+     * */
     public type: WDODocumentType
     /** Side of the document (`front` if the document is one-sided or only one side is expected). */
     public side: WDODocumentSide
@@ -43,7 +51,12 @@ export class WDODocumentFile {
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
      * @returns Document file to upload.
      */
-    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string): WDODocumentFile {
+    static fromScannedDocument(
+        scannedDocument: WDOScannedDocument,
+        side: WDODocumentSide,
+        data: Base64EncodedJPEG,
+        dataSignature?: string
+    ): WDODocumentFile {
         const originalDocumentId = scannedDocument.sides.find(s => s.type === side)?.serverId
         return new WDODocumentFile(data, scannedDocument.type, side, originalDocumentId, dataSignature)
     }
@@ -57,7 +70,13 @@ export class WDODocumentFile {
      * @param originalDocumentId Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
      */
-    constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string) {
+    constructor(
+        data: Base64EncodedJPEG,
+        type: WDODocumentType,
+        side: WDODocumentSide,
+        originalDocumentId?: string,
+        dataSignature?: string
+    ) {
         this.data = data
         this.dataSignature = dataSignature
         this.type = type
@@ -66,36 +85,29 @@ export class WDODocumentFile {
     }
 }
 
-/** Type of the document. */ 
-export enum WDODocumentType {
-    /** National ID card */
-    idCard = "idCard",
-    /** Passport */
-    passport = "passport",
-    /** Drivers license */
-    driversLicense = "driversLicense"
-}
-
-/** Side of the document */ 
+/** Side of the document */
 export enum WDODocumentSide {
     /** Front side of a document. Usually the one with the picture.
      * 
-     * When a document has more than one side but only one side is used (for example passport), then such side is considered to be front.
+     * When a document has more than one side but only one side is used (for example, passport),
+     * then such a side is considered to be front.
      */
     front = "front",
-    /** Back side of a document */
+    /** Backside of a document */
     back = "back"
 }
 
 /* @internal */
-export function WDODocumentTypeToSubmitType(type: WDODocumentType): WDODocumentSubmitFileType {
+export function WDODocumentTypeToSubmitType(type: WDODocumentType): string {
     switch (type) {
-        case WDODocumentType.idCard:
-            return WDODocumentSubmitFileType.idCard
-        case WDODocumentType.passport:
-            return WDODocumentSubmitFileType.passport
-        case WDODocumentType.driversLicense:
-            return WDODocumentSubmitFileType.driversLicense
+        case "idCard":
+            return "ID_CARD"
+        case "passport":
+            return "PASSPORT"
+        case "driversLicense":
+            return "DRIVING_LICENSE"
+        default:
+            return type
     }
 }
 
