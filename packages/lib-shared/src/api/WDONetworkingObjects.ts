@@ -25,7 +25,7 @@ export enum WDOOnboardingStatus {
     activationInProgress = "ACTIVATION_IN_PROGRESS",
     /** Verification part of the process is in progress */
     verificationInProgress = "VERIFICATION_IN_PROGRESS",
-    /** Onboarding process has failed */
+    /** The onboarding process has failed */
     failed = "FAILED",
     /** Onboarding process is completed */
     finished = "FINISHED"
@@ -72,7 +72,7 @@ export enum WDOIdentityVerificationPhase {
     clientEvaluation = "CLIENT_EVALUATION",
     /** Document verification is in progress */
     documentVerification = "DOCUMENT_VERIFICATION",
-    /** Cross check on documents is in progress */
+    /** Cross-check on documents is in progress */
     documentVerificationFinal = "DOCUMENT_VERIFICATION_FINAL",
     /** OTP verification needed */
     otp = "OTP_VERIFICATION",
@@ -86,9 +86,9 @@ export enum WDOIdentityVerificationPhase {
 
 /* @internal */
 export enum WDODocumentSubmitFileSide {
-    /** Front side of an document. Usually the one with the picture */
+    /** Front side of a document. Usually the one with the picture */
     front = "FRONT",
-    /** Back side of an document */
+    /** Back side of a document */
     back = "BACK"
 }
 
@@ -114,7 +114,7 @@ export enum WDODocumentStatus {
     accepted = "ACCEPTED",
     /** Document is being uploaded to the verification system by the backend */
     uploadInProgress = "UPLOAD_IN_PROGRESS",
-    /** Document are being processed */
+    /** Document is being processed */
     inProgress = "IN_PROGRESS",
     /** Document is pending verification */
     verificationPending = "VERIFICATION_PENDING",
@@ -128,11 +128,11 @@ export enum WDODocumentStatus {
 
 /* @internal */
 export interface WDODocumentSubmitFile {
-    /** Name of the file (with path) */
+    /** Name of the file (with a path) */
     filename: string
     /** Type of the document */
     type: string
-    /** Side of the document (for example front side of the ID card) */
+    /** Side of the document (for example, front side of the ID card) */
     side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string

@@ -4,7 +4,7 @@
 
 - Added `onboardingApproval` to the `WDOStatusCheckReason` when the process is waiting for institution approval.
 - SDK now supports a server that is configured to support multiple BlinkID applications (bundle IDs/Package Names). The `origin` parameter is now sent to the server to identify the application.
-- Removed `WDODocumentType` and `DocumentSubmitFileType` types and use `String` type instead to better accommodate dynamic configuration of document scan.
+- Replaced the `WDODocumentType` enum with a `WDODocumentType` string union type alias (see `WDODocumentFile.ts`) and removed the `WDODocumentSubmitFileType` enum to better accommodate dynamic configuration of document scan.
 
 ## 1.2.0 (Jan, 2026)
 
