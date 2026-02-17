@@ -164,7 +164,12 @@ export interface WDOVerifyOTPResponse {
 
 /** Configuration for a document */
 export interface WDOConfigurationDocument {
-    /** Type of the document */
+    /** Type of the document.
+     * Expected values like: `ID_CARD`, `PASSPORT`, `DRIVING_LICENSE`.
+     * All possible values can be found at backend implementation:
+     * https://github.com/wultra/enrollment-server/blob/develop/enrollment-server-onboarding-domain-model/src/main/java/com/wultra/app/enrollmentserver/model/enumeration/DocumentType.java
+     * Expected/possible values can be obtained from `WDOConfigurationService.getConfiguration()`.
+     * */
     type: string
     /** Number of sides the document has */
     sideCount: number

@@ -13,7 +13,7 @@ import { WDOLogger } from './WDOLogger'
 import { WDOError, WDOErrorReason } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
-import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType, WDODocumentTypeToSubmitType } from './WDODocumentFile'
+import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType } from './WDODocumentFile'
 import { WDOPlatform, WDOPowerAuth, WDOPowerAuthActivationStatus, WDOPowerAuthPassword } from './WDOPlatform'
 
 /**
@@ -300,7 +300,7 @@ export abstract class WDOBaseVerificationService<
 
             return {
                 filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
-                type: WDODocumentTypeToSubmitType(f.type),
+                type: f.type,
                 side: WDOCreateDocumentSubmitFileSide(f.side),
                 originalDocumentId: f.originalDocumentId,
                 data: f.data

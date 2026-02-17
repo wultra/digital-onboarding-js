@@ -8,7 +8,7 @@
  */
 
 import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
-import { WDODocumentSide, WDODocumentType, WDODocumentTypeToSubmitType } from "./WDODocumentFile"
+import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 import { WDOLogger } from "./WDOLogger"
 
 /** Describes the state of documents that need to be uploaded to the server. */
@@ -38,7 +38,7 @@ export class WDOVerificationScanProcess {
         }, new Map())
 
         groups.forEach((docs, type) => {
-            this.documents.find(d => WDODocumentTypeToSubmitType(d.type) === type)?.processServerData(docs)
+            this.documents.find(d => d.type === type)?.processServerData(docs)
         })
     }
 

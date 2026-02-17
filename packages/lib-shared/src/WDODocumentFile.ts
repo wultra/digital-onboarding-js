@@ -14,7 +14,7 @@ import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 export type Base64EncodedJPEG = string
 
 /** Type of the document. */
-export type WDODocumentType = "idCard" | "passport" | "driversLicense" | string
+export type WDODocumentType = string
 
 /** Image of a document that can be sent to the backend for Identity Verification. */
 export class WDODocumentFile {
@@ -95,20 +95,6 @@ export enum WDODocumentSide {
     front = "front",
     /** Backside of a document */
     back = "back"
-}
-
-/* @internal */
-export function WDODocumentTypeToSubmitType(type: WDODocumentType): string {
-    switch (type) {
-        case "idCard":
-            return "ID_CARD"
-        case "passport":
-            return "PASSPORT"
-        case "driversLicense":
-            return "DRIVING_LICENSE"
-        default:
-            return type
-    }
 }
 
 /* @internal */
