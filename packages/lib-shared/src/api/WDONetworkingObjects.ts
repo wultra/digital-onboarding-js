@@ -3,11 +3,11 @@
  *
  * This source code is licensed under the Apache License, Version 2.0 license
  * found in the LICENSE file in the root directory of this source tree.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
+import { WDODocumentType } from "../WDODocumentFile";
 
-/* @internal */
 export interface WDOProcessResponse {
     /** ID of the process */
     processId: string
@@ -26,7 +26,7 @@ export enum WDOOnboardingStatus {
     activationInProgress = "ACTIVATION_IN_PROGRESS",
     /** Verification part of the process is in progress */
     verificationInProgress = "VERIFICATION_IN_PROGRESS",
-    /** Onboarding process has failed */
+    /** The onboarding process has failed */
     failed = "FAILED",
     /** Onboarding process is completed */
     finished = "FINISHED"
@@ -73,7 +73,7 @@ export enum WDOIdentityVerificationPhase {
     clientEvaluation = "CLIENT_EVALUATION",
     /** Document verification is in progress */
     documentVerification = "DOCUMENT_VERIFICATION",
-    /** Cross check on documents is in progress */
+    /** Cross-check on documents is in progress */
     documentVerificationFinal = "DOCUMENT_VERIFICATION_FINAL",
     /** OTP verification needed */
     otp = "OTP_VERIFICATION",
@@ -86,22 +86,10 @@ export enum WDOIdentityVerificationPhase {
 }
 
 /* @internal */
-export enum WDODocumentSubmitFileType {
-    /** National ID card */
-    idCard = "ID_CARD",
-    /** Passport */
-    passport = "PASSPORT",
-    /** Driving license */
-    driversLicense = "DRIVING_LICENSE",
-    /** Selfie photo */
-    selfiePhoto = "SELFIE_PHOTO"
-}
-
-/* @internal */
 export enum WDODocumentSubmitFileSide {
-    /** Front side of an document. Usually the one with the picture */
+    /** Front side of a document. Usually the one with the picture */
     front = "FRONT",
-    /** Back side of an document */
+    /** Back side of a document */
     back = "BACK"
 }
 
@@ -112,7 +100,7 @@ export interface WDODocument {
     /** Unique ID of the file */
     id: string
     /** Type of the file */
-    type: WDODocumentSubmitFileType
+    type: string
     /** Side of the file */
     side: WDODocumentSubmitFileSide
     /** Status of the processing */
@@ -127,7 +115,7 @@ export enum WDODocumentStatus {
     accepted = "ACCEPTED",
     /** Document is being uploaded to the verification system by the backend */
     uploadInProgress = "UPLOAD_IN_PROGRESS",
-    /** Document are being processed */
+    /** Document is being processed */
     inProgress = "IN_PROGRESS",
     /** Document is pending verification */
     verificationPending = "VERIFICATION_PENDING",
@@ -141,11 +129,11 @@ export enum WDODocumentStatus {
 
 /* @internal */
 export interface WDODocumentSubmitFile {
-    /** Name of the file (with path) */
+    /** Name of the file (with a path) */
     filename: string
     /** Type of the document */
-    type: WDODocumentSubmitFileType
-    /** Side of the document (for example front side of the ID card) */
+    type: string
+    /** Side of the document (for example, front side of the ID card) */
     side: WDODocumentSubmitFileSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
@@ -177,8 +165,8 @@ export interface WDOVerifyOTPResponse {
 
 /** Configuration for a document */
 export interface WDOConfigurationDocument {
-    /** Type of the document */
-    type: string
+    /** Type of the document. */
+    type: WDODocumentType
     /** Number of sides the document has */
     sideCount: number
 }

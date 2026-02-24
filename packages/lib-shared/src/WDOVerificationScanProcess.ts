@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocument, WDODocumentSubmitFileSide, WDODocumentSubmitFileType } from "./api/WDONetworkingObjects"
-import { WDODocumentSide, WDODocumentType, WDODocumentTypeToSubmitType } from "./WDODocumentFile"
+import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
+import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 import { WDOLogger } from "./WDOLogger"
 
 /** Describes the state of documents that need to be uploaded to the server. */
@@ -18,7 +18,9 @@ export class WDOVerificationScanProcess {
     documents: WDOScannedDocument[]
 
     /** Which document should be scanned next. `undefined` when all documents are uploaded and accepted. */
-    get nextDocumentToScan(): WDOScannedDocument | undefined { return this.documents.find(d => d.uploadState !== UploadState.accepted) }
+    get nextDocumentToScan(): WDOScannedDocument | undefined {
+        return this.documents.find(d => d.uploadState !== UploadState.accepted)
+    }
 
     /* @internal */
     constructor(types: WDODocumentType[]) {
@@ -27,7 +29,7 @@ export class WDOVerificationScanProcess {
 
     /* @internal */
     feedServerData(documents: WDODocument[]) {
-        const groups = documents.reduce<Map<WDODocumentSubmitFileType, WDODocument[]>>((map, doc) => {
+        const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
             const key = doc.type
             const group = map.get(key) ?? []
             group.push(doc)
@@ -36,7 +38,7 @@ export class WDOVerificationScanProcess {
         }, new Map())
 
         groups.forEach((docs, type) => {
-            this.documents.find(d => WDODocumentTypeToSubmitType(d.type) === type)?.processServerData(docs)
+            this.documents.find(d => d.type === type)?.processServerData(docs)
         })
     }
 
@@ -104,7 +106,7 @@ export enum UploadState {
     /** The document was not uploaded yet. */
     notUploaded,
     
-    /** The document was accepted by the server. */
+    /** The server accepted the document. */
     accepted,
     
     /** The document was rejected and needs to be re-uploaded. */
