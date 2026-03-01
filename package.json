@@ -10,7 +10,7 @@
     "packCordova": "sh scripts/build.sh && cp -R README.md LICENSE docs packages/lib-cordova/ && cd packages/lib-cordova && yarn clean-package && yarn pack -o digital-onboarding-js.tgz && yarn clean-package restore && rm -rf README.md LICENSE docs/"
   },
   "devDependencies": {
-    "rollup": "^4.55.1",
+    "rollup": "^4.59.0",
     "rollup-plugin-dts": "^6.3.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.9.3"
