@@ -228,7 +228,7 @@ export abstract class WDOBaseVerificationService<
         } catch (error) {
             WDOLogger.error(`Error fetching verification status: ${JSON.stringify(error)}`)
             this.lastStatus = undefined
-            throw this.processError(error)
+            throw await this.processError(error)
         }
     }
 
@@ -500,8 +500,8 @@ export abstract class WDOBaseVerificationService<
 
     /* @internal */
     private handleError<T>(promise: Promise<T>): Promise<T> {
-        return promise.catch(error => {
-            throw this.processError(error)
+        return promise.catch(async error => {
+            throw await this.processError(error)
         })
     }
 

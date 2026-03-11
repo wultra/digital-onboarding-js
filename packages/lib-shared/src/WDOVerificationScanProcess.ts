@@ -53,7 +53,7 @@ export class WDOVerificationScanProcess {
             WDOLogger.error("WDOVerificationScanProcess.fromCachedData: unsupported cached data version")
             return undefined
         }
-        const types = split[1].split(",").map(s => s)
+        const types = split[1].split(",")
         return new WDOVerificationScanProcess(types)
     }
 
