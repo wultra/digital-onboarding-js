@@ -35,9 +35,11 @@ export enum WDOOnboardingStatus {
 /* @internal */
 export interface WDOIdentityStatusResponse {
     processId: string
+    processType: string
+    rejectReason?: string
     identityVerificationStatus: WDOIdentityVerificationStatus
     identityVerificationPhase?: WDOIdentityVerificationPhase
-    config: WDOIdentityConfig
+    config?: WDOIdentityConfig
     consentRequired: boolean
 }
 
@@ -169,6 +171,8 @@ export interface WDOConfigurationDocument {
     type: WDODocumentType
     /** Number of sides the document has */
     sideCount: number
+    /** Country of origin of the document as ISO 3166-1 alpha-3 code */
+    country?: string
 }
 
 /** Group of documents in the configuration */
@@ -187,6 +191,8 @@ export interface WDOConfigurationResponse {
     otpForIdentification: boolean
     /** Is OTP required for the second part - identity verification. */
     otpForIdentityVerification: boolean
+    /** Is the onboarding process configured with temporary activation that should be exchanged for the permanent one. */
+    useTemporaryActivation: boolean
     /** Documents required for identity verification. */
     documents: {
         /** Number of total required documents */

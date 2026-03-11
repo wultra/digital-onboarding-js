@@ -335,8 +335,8 @@ const verification: WDOVerificationService // configured instance
 try {
     // assuming user selected ID card and driver's license
     const docTypesResult = await verification.documentsSetSelectedTypes([
-        WDODocumentType.idCard,
-        WDODocumentType.driversLicense
+        "ID_CARD",
+        "PASSPORT"
     ])
     // state will be in the `scanDocument` case here - display the document scanner
 } catch (error) {
@@ -397,7 +397,7 @@ const verification: WDOVerificationService // configured instance
 
 const passportToUpload = WDODocumentFile(
     "BASE64_ENCODED_IMAGE_DATA", // raw image data from the document scanning library/photo camera
-    WDODocumentType.passport,
+    "PASSPORT",
     WDODocumentSide.front, // passport has only front side
     undefined, // original id, optional (use only when re-uploading the file - for example when first upload was rejected because of a blur)
     undefined // signature, optional (use when provided by the document scanning library)
