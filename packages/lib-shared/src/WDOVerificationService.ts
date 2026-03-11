@@ -382,7 +382,7 @@ export abstract class WDOBaseVerificationService<
                 return this.processState({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
             } else {
                 WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
-                throw this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
+                throw await this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
             }
         }
     }

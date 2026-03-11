@@ -2,10 +2,10 @@
 
 ## X.X.X (TBA)
 
-- `WDODocumentType` changed from an enum to a typealias of `String` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned document. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
+- `WDODocumentType` changed from an enum to a type alias of `string` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned documents. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
 - Added `processType` to the `WDOVerificationService` to allow clients to distinguish between different processes.
 - `WDOVerificationService.status` now returns additional information about the process, such as `processType` and `processId`.
-- `WDOConfigurationResponse` not contains `useTemporaryActivation` to indicate if the onboarding process is configured with temporary activation that should be exchanged for the permanent one via the new `finishActivation` method in the verification flow.
+- `WDOConfigurationResponse` now contains `useTemporaryActivation` to indicate if the onboarding process is configured with temporary activation that should be exchanged for the permanent one via the new `finishActivation` method in the verification flow.
 - `WDOConfigurationDocument` now contains optional `country` property to specify the country of origin of the document as ISO 3166-1 alpha-3 code.
 
 ## 1.3.0 (Feb, 2026)

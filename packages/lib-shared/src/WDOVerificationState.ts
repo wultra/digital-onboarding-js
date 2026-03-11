@@ -263,11 +263,11 @@ export enum WDOStatusCheckReason {
 /** Additional data that comes with the state from the server. */
 export interface WDOVerificationStateServerData {
     /** Data specific to the verification process */
-    serverData: WDOProcessServerDataData
+    serverData: WDOProcessServerData
 }
 
 /** Data specific to the verification process */
-export interface WDOProcessServerDataData {
+export interface WDOProcessServerData {
     /** Unique identifier for the verification process */
     processId: string
     /** Type of the verification process */

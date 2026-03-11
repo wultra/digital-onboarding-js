@@ -333,7 +333,7 @@ For example, your system might require a national ID and one additional document
 ```typescript
 const verification: WDOVerificationService // configured instance
 try {
-    // assuming user selected ID card and driver's license
+    // assuming user selected ID card and passport. The list of available document types can be retrieved from the configuration endpoint or hardcoded based on your backend setup.
     const docTypesResult = await verification.documentsSetSelectedTypes([
         "ID_CARD",
         "PASSPORT"
