@@ -100,8 +100,10 @@ export interface WDOPresenceCheckState {
  */
 export interface WDOOtpState {
     type: WDOVerificationStateType.otp
-    /** Number of remaining attempts to enter the correct OTP */
+    /** Number of remaining attempts to enter the correct OTP. Available after a failed OTP attempt */
     remainingAttempts?: number
+    /** Time in seconds that user needs to wait between OTP resend calls. Null when not provided by the server */
+    otpResendPeriodSeconds?: number
 }
 
 /**

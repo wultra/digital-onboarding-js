@@ -114,15 +114,6 @@ export abstract class WDOBaseVerificationService<
         this.api.networking.acceptLanguage = language
     }
 
-    /** 
-     * Time in seconds that user needs to wait between OTP resend calls 
-     * 
-     * The value is available after a successful status call.
-     */
-    public get otpResendPeriodSeconds(): number | undefined {
-        return this.lastStatus?.config?.otpResendPeriodSeconds
-    }
-
     /**
      * Type of the process.
      * 
@@ -211,7 +202,7 @@ export abstract class WDOBaseVerificationService<
                 case WDONextStep.presenceCheck:
                     return this.processServerState({ type: WDOVerificationStateType.presenceCheck }, response)
                 case WDONextStep.otp:
-                    return this.processServerState({ type: WDOVerificationStateType.otp }, response)
+                    return this.processServerState({ type: WDOVerificationStateType.otp, otpResendPeriodSeconds: response.config?.otpResendPeriodSeconds }, response)
                 case WDONextStep.statusCheck:
                     return this.processServerState({ type: WDOVerificationStateType.processing, item: vf.statusCheckReason ?? WDOStatusCheckReason.unknown }, response)
                 case WDONextStep.failed:
@@ -379,7 +370,7 @@ export abstract class WDOBaseVerificationService<
         } else {
             if (response.remainingAttempts > 0 && response.expired == false) {
                 WDOLogger.error(`OTP verification failed, remaining attempts: ${response.remainingAttempts}`)
-                return this.processState({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
+                return this.processState({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts, otpResendPeriodSeconds: this.lastStatus?.config?.otpResendPeriodSeconds })
             } else {
                 WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
                 throw await this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))

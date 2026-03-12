@@ -198,8 +198,10 @@ export interface WDOPresenceCheckState {
  */
 export interface WDOOtpState {
     type: WDOVerificationStateType.otp
-    /** Number of remaining attempts to enter the correct OTP */
+    /** Number of remaining attempts to enter the correct OTP. Available after a failed OTP attempt */
     remainingAttempts?: number
+    /** Time in seconds that user needs to wait between OTP resend calls. Null when not provided by the server */
+    otpResendPeriodSeconds?: number
 }
 
 /**
@@ -230,6 +232,8 @@ export interface WDOEndStateState {
     type: WDOVerificationStateType.endState
     /** Reason for the end state */
     reason: WDOEndStateReason
+    /** In case the reason is `rejected`, this field contains the reject reason if it was provided by the system. */
+    rejectReason?: string
 }
 
 /**
@@ -238,6 +242,33 @@ export interface WDOEndStateState {
 export interface WDOSuccessState {
     type: WDOVerificationStateType.success
 }
+```
+
+## Additional server data
+
+The `status()` method returns `WDOVerificationState & WDOVerificationStateServerData`. The `WDOVerificationStateServerData` part provides additional context about the current server-side process:
+
+```typescript
+/** Additional data that comes with the state from the server. */
+export interface WDOVerificationStateServerData {
+    /** Data specific to the verification process */
+    serverData: WDOProcessServerData
+}
+
+/** Data specific to the verification process */
+export interface WDOProcessServerData {
+    /** Unique identifier for the verification process */
+    processId: string
+    /** Type of the verification process */
+    processType: string
+}
+```
+
+You can also retrieve the `processType` at any time after a successful `status()` call via the `processType` getter on the service:
+
+```typescript
+const verification: WDOVerificationService // configured instance
+const type = verification.processType // e.g. "ONBOARDING", undefined if status was not yet called
 ```
 
 ## Creating an instance
@@ -533,7 +564,9 @@ When the process fails, a `failed` state is returned. This means that the curren
 
 ## Endstate state
 
-When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endstate` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuth object. After that, user should be put inti the "fresh install state".
+When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endstate` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuth object. After that, user should be put into the "fresh install state".
+
+The state contains a `reason` field of type `WDOEndStateReason`. When the reason is `rejected`, the optional `rejectReason` field may contain an explanation provided by the server.
 
 ## Read next
 
