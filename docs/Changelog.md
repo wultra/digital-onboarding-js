@@ -1,6 +1,6 @@
 # Changelog
 
-## X.X.X (TBA)
+## 2.0.0 (Mar, 2026)
 
 - `WDODocumentType` changed from an enum to a type alias of `string` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned documents. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
 - Added `processType` to the `WDOVerificationService` to allow clients to distinguish between different processes.
