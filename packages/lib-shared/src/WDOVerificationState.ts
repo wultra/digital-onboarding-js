@@ -100,8 +100,10 @@ export interface WDOPresenceCheckState {
  */
 export interface WDOOtpState {
     type: WDOVerificationStateType.otp
-    /** Number of remaining attempts to enter the correct OTP */
+    /** Number of remaining attempts to enter the correct OTP. Available after a failed OTP attempt */
     remainingAttempts?: number
+    /** Time in seconds that user needs to wait between OTP resend calls. Undefined when not provided by the server */
+    otpResendPeriodSeconds?: number
 }
 
 /**
@@ -132,6 +134,8 @@ export interface WDOEndStateState {
     type: WDOVerificationStateType.endState
     /** Reason for the end state */
     reason: WDOEndStateReason
+    /** In case the reason is `rejected`, this field contains the reject reason if it was provided by the system. */
+    rejectReason?: string
 }
 
 /**
@@ -256,4 +260,18 @@ export enum WDOStatusCheckReason {
      * This may take some time, depending on the institution's processes.
      */
     onboardingApproval = "onboardingApproval"
+}
+
+/** Additional data that comes with the state from the server. */
+export interface WDOVerificationStateServerData {
+    /** Data specific to the verification process */
+    serverData: WDOProcessServerData
+}
+
+/** Data specific to the verification process */
+export interface WDOProcessServerData {
+    /** Unique identifier for the verification process */
+    processId: string
+    /** Type of the verification process */
+    processType: string
 }

@@ -11,7 +11,7 @@ import { WDOApi } from './api/WDOApi'
 import { WDODocumentSubmitFile, WDODocument, WDODocumentStatus, WDOIdentityStatusResponse, WDOIdentityVerificationPhase, WDOIdentityVerificationStatus } from './api/WDONetworkingObjects'
 import { WDOLogger } from './WDOLogger'
 import { WDOError, WDOErrorReason } from './WDOError'
-import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason } from './WDOVerificationState'
+import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason, WDOVerificationStateServerData } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
 import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType } from './WDODocumentFile'
 import { WDOPlatform, WDOPowerAuth, WDOPowerAuthActivationStatus, WDOPowerAuthPassword } from './WDOPlatform'
@@ -114,9 +114,13 @@ export abstract class WDOBaseVerificationService<
         this.api.networking.acceptLanguage = language
     }
 
-    /** Time in seconds that user needs to wait between OTP resend calls */
-    public get otpResendPeriodSeconds(): number | undefined {
-        return this.lastStatus?.config?.otpResendPeriodSeconds
+    /**
+     * Type of the process.
+     * 
+     * The value is available after a successful status call.
+     */
+    public get processType(): string | undefined {
+        return this.lastStatus?.processType
     }
 
     /**
@@ -127,7 +131,7 @@ export abstract class WDOBaseVerificationService<
     /**
      * Status of the verification.
      */
-    async status(): Promise<WDOVerificationState> {
+    async status(): Promise<WDOVerificationState & WDOVerificationStateServerData> {
         try {
             const response = await this.api.verificationStatus()
             WDOLogger.info("Verification status successfully retrieved.")
@@ -157,7 +161,7 @@ export abstract class WDOBaseVerificationService<
 
             switch (vf.nextStep) {
                 case WDONextStep.intro:
-                    return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: response.consentRequired })
+                    return this.processServerState({ type: WDOVerificationStateType.intro, consentRequired: response.consentRequired }, response)
                 case WDONextStep.documentScan:
                     WDOLogger.debug("Verifying documents status")
                     const docsResponse = await this.api.verificationDocumentsStatus(response.processId)
@@ -174,48 +178,48 @@ export abstract class WDOBaseVerificationService<
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
-                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                            return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                         } else if (documents.every(d => documentAction(d) === "proceed")) {
                             WDOLogger.debug("All documents accepted, proceeding")
-                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                            return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                         } else if (documents.some(d => documentAction(d) === "wait")) {
                             WDOLogger.debug("At least one document still in progress, moving to processing")
-                            return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification })
+                            return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
                         } else if (documents.length == 0) {
                             WDOLogger.debug("No documents scanned, scan documents...")
-                            return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: cachedProcess })
+                            return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                         } else {
-                            return this.processSuccess({ type: WDOVerificationStateType.failed })
+                            return this.processServerState({ type: WDOVerificationStateType.failed }, response)
                         }
 
                     } else {
                         if (documents.length == 0) {
-                            return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
+                            return this.processServerState({ type: WDOVerificationStateType.documentsToScanSelect }, response)
                         } else {
-                            return this.processSuccess({ type: WDOVerificationStateType.failed })
+                            return this.processServerState({ type: WDOVerificationStateType.failed }, response)
                         }
                     }
                 case WDONextStep.presenceCheck:
-                    return this.processSuccess({ type: WDOVerificationStateType.presenceCheck })
+                    return this.processServerState({ type: WDOVerificationStateType.presenceCheck }, response)
                 case WDONextStep.otp:
-                    return this.processSuccess({ type: WDOVerificationStateType.otp })
+                    return this.processServerState({ type: WDOVerificationStateType.otp, otpResendPeriodSeconds: response.config?.otpResendPeriodSeconds }, response)
                 case WDONextStep.statusCheck:
-                    return this.processSuccess({ type: WDOVerificationStateType.processing, item: vf.statusCheckReason ?? WDOStatusCheckReason.unknown })
+                    return this.processServerState({ type: WDOVerificationStateType.processing, item: vf.statusCheckReason ?? WDOStatusCheckReason.unknown }, response)
                 case WDONextStep.failed:
-                    return this.processSuccess({ type: WDOVerificationStateType.failed })
+                    return this.processServerState({ type: WDOVerificationStateType.failed }, response)
                 case WDONextStep.rejected:
-                    return this.processSuccess({ type: WDOVerificationStateType.endState, reason: WDOEndStateReason.rejected })
+                    return this.processServerState({ type: WDOVerificationStateType.endState, reason: WDOEndStateReason.rejected, rejectReason: response.rejectReason }, response)
                 case WDONextStep.success:
-                    return this.processSuccess({ type: WDOVerificationStateType.success })
+                    return this.processServerState({ type: WDOVerificationStateType.success }, response)
                 case WDONextStep.finishActivation:
-                    return this.processSuccess({ type: WDOVerificationStateType.finishActivation })
+                    return this.processServerState({ type: WDOVerificationStateType.finishActivation }, response)
 
             }
 
         } catch (error) {
             WDOLogger.error(`Error fetching verification status: ${JSON.stringify(error)}`)
             this.lastStatus = undefined
-            throw this.processError(error)
+            throw await this.processError(error)
         }
     }
 
@@ -245,13 +249,13 @@ export abstract class WDOBaseVerificationService<
             case WDOConsentResponse.declined:
                 WDOLogger.info("User declined consent - returning to intro state")
                 await this.handleError(this.api.verificationResolveConsent(pid, false))
-                return this.processSuccess({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true }) // TODO: ok to assume true?
+                return this.processState({ type: WDOVerificationStateType.intro, consentRequired: this.lastStatus?.consentRequired ?? true }) // TODO: ok to assume true?
             case WDOConsentResponse.notRequired:
                 WDOLogger.info("Consent not required - proceeding")
         }
 
         await this.handleError(this.api.verificationStart(pid))
-        return this.processSuccess({ type: WDOVerificationStateType.documentsToScanSelect })
+        return this.processState({ type: WDOVerificationStateType.documentsToScanSelect })
     }
 
     /**
@@ -280,7 +284,7 @@ export abstract class WDOBaseVerificationService<
         WDOLogger.debug(`Submitting selected document types: ${types}`)
         const process = new WDOVerificationScanProcess(types)
         await this.setCachedProcess(process)
-        return this.processSuccess({ type: WDOVerificationStateType.scanDocument, process: process })
+        return this.processState({ type: WDOVerificationStateType.scanDocument, process: process })
     }
 
     /**
@@ -308,7 +312,7 @@ export abstract class WDOBaseVerificationService<
         })
 
         await this.handleError(this.api.verificationSubmitDocuments(pid, resubmit, submitFiles))
-        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
+        return this.processState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentUpload })
     }
 
     /**
@@ -317,7 +321,7 @@ export abstract class WDOBaseVerificationService<
     async presenceCheckInit(): Promise<{ iProovVerificationToken?: string }> {
         const pid = this.verifyHasActiveProcess()
         const response = await this.handleError(this.api.verificationPresenceCheckInit(pid))
-        return this.processSuccess(response.sessionAttributes)
+        return response.sessionAttributes
     }
 
     /** 
@@ -326,7 +330,7 @@ export abstract class WDOBaseVerificationService<
     async presenceCheckSubmit(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         await this.handleError(this.api.verificationPresenceCheckSubmit(pid))
-        return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.verifyingPresence })
+        return this.processState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.verifyingPresence })
     }
 
     /**
@@ -362,14 +366,14 @@ export abstract class WDOBaseVerificationService<
         const response = await this.handleError(this.api.verifyOTP(pid, otp))
         if (response.verified) {
             WDOLogger.info("OTP verified successfully.")
-            return this.processSuccess({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
+            return this.processState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.unknown })
         } else {
             if (response.remainingAttempts > 0 && response.expired == false) {
                 WDOLogger.error(`OTP verification failed, remaining attempts: ${response.remainingAttempts}`)
-                return this.processSuccess({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts })
+                return this.processState({ type: WDOVerificationStateType.otp, remainingAttempts: response.remainingAttempts, otpResendPeriodSeconds: this.lastStatus?.config?.otpResendPeriodSeconds })
             } else {
                 WDOLogger.error("OTP verification failed, no remaining attempts or OTP expired")
-                throw this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
+                throw await this.processError(new WDOError(WDOErrorReason.otpFailed, "OTP verification failed, no remaining attempts or OTP expired"))
             }
         }
     }
@@ -431,7 +435,7 @@ export abstract class WDOBaseVerificationService<
                 
                 throw e // rethrow
             }
-            return this.processSuccess({ type: WDOVerificationStateType.success })
+            return this.processState({ type: WDOVerificationStateType.success })
 
         } finally {
             await newPassword.clear() // destroy the password after use
@@ -474,17 +478,21 @@ export abstract class WDOBaseVerificationService<
     }
 
     /* @internal */
-    private processSuccess<T>(result: T): T {
-        if ((result as WDOVerificationState).type !== undefined) {
-            this.listener?.verificationStatusChanged(this, result as WDOVerificationState)
-        }
+    private processServerState(result: WDOVerificationState, response: WDOIdentityStatusResponse): WDOVerificationState & WDOVerificationStateServerData {
+        const resultWithServerData = { ...result, serverData: { processId: response.processId, processType: response.processType } }
+        return this.processState(resultWithServerData)
+    }
+
+    /* @internal */
+    private processState<T extends WDOVerificationState>(result: T): T {
+        this.listener?.verificationStatusChanged(this, result)
         return result
     }
 
     /* @internal */
     private handleError<T>(promise: Promise<T>): Promise<T> {
-        return promise.catch(error => {
-            throw this.processError(error)
+        return promise.catch(async error => {
+            throw await this.processError(error)
         })
     }
 

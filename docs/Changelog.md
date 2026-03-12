@@ -2,9 +2,18 @@
 
 ## X.X.X (TBA)
 
+- `WDODocumentType` changed from an enum to a type alias of `string` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned documents. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
+- Added `processType` to the `WDOVerificationService` to allow clients to distinguish between different processes.
+- `WDOVerificationService.status` now returns additional information about the process, such as `processType` and `processId`.
+- `WDOEndStateState` now contains optional `rejectReason` property when the `reason` is `rejected`. This contains the reject reason if provided by the server.
+- Removed `otpResendPeriodSeconds` from `WDOVerificationService`. The value is now available in the `WDOOtpState` returned by `status()` and `verifyOTP()`.
+- `WDOConfigurationResponse` now contains `useTemporaryActivation` to indicate if the onboarding process is configured with temporary activation that should be exchanged for the permanent one via the new `finishActivation` method in the verification flow.
+- `WDOConfigurationDocument` now contains optional `country` property to specify the country of origin of the document as ISO 3166-1 alpha-3 code.
+
+## 1.3.0 (Feb, 2026)
+
 - Added `onboardingApproval` to the `WDOStatusCheckReason` when the process is waiting for institution approval.
 - SDK now supports a server that is configured to support multiple BlinkID applications (bundle IDs/Package Names). The `origin` parameter is now sent to the server to identify the application.
-- `WDODocumentType` changed from an enum to a typealias of `String` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned document. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
 
 ## 1.2.0 (Jan, 2026)
 
