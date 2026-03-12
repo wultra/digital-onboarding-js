@@ -200,7 +200,7 @@ export interface WDOOtpState {
     type: WDOVerificationStateType.otp
     /** Number of remaining attempts to enter the correct OTP. Available after a failed OTP attempt */
     remainingAttempts?: number
-    /** Time in seconds that user needs to wait between OTP resend calls. Null when not provided by the server */
+    /** Time in seconds that user needs to wait between OTP resend calls. Undefined when not provided by the server */
     otpResendPeriodSeconds?: number
 }
 
@@ -564,7 +564,7 @@ When the process fails, a `failed` state is returned. This means that the curren
 
 ## Endstate state
 
-When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endstate` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuth object. After that, user should be put into the "fresh install state".
+When the activation is no longer able to be verified (for example did several failed attempts or took too long to finish), the `endState` state is returned. In this state there's nothing the user can do to continue. `cancelWholeProcess` shall be called and `removeActivationLocal` should be called on the PowerAuth object. After that, user should be put into the "fresh install state".
 
 The state contains a `reason` field of type `WDOEndStateReason`. When the reason is `rejected`, the optional `rejectReason` field may contain an explanation provided by the server.
 
