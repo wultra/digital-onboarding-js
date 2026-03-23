@@ -43,12 +43,12 @@ export enum WDOConsentResponse {
 }
 
 /**
- * Service that can verify previously activated PowerAuth instance.
+ * Service that can verify a previously activated PowerAuth instance.
  * 
- * When PowerAuth instance was activated with weak credentials via `WDOActivationService`, user needs to verify his genuine presence.
- * This can be confirmed in the `WDOVerificationService.isVerificationRequired` which will be `true`.
+ * When a PowerAuth instance was activated with weak credentials via `WDOActivationService`, the user needs to verify his genuine presence.
+ * This can be confirmed in the `WDOVerificationService.isVerificationRequired`, which will be `true`.
  * 
- * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`) and you need to configure networking service with the right URL.
+ * This service operates against Wultra Onboarding server (usually ending with `/enrollment-onboarding-server`), and you need to configure a networking service with the right URL.
  */
 export abstract class WDOBaseVerificationService<
     TPowerAuth extends WDOPowerAuth,
@@ -104,11 +104,11 @@ export abstract class WDOBaseVerificationService<
 
     /** 
      * Accept language for the outgoing requests headers.
-     * Default value is "en".
+     * The default value is "en".
      *
      * Standard RFC "Accept-Language" https://tools.ietf.org/html/rfc7231#section-5.3.5
-     * Response texts are based on this setting. For example when "de" is set, server
-     * will return error texts and other in german (if available).
+     * Response texts are based on this setting. For example, when "de" is set, server
+     * will return error texts and other in German (if available).
      */
     public changeAcceptLanguage(language: string) {
         this.api.networking.acceptLanguage = language
@@ -170,18 +170,26 @@ export abstract class WDOBaseVerificationService<
 
                     const documents = docsResponse.documents
 
+                    // local state of documents that the user has selected to provide
                     const cachedProcess = await this.getCachedProcess()
 
                     if (cachedProcess) {
-                        
+
                         cachedProcess.feedServerData(docsResponse.documents)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
                             return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                         } else if (documents.every(d => documentAction(d) === "proceed")) {
+                            if (cachedProcess.nextDocumentToScan) {
+                                WDOLogger.debug("All documents accepted, but we are expecting more documents to scan")
+                                // all documents on the backend are accepted, but the user has selected more documents to scan
+                                return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
+                            }
+                            // corner case state, when the verification status returns documents_upload, but verificationDocumentsStatus() returns
+                            // that all documents are accepted (the change happens between the two API calls)
                             WDOLogger.debug("All documents accepted, proceeding")
-                            return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
+                            return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
                         } else if (documents.some(d => documentAction(d) === "wait")) {
                             WDOLogger.debug("At least one document still in progress, moving to processing")
                             return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
@@ -224,7 +232,7 @@ export abstract class WDOBaseVerificationService<
     }
 
     /**
-     * Returns consent text for user to approve. The content of the text depends on the server configuration and might be plain text or HTML.
+     * Returns consent text for the user to approve. The content of the text depends on the server configuration and might be plain text or HTML.
      * 
      * Consent text explains how the service will handle his document photos or selfie scans.
      */
@@ -235,7 +243,7 @@ export abstract class WDOBaseVerificationService<
     }
     
     /**
-     * Start the identity verification after user approved the consent (if required)
+     * Start the identity verification after the user approved the consent (if required)
      * 
      * @param consentApprovedByUser Response of the user to the consent. The hint can be obtained in the `status()` call (`consentRequired` property when the result is `intro`).
      */
@@ -261,7 +269,7 @@ export abstract class WDOBaseVerificationService<
     /**
      * Get the token for the document scanning SDK, when required.
      * 
-     * This is needed for example for ZenID or BlinkID provider.
+     * This is needed, for example, for ZenID or BlinkID provider.
      * 
      * @param challenge Optional challenge provided by the scanning SDK.
      */
@@ -276,7 +284,7 @@ export abstract class WDOBaseVerificationService<
     /**
      * Set which documents will be scanned.
      * 
-     * Note that this needs to be in sync what server expects based on the configuration.
+     * Note that this needs to be in sync with what the server expects based on the configuration.
      * 
      * @param types Types of documents to scan.
      */
@@ -289,7 +297,7 @@ export abstract class WDOBaseVerificationService<
 
     /**
      * Upload document files to the server. The order of the documents is up to you. 
-     * Make sure that uploaded document are reasonable size so you're not uploading large files.
+     * Make sure that uploaded document is reasonable size so you're not uploading large files.
      * 
      * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
      * 
@@ -334,7 +342,7 @@ export abstract class WDOBaseVerificationService<
     }
 
     /**
-     * Verification restart. When sucessfully called, intro screen should be presented.
+     * Verification restart. When successfully called, an intro screen should be presented.
      */
     async restartVerification(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
@@ -347,7 +355,7 @@ export abstract class WDOBaseVerificationService<
 
     /**
      * Cancel the whole activation/verification. After this it's no longer possible to call
-     * any API of this library and PowerAuth activation should be removed and activation started again.
+     * any API of this library, and PowerAuth activation should be removed, and activation started again.
      */
     async cancelWholeProcess(): Promise<void> {
         const pid = this.verifyHasActiveProcess()
@@ -359,7 +367,7 @@ export abstract class WDOBaseVerificationService<
     /**
      * Verify OTP that user entered as a last step of the verification.
      * 
-     * @param otp OTP that user obtained via other channel (usually SMS or email).
+     * @param otp OTP that user obtained via another channel (usually SMS or email).
      */
     async verifyOTP(otp: string): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
@@ -379,7 +387,7 @@ export abstract class WDOBaseVerificationService<
     }
 
     /**
-     * Finishes verification by creating a new PowerAuth activation on given `newPowerAuthInstance`.
+     * Finishes verification by creating a new PowerAuth activation on a given ` newPowerAuthInstance `.
      * 
      * Needs to be called when "activationFinish" next step is returned from the `status()` call.
      * 
@@ -524,7 +532,7 @@ export abstract class WDOBaseVerificationService<
 class WDOVerificationStatus {
     /** Expected next step */
     readonly nextStep: WDONextStep
-    /** Reason for status check, if applicable (only when nextStep is `statusCheck`) */
+    /** Reason for status check, if applicable (only when the nextStep is `statusCheck`) */
     readonly statusCheckReason: WDOStatusCheckReason | undefined
 
 
