@@ -170,7 +170,7 @@ export abstract class WDOBaseVerificationService<
 
                     const documents = docsResponse.documents
 
-                    // local state of documents, that user has selected to provide
+                    // local state of documents that the user has selected to provide
                     const cachedProcess = await this.getCachedProcess()
 
                     if (cachedProcess) {
@@ -186,7 +186,7 @@ export abstract class WDOBaseVerificationService<
                                 // all documents on the backend are accepted, but the user has selected more documents to scan
                                 return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                             }
-                            // corner-case state, when the verification status returns documents_upload, but verificationDocumentsStatus() returns
+                            // corner case state, when the verification status returns documents_upload, but verificationDocumentsStatus() returns
                             // that all documents are accepted (the change happens between the two API calls)
                             WDOLogger.debug("All documents accepted, proceeding")
                             return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
