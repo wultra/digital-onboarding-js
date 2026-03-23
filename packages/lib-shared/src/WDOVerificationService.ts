@@ -170,18 +170,26 @@ export abstract class WDOBaseVerificationService<
 
                     const documents = docsResponse.documents
 
+                    // local state of documents, that user has selected to provide
                     const cachedProcess = await this.getCachedProcess()
 
                     if (cachedProcess) {
-                        
+
                         cachedProcess.feedServerData(docsResponse.documents)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
                             return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
                         } else if (documents.every(d => documentAction(d) === "proceed")) {
+                            if (cachedProcess.documents.length > documents.length) {
+                                WDOLogger.debug("All documents accepted, but we are expecting more documents to scan")
+                                // all documents on the backend are accepted, but the user has selected more documents to scan
+                                return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
+                            }
+                            // corner-case state, when the verification status returns documents_upload, but verificationDocumentsStatus() returns
+                            // that all documents are accepted (the change happens between the two API calls)
                             WDOLogger.debug("All documents accepted, proceeding")
-                            return this.processServerState({ type: WDOVerificationStateType.scanDocument, process: cachedProcess }, response)
+                            return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
                         } else if (documents.some(d => documentAction(d) === "wait")) {
                             WDOLogger.debug("At least one document still in progress, moving to processing")
                             return this.processServerState({ type: WDOVerificationStateType.processing, item: WDOStatusCheckReason.documentVerification }, response)
