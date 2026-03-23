@@ -1,6 +1,9 @@
 # Changelog
 
 ## X.X.X (TBA)
+- Fixed: Document scan flow no longer proceeds to processing when additional documents are still selected locally.
+
+## X.X.X (TBA)
 
 - `WDODocumentType` changed from an enum to a type alias of `string` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned documents. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
 - Added `processType` to the `WDOVerificationService` to allow clients to distinguish between different processes.
