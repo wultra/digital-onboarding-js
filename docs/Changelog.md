@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (Mar, 2026)
+## 2.0.1 (Mar, 2026)
 
 - Fixed: Document scan flow no longer proceeds to processing when additional documents are still selected locally.
 
