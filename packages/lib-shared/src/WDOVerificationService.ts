@@ -170,7 +170,7 @@ export abstract class WDOBaseVerificationService<
 
                     const documents = docsResponse.documents
 
-                    // local state of documents, that user has selected to provide
+                    // local state of documents that the user has selected to provide
                     const cachedProcess = await this.getCachedProcess()
 
                     if (cachedProcess) {
