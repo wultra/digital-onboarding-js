@@ -318,7 +318,7 @@ export abstract class WDOBaseVerificationService<
             const cachedProcess = await this.getCachedProcess()
             if (cachedProcess && filesWithoutOriginalId.length > 0) {
                 // Now fetch documents already uploaded to the server
-                const serverDocuments = await (await this.api.verificationDocumentsStatus(pid)).documents
+                const serverDocuments = (await this.api.verificationDocumentsStatus(pid)).documents
                 // Feed the data to the process
                 cachedProcess.feedServerData(serverDocuments)
                 WDOLogger.debug(`Found cached process with documents: ${cachedProcess.documents.map(d => d.type + " " + `${d.sides.length} sides ` + d.sides.map(s => s.type).join("/")).join(", ")}`)

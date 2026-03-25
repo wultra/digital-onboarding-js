@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocument } from "./api/WDONetworkingObjects"
-import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
+import type { WDODocument } from "./api/WDONetworkingObjects"
+import type { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 import { WDOLogger } from "./WDOLogger"
 
 /** Describes the state of documents that need to be uploaded to the server. */

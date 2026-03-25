@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-import { WDODocumentSide, WDODocumentType } from "../WDODocumentFile";
+import type { WDODocumentSide, WDODocumentType } from "../WDODocumentFile"
 
 export interface WDOProcessResponse {
     /** ID of the process */
