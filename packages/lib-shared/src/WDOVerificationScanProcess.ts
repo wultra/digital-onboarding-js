@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
+import { WDODocument } from "./api/WDONetworkingObjects"
 import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 import { WDOLogger } from "./WDOLogger"
 
@@ -29,17 +29,10 @@ export class WDOVerificationScanProcess {
 
     /* @internal */
     feedServerData(documents: WDODocument[]) {
-        const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
-            const key = doc.type
-            const group = map.get(key) ?? []
-            group.push(doc)
-            map.set(key, group)
-            return map
-        }, new Map())
-
-        groups.forEach((docs, type) => {
-            this.documents.find(d => d.type === type)?.processServerData(docs)
-        })
+        for (const documentToScan of this.documents) {
+            let serverDocuments = documents.filter(d => d.type === documentToScan.type)
+            documentToScan.processServerData(serverDocuments)
+        }
     }
 
     /* @internal */
@@ -97,7 +90,7 @@ export class WDOScannedDocument {
 
     /* @internal */
     processServerData(documents: WDODocument[]) {
-        this._sides = documents.map(doc => new Side(doc.side == WDODocumentSubmitFileSide.front ? WDODocumentSide.front : WDODocumentSide.back, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
+        this._sides = documents.map(doc => new Side(doc.side, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
     }
 }
 

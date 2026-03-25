@@ -13,7 +13,7 @@ import { WDOLogger } from './WDOLogger'
 import { WDOError, WDOErrorReason } from './WDOError'
 import { WDOEndStateReason, WDOVerificationState, WDOVerificationStateType, WDOStatusCheckReason, WDOVerificationStateServerData } from './WDOVerificationState'
 import { WDOVerificationScanProcess } from './WDOVerificationScanProcess'
-import { WDOCreateDocumentSubmitFileSide, WDODocumentFile, WDODocumentType } from './WDODocumentFile'
+import { WDODocumentFile, WDODocumentType } from './WDODocumentFile'
 import { WDOPlatform, WDOPowerAuth, WDOPowerAuthActivationStatus, WDOPowerAuthPassword } from './WDOPlatform'
 
 /**
@@ -175,7 +175,7 @@ export abstract class WDOBaseVerificationService<
 
                     if (cachedProcess) {
 
-                        cachedProcess.feedServerData(docsResponse.documents)
+                        cachedProcess.feedServerData(documents)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
@@ -313,7 +313,7 @@ export abstract class WDOBaseVerificationService<
             return {
                 filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
                 type: f.type,
-                side: WDOCreateDocumentSubmitFileSide(f.side),
+                side: f.side,
                 originalDocumentId: f.originalDocumentId,
                 data: f.data
             }
