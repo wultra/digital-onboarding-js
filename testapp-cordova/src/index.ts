@@ -44,6 +44,10 @@ function onDeviceReady() {
     simulateActivation()
 }
 
+const approveWhenApprovalNeeded = true
+const validUserAttributes = getRandomAttributes()
+const approvalRejectReason = "Just a test reason"
+
 async function simulateActivation() {
 
     const pin = "1234"
@@ -74,13 +78,6 @@ async function simulateActivation() {
         `${serverCredentials.server}/enrollment-server-onboarding/`
     )
 
-    function getRandomAttributes(): any {
-        return {
-            clientNumber: generateRandomNumericString(),
-            birthDate: "1990/03/04"
-        }
-    }
-
     let testFinishedWithSuccess = false
 
     try {
@@ -92,6 +89,7 @@ async function simulateActivation() {
             enabled: true,
             otpForIdentification: true,
             otpForIdentityVerification: true,
+            useTemporaryActivation: false,
             documents: {
                 totalRequiredDocumentsCount: 1,
                 groups: [
@@ -100,7 +98,8 @@ async function simulateActivation() {
                         items: [
                             {
                                 type: "ID_CARD",
-                                sideCount: 2
+                                sideCount: 2,
+                                country: "CZE"
                             }
                         ]
                     }
@@ -121,6 +120,9 @@ async function simulateActivation() {
             if (!config.documents || config.documents.groups.length === 0 || config.documents.groups[0].items.length === 0) {
                 throw new Error("No documents configured for onboarding process on the server!")
             }
+            if (typeof config.useTemporaryActivation !== "boolean") {
+                throw new Error("Invalid configuration for temporary activation!")
+            }
         } else {
             console.log("No process type specified, skipping configuration fetch.")
             config = defaultConfig
@@ -133,7 +135,7 @@ async function simulateActivation() {
         // first go-through to add mandatory documents from all groups
         for (const group of config.documents.groups) {
             for (let i = 0; i < group.requiredDocumentsCount; i++) {
-                const docType = configDocToDocType(group.items[i])
+                const docType = group.items[i]
                 console.log(`Adding mandatory document from configuration group: ${docType.type}`)
                 documentTypesToScan.push(docType)
             }
@@ -152,10 +154,9 @@ async function simulateActivation() {
                 }
 
                 for (const item of group.items) {
-                    const docType = configDocToDocType(item)
-                    if (!documentTypesToScan.find(d => d.type === docType.type)) {
-                        console.log(`Adding non-mandatory document from configuration group: ${docType.type}`)
-                        documentTypesToScan.push(docType)
+                    if (!documentTypesToScan.find(d => d.type === item.type)) {
+                        console.log(`Adding non-mandatory document from configuration group: ${item.type}`)
+                        documentTypesToScan.push(item)
                         if (hasRequiredDocCount(documentTypesToScan)) {
                             break
                         }
@@ -225,7 +226,7 @@ async function simulateActivation() {
 
         // start onboarding
         console.log(`Starting second onboarding process with onboarding type: ${processType}...`)
-        await activationService.start(getRandomAttributes(), processType)
+        await activationService.start(validUserAttributes, processType)
         console.log(`Activation started:  ${await activationService.hasActiveProcess() ? "yes" : "no"}`)
 
         // get onboarding status
@@ -385,6 +386,19 @@ async function simulateActivation() {
         let blinkIDUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
         
         for (const doc of documentTypesToScan) {
+
+            console.log(`First upload dummy document for document type ${doc.type} to test upload failure and reupload mechanism...`)
+            let dummyJpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q=="
+            const dummyImagesToUpload = [new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.front)]
+            if (doc.sideCount > 1) {
+                dummyImagesToUpload.push(new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.back))
+            }
+
+            const dummyUploadResult = await uploadDocumentsFromBlinkId(verificationService, dummyImagesToUpload)
+            console.log(`Verification status after dummy document upload: ${dummyUploadResult.type}`)
+            // we expect the dummy upload to fail and the state to remain the same, if it changed, it means that the dummy document was accepted which is not expected
+            guardState(dummyUploadResult.type, WDOVerificationStateType.scanDocument)
+
             console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
             const result = await BlinkID.performScan(sdkSettings, sessionSettings, uxSettings)
         
@@ -541,8 +555,17 @@ async function simulateActivation() {
     console.log("-------------\n")
 }
 
+
+
+function getRandomAttributes(): { clientNumber: string, birthDate: string } {
+    return {
+        clientNumber: generateRandomNumericString(),
+        birthDate: "1990/03/04"
+    }
+}
+
 async function uploadDocumentsFromBlinkId(verificationService: WDOVerificationService, documents: WDODocumentFile[]): Promise<WDOVerificationState> {
-    console.log("Submitting blinkID images...")
+    console.log("Submitting images...")
     const scanResult = await verificationService.documentsSubmit(
         documents
     )
@@ -562,9 +585,23 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
 
         if (repeatedStatus.item === WDOStatusCheckReason.onboardingApproval) {
             console.log("Process is waiting for onboarding approval from institution...")
-            // simulate approval
-            await approveOnboarding((verificationService as any).lastStatus.processId)
-            console.log("Onboarding process approved.")
+            // simulate approval (we assume we're on a mock service that adds "mock_" prefix to client number)
+            await approveOnboarding((verificationService as any).lastStatus.processId, `mockuser_${validUserAttributes.clientNumber}`, approveWhenApprovalNeeded)
+            console.log(`Onboarding process ${approveWhenApprovalNeeded ? "approved" : "rejected"}.`)
+            if (!approveWhenApprovalNeeded) {
+                console.log("Test is set to reject onboarding, finishing test here.")
+                let status = await verificationService.status() // return current status which should be end state with rejected reason
+                if (status.type == WDOVerificationStateType.endState) {
+
+                    if (status.rejectReason == approvalRejectReason) {
+                        console.log("Verification ended with end state as expected after onboarding rejection.")
+                        throw new Error("Onboarding was rejected as part of the test, stopping further processing.")
+                    } else {
+                        console.log(`Verification ended with end state but with unexpected reject reason: ${status.rejectReason}`)
+                        throw new Error(`Verification ended with end state but with unexpected reject reason: ${status.rejectReason}`)
+                    }
+                }
+            }
         }
 
         console.log(`Verification still processing (${repeatedStatus.item}), waiting 3 seconds before next status check...`)
@@ -592,20 +629,7 @@ function generateRandomNumericString(length: number = 10): string {
     return result
 }
 
-
-function configDocToDocType(doc: WDOConfigurationDocument): { type: WDODocumentType, sideCount: number } {
-    if (doc.type === "DRIVER_LICENSE") {
-        return { type: WDODocumentType.driversLicense, sideCount: doc.sideCount }
-    } else if (doc.type === "ID_CARD") {
-        return { type: WDODocumentType.idCard, sideCount: doc.sideCount }
-    } else if (doc.type === "PASSPORT") {
-        return { type: WDODocumentType.passport, sideCount: doc.sideCount }
-    } else {
-        throw new Error(`Unsupported document type in configuration: ${doc.type}`)
-    }
-}
-
-async function approveOnboarding(processId: string): Promise<any> {
+async function approveOnboarding(processId: string, userId: string, approve: boolean): Promise<any> {
 
     // first get verification id for the process
 
@@ -633,8 +657,9 @@ async function approveOnboarding(processId: string): Promise<any> {
     const raw = JSON.stringify({
         "processId": processId,
         "identityVerificationId": verificationId,
-        "userId": "foo",
-        "approvalResult": "OK"
+        "userId": userId,
+        "approvalResult": approve ? "OK" : "NOK",
+        "approvalResultReason": approve ? "" : approvalRejectReason
     })
 
     const requestOptions2 = {
@@ -643,8 +668,10 @@ async function approveOnboarding(processId: string): Promise<any> {
         body: raw
     }
 
+    console.log(`Submitting onboarding approval with body: ${raw}`)
     const result2 = await fetch(`${serverCredentials.server}/enrollment-server-onboarding/api/private/client/approve`, requestOptions2)
     console.log(`Onboarding approval response status for process ${processId} and verification ${verificationId}: ${result2.status}`)
+    console.log(`${await result2.text()}`)
 
     if (!result2.ok) {
         throw new Error("Failed to approve onboarding process") 
