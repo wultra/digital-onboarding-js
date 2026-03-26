@@ -176,6 +176,7 @@ export abstract class WDOBaseVerificationService<
                     if (cachedProcess) {
 
                         cachedProcess.feedServerData(documents)
+                        await this.setCachedProcess(cachedProcess)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
@@ -263,6 +264,7 @@ export abstract class WDOBaseVerificationService<
         }
 
         await this.handleError(this.api.verificationStart(pid))
+        await this.setCachedProcess(undefined) // clear cache when starting the verification
         return this.processState({ type: WDOVerificationStateType.documentsToScanSelect })
     }
 
@@ -308,21 +310,16 @@ export abstract class WDOBaseVerificationService<
         const pid = this.verifyHasActiveProcess()
 
         // --
-        // Following block is a fallback mechanism to find originalDocumentId for documents that are being re-uploaded without originalDocumentId, based on the cached process and the server status of documents. 
-        // This is to handle the case when integrator is uploading the same document again without providing the originalDocumentId, but we can find the original document ID from the cached process based on the type and side. 
+        // Following block fills in originalDocumentId for documents being re-uploaded without it.
+        // The cached process is kept up-to-date with server-side IDs after each status() call,
+        // so no extra server call is needed here.
         // The recommended way is to always provide the originalDocumentId when re-uploading the same document.
         // Note that this will be improved on the backend in the future via https://github.com/wultra/enrollment-server/issues/1650
         {
-            // First we check if there are any documents without originalDocumentId, if not, we can skip this block
             const filesWithoutOriginalId = files.filter(f => f.originalDocumentId == undefined)
-            const cachedProcess = await this.getCachedProcess()
-            if (cachedProcess && filesWithoutOriginalId.length > 0) {
-                // Now fetch documents already uploaded to the server
-                const serverDocuments = (await this.api.verificationDocumentsStatus(pid)).documents
-                // Feed the data to the process
-                cachedProcess.feedServerData(serverDocuments)
+            const cachedProcess = filesWithoutOriginalId.length > 0 ? await this.getCachedProcess() : undefined
+            if (cachedProcess) {
                 WDOLogger.debug(`Found cached process with documents: ${cachedProcess.documents.map(d => d.type + " " + `${d.sides.length} sides ` + d.sides.map(s => s.type).join("/")).join(", ")}`)
-                // Try to find originalDocumentId for documents that are being re-uploaded without originalDocumentId based on the cached process
                 for (const file of filesWithoutOriginalId) {
                     WDOLogger.debug(`Document ${file.type} ${file.side} does not have originalDocumentId, trying to find it from cached process...`)
                     const originalDocumentId = cachedProcess.documents.find(d => d.type == file.type)?.sides.find(s => s.type == file.side)?.serverId
@@ -335,7 +332,7 @@ export abstract class WDOBaseVerificationService<
                 }
             }
         }
-        // -- End of the fallback mechanism for finding originalDocumentId from cached process. Now, all documents should have originalDocumentId if they are re-uploads, otherwise they will be treated as new uploads.
+        // -- All documents should now have originalDocumentId if they are re-uploads, otherwise they will be treated as new uploads.
 
         const resubmit = files.some(f => f.originalDocumentId != undefined)
 
