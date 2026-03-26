@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-import { WDODocumentType } from "../WDODocumentFile";
+import type { WDODocumentSide, WDODocumentType } from "../WDODocumentFile"
 
 export interface WDOProcessResponse {
     /** ID of the process */
@@ -88,14 +88,6 @@ export enum WDOIdentityVerificationPhase {
 }
 
 /* @internal */
-export enum WDODocumentSubmitFileSide {
-    /** Front side of a document. Usually the one with the picture */
-    front = "FRONT",
-    /** Back side of a document */
-    back = "BACK"
-}
-
-/* @internal */
 export interface WDODocument {
     /** Name of the file. */
     filename: string
@@ -104,7 +96,7 @@ export interface WDODocument {
     /** Type of the file */
     type: string
     /** Side of the file */
-    side: WDODocumentSubmitFileSide
+    side: WDODocumentSide
     /** Status of the processing */
     status: WDODocumentStatus
     /** Possible errors */
@@ -136,7 +128,7 @@ export interface WDODocumentSubmitFile {
     /** Type of the document */
     type: string
     /** Side of the document (for example, front side of the ID card) */
-    side: WDODocumentSubmitFileSide
+    side: WDODocumentSide
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
     /** Base64 encoded data image. */
