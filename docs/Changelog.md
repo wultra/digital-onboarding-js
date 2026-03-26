@@ -3,6 +3,7 @@
 ## X.X.X (TBD)
 
 - When re-uploading a rejected document without providing `originalDocumentId`, the SDK now resolves it automatically.
+  - Matching is based on the server data provided during the `status()` call, which includes the list of documents and their sides that the user already uploaded.
 - `WDODocumentSide` enum values changed from lowercase (`"front"`, `"back"`) to uppercase (`"FRONT"`, `"BACK"`) to match server API values.
 
 ## 2.0.1 (Mar, 2026)

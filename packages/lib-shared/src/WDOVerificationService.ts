@@ -311,34 +311,8 @@ export abstract class WDOBaseVerificationService<
         
         const pid = this.verifyHasActiveProcess()
 
-        const processedFiles = files.map(f => {
-            return new WDODocumentFile(f.data, f.type, f.side, f.originalDocumentId, f.dataSignature) // clone the file to avoid mutating the original one with resolved originalDocumentId
-        })
-
-        // --
-        // Following block fills in originalDocumentId for documents being re-uploaded without it.
-        // The cached process is kept up-to-date with server-side IDs after each status() call,
-        // so no extra server call is needed here.
-        // The recommended way is to always provide the originalDocumentId when re-uploading the same document.
-        // Note that this will be improved on the backend in the future via https://github.com/wultra/enrollment-server/issues/1650
-        {
-            const filesWithoutOriginalId = processedFiles.filter(f => f.originalDocumentId == undefined)
-            const cachedProcess = filesWithoutOriginalId.length > 0 ? await this.getCachedProcess(pid) : undefined
-            if (cachedProcess) {
-                WDOLogger.debug(`Found cached process with documents: ${cachedProcess.documents.map(d => d.type + " " + `${d.sides.length} sides ` + d.sides.map(s => s.type).join("/")).join(", ")}`)
-                for (const file of filesWithoutOriginalId) {
-                    WDOLogger.debug(`Document ${file.type} ${file.side} does not have originalDocumentId, trying to find it from cached process...`)
-                    const originalDocumentId = cachedProcess.documents.find(d => d.type == file.type)?.sides.find(s => s.type == file.side)?.serverId
-                    if (originalDocumentId) {
-                        WDOLogger.debug(`Found originalDocumentId ${originalDocumentId} for document ${file.type} ${file.side} from cached process`)
-                        file.originalDocumentId = originalDocumentId
-                    } else {
-                        WDOLogger.debug(`Original document ID not found for document ${file.type} ${file.side} in cached process`)
-                    }
-                }
-            }
-        }
-        // -- All documents should now have originalDocumentId if they are re-uploads, otherwise they will be treated as new uploads.
+        // process the documents to fill in originalDocumentId when missing
+        const processedFiles = await this.processDocumentsToUpload(pid, files)
 
         const resubmit = processedFiles.some(f => f.originalDocumentId != undefined)
 
@@ -508,6 +482,37 @@ export abstract class WDOBaseVerificationService<
     }
 
     // PRIVATE METHODS
+
+    /* @internal */
+    private async processDocumentsToUpload(pid: string, documents: WDODocumentFile[]): Promise<WDODocumentFile[]> {
+        // clone the documents to avoid mutating the original ones with resolved originalDocumentId
+        const processedFiles = documents.map(f => {
+            return new WDODocumentFile(f.data, f.type, f.side, f.originalDocumentId, f.dataSignature)
+        })
+
+        // Following block fills in originalDocumentId for documents being re-uploaded without it.
+        // The cached process is kept up-to-date with server-side IDs after each status() call,
+        // so no extra server call is needed here.
+        // The recommended way is to always provide the originalDocumentId when re-uploading the same document.
+        // Note that this will be improved on the backend in the future via https://github.com/wultra/enrollment-server/issues/1650
+        const filesWithoutOriginalId = processedFiles.filter(f => f.originalDocumentId == undefined)
+        const cachedProcess = filesWithoutOriginalId.length > 0 ? await this.getCachedProcess(pid) : undefined
+        if (cachedProcess) {
+            WDOLogger.debug(`Found cached process with documents: ${cachedProcess.documents.map(d => d.type + " " + `${d.sides.length} sides ` + d.sides.map(s => s.type).join("/")).join(", ")}`)
+            for (const file of filesWithoutOriginalId) {
+                WDOLogger.debug(`Document ${file.type} ${file.side} does not have originalDocumentId, trying to find it from cached process...`)
+                const originalDocumentId = cachedProcess.documents.find(d => d.type == file.type)?.sides.find(s => s.type == file.side)?.serverId
+                if (originalDocumentId) {
+                    WDOLogger.debug(`Found originalDocumentId ${originalDocumentId} for document ${file.type} ${file.side} from cached process`)
+                    file.originalDocumentId = originalDocumentId
+                } else {
+                    WDOLogger.debug(`Original document ID not found for document ${file.type} ${file.side} in cached process`)
+                }
+            }
+        }
+
+        return processedFiles
+    }
 
     /* @internal */
     private verifyHasActiveProcess(): string {
