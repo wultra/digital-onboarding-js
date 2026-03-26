@@ -3,12 +3,12 @@
  *
  * This source code is licensed under the Apache License, Version 2.0 license
  * found in the LICENSE file in the root directory of this source tree.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocument, WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
-import { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
+import type { WDODocument } from "./api/WDONetworkingObjects"
+import type { WDODocumentSide, WDODocumentType } from "./WDODocumentFile"
 import { WDOLogger } from "./WDOLogger"
 
 /** Describes the state of documents that need to be uploaded to the server. */
@@ -23,43 +23,67 @@ export class WDOVerificationScanProcess {
     }
 
     /* @internal */
-    constructor(types: WDODocumentType[]) {
-        this.documents = types.map(t => new WDOScannedDocument(t))
+    constructor(input: WDODocumentType[] | WDOScannedDocument[]) {
+        if (input.length > 0 && input[0] instanceof WDOScannedDocument) {
+            this.documents = input as WDOScannedDocument[]
+        } else {
+            this.documents = (input as WDODocumentType[]).map(t => new WDOScannedDocument(t))
+        }
     }
 
     /* @internal */
     feedServerData(documents: WDODocument[]) {
-        const groups = documents.reduce<Map<string, WDODocument[]>>((map, doc) => {
-            const key = doc.type
-            const group = map.get(key) ?? []
-            group.push(doc)
-            map.set(key, group)
-            return map
-        }, new Map())
-
-        groups.forEach((docs, type) => {
-            this.documents.find(d => d.type === type)?.processServerData(docs)
-        })
+        for (const documentToScan of this.documents) {
+            let serverDocuments = documents.filter(d => d.type === documentToScan.type)
+            documentToScan.processServerData(serverDocuments)
+        }
     }
 
     /* @internal */
     static fromCachedData(data: string): WDOVerificationScanProcess | undefined {
-        const split = data.split(":")
-        if (split.length != 2) {
-            WDOLogger.error("WDOVerificationScanProcess.fromCachedData: invalid cached data format")
+        // v1 format: "v1:TYPE1,TYPE2,..."
+        if (data.startsWith("v1:")) {
+            const split = data.split(":")
+            if (split.length != 2) {
+                WDOLogger.error("WDOVerificationScanProcess.fromCachedData: invalid v1 cached data format")
+                return undefined
+            }
+            const types = split[1].split(",")
+            return new WDOVerificationScanProcess(types as WDODocumentType[])
+        }
+
+        // v2 format: JSON
+        try {
+            const parsed = JSON.parse(data) as CacheV2
+            if (parsed.v !== 2) {
+                WDOLogger.error(`WDOVerificationScanProcess.fromCachedData: unsupported cached data version: ${parsed.v}`)
+                return undefined
+            }
+            const documents = parsed.documents.map(d => {
+                const sides = d.sides.map(s => new Side(s.type as WDODocumentSide, s.serverId, s.uploadState))
+                return new WDOScannedDocument(d.type as WDODocumentType, sides)
+            })
+            return new WDOVerificationScanProcess(documents)
+        } catch (e) {
+            WDOLogger.error(`WDOVerificationScanProcess.fromCachedData: failed to parse cached data: ${e}`)
             return undefined
         }
-        if (split[0] !== "v1") {
-            WDOLogger.error("WDOVerificationScanProcess.fromCachedData: unsupported cached data version")
-            return undefined
-        }
-        const types = split[1].split(",")
-        return new WDOVerificationScanProcess(types)
     }
 
     /* @internal */
     dataForCache(): string {
-        return `v1:${this.documents.map(d => { return d.type }).join(",")}`
+        const data: CacheV2 = {
+            v: 2,
+            documents: this.documents.map(d => ({
+                type: d.type,
+                sides: d.sides.map(s => ({
+                    type: s.type,
+                    serverId: s.serverId,
+                    uploadState: s.uploadState
+                }))
+            }))
+        }
+        return JSON.stringify(data)
     }
 }
 
@@ -86,42 +110,43 @@ export class WDOScannedDocument {
 
     /** Sides of the document that were uploaded on the server. */
     get sides(): Side[] { return this._sides }
-    
-    /* @internal */
-    private _sides = new Array<Side>()
 
     /* @internal */
-    constructor(type: WDODocumentType) {
+    private _sides: Side[]
+
+    /* @internal */
+    constructor(type: WDODocumentType, initialSides?: Side[]) {
         this.type = type
+        this._sides = initialSides ?? []
     }
 
     /* @internal */
     processServerData(documents: WDODocument[]) {
-        this._sides = documents.map(doc => new Side(doc.side == WDODocumentSubmitFileSide.front ? WDODocumentSide.front : WDODocumentSide.back, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
+        this._sides = documents.map(doc => new Side(doc.side, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
     }
 }
 
 /** State of the document on the server. */
-export enum UploadState {    
+export enum UploadState {
     /** The document was not uploaded yet. */
     notUploaded,
-    
+
     /** The server accepted the document. */
     accepted,
-    
+
     /** The document was rejected and needs to be re-uploaded. */
     rejected
 }
 
 /** Side of the uploaded document. */
 export class Side {
-    
+
     /** Type of the side. */
     public type: WDODocumentSide
-    
+
     /** ID on the server. Use this ID in case of an reupload */
     public serverId: string
-    
+
     /** Upload state of the document */
     public uploadState: UploadState
 
@@ -131,4 +156,25 @@ export class Side {
         this.serverId = serverId
         this.uploadState = uploadState
     }
+}
+
+// Cache format types
+
+/* @internal */
+interface CacheV2Side {
+    type: string
+    serverId: string
+    uploadState: number
+}
+
+/* @internal */
+interface CacheV2Document {
+    type: string
+    sides: CacheV2Side[]
+}
+
+/* @internal */
+interface CacheV2 {
+    v: 2
+    documents: CacheV2Document[]
 }

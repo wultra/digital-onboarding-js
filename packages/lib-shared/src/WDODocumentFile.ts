@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WDODocumentSubmitFileSide } from "./api/WDONetworkingObjects"
 import { WDOScannedDocument } from "./WDOVerificationScanProcess"
 
 /** String that contains a Base64 encoded JPEG image */
@@ -97,17 +96,7 @@ export enum WDODocumentSide {
      * When a document has more than one side but only one side is used (for example, passport),
      * then such a side is considered to be front.
      */
-    front = "front",
+    front = "FRONT",
     /** Backside of a document */
-    back = "back"
-}
-
-/* @internal */
-export function WDOCreateDocumentSubmitFileSide(side: WDODocumentSide): WDODocumentSubmitFileSide {
-    switch (side) {
-        case WDODocumentSide.front:
-            return WDODocumentSubmitFileSide.front
-        case WDODocumentSide.back:
-            return WDODocumentSubmitFileSide.back
-    }
+    back = "BACK"
 }
