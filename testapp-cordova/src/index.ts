@@ -585,7 +585,7 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
 
         if (repeatedStatus.item === WDOStatusCheckReason.onboardingApproval) {
             console.log("Process is waiting for onboarding approval from institution...")
-            // simulate approval (we assume we're on a mock service that adds "mock_" prefix to client number)
+            // simulate approval (we assume we're on a mock service that adds "mockuser_" prefix to client number)
             await approveOnboarding((verificationService as any).lastStatus.processId, `mockuser_${validUserAttributes.clientNumber}`, approveWhenApprovalNeeded)
             console.log(`Onboarding process ${approveWhenApprovalNeeded ? "approved" : "rejected"}.`)
             if (!approveWhenApprovalNeeded) {

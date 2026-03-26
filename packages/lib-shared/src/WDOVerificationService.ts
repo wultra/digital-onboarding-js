@@ -84,16 +84,16 @@ export abstract class WDOBaseVerificationService<
     protected lastStatus: WDOIdentityStatusResponse | undefined = undefined
 
     /* @internal */
-    private cacheKey(): string { return `wdocp_${this.powerauth.instanceId}` }
+    private cacheKey(pid: string): string { return `wdocp_${pid}` }
 
     /* @internal */
-    private async setCachedProcess(process: WDOVerificationScanProcess | undefined): Promise<void> {
-        await WDOPlatform.cache.set(this.cacheKey(), process?.dataForCache())
+    private async setCachedProcess(pid: string, process: WDOVerificationScanProcess | undefined): Promise<void> {
+        await WDOPlatform.cache.set(this.cacheKey(pid), process?.dataForCache())
     }
 
     /* @internal */
-    private async getCachedProcess(): Promise<WDOVerificationScanProcess | undefined> {
-        const data = await WDOPlatform.cache.get(this.cacheKey())
+    private async getCachedProcess(pid: string): Promise<WDOVerificationScanProcess | undefined> {
+        const data = await WDOPlatform.cache.get(this.cacheKey(pid))
         if (!data) {
             return undefined
         }
@@ -148,7 +148,7 @@ export abstract class WDOBaseVerificationService<
                 case WDOIdentityVerificationStatus.notInitialized:
                 case WDOIdentityVerificationStatus.accepted:
                     WDOLogger.debug(`Status ${response.identityVerificationStatus} - clearing cache`)
-                    await this.setCachedProcess(undefined)
+                    await this.setCachedProcess(response.processId, undefined)
                     break
                 default:
                     // no-op
@@ -171,12 +171,12 @@ export abstract class WDOBaseVerificationService<
                     const documents = docsResponse.documents
 
                     // local state of documents that the user has selected to provide
-                    const cachedProcess = await this.getCachedProcess()
+                    const cachedProcess = await this.getCachedProcess(response.processId)
 
                     if (cachedProcess) {
 
                         cachedProcess.feedServerData(documents)
-                        await this.setCachedProcess(cachedProcess)
+                        await this.setCachedProcess(response.processId, cachedProcess)
 
                         if (documents.some(d => documentAction(d) === "error") || documents.some(d => d.errors != undefined && d.errors.length > 0)) {
                             WDOLogger.debug(`At least one document in error state: ${documents.some(d => documentAction(d) === "error")}, ${documents.some(d => d.errors != undefined && d.errors.length > 0)}`)
@@ -264,7 +264,7 @@ export abstract class WDOBaseVerificationService<
         }
 
         await this.handleError(this.api.verificationStart(pid))
-        await this.setCachedProcess(undefined) // clear cache when starting the verification
+        await this.setCachedProcess(pid, undefined) // clear cache when starting the verification
         return this.processState({ type: WDOVerificationStateType.documentsToScanSelect })
     }
 
@@ -293,7 +293,7 @@ export abstract class WDOBaseVerificationService<
     async documentsSetSelectedTypes(types: WDODocumentType[]): Promise<WDOVerificationState> {
         WDOLogger.debug(`Submitting selected document types: ${types}`)
         const process = new WDOVerificationScanProcess(types)
-        await this.setCachedProcess(process)
+        await this.setCachedProcess(this.verifyHasActiveProcess(), process)
         return this.processState({ type: WDOVerificationStateType.scanDocument, process: process })
     }
 
@@ -301,13 +301,19 @@ export abstract class WDOBaseVerificationService<
      * Upload document files to the server. The order of the documents is up to you. 
      * Make sure that uploaded document is reasonable size so you're not uploading large files.
      * 
-     * If you're uploading the same document file again, you need to include the `originalDocumentId` otherwise it will be rejected by the server.
+     * If you're uploading the same document file again, you need to include the `originalDocumentId`. If you don't include it,
+     * this method will try to resolve the `originalDocumentId` from the cached process, so if you have previously uploaded the same document type and side, 
+     * you can skip providing `originalDocumentId` here, and it will be filled in automatically. The recommended way is to always provide `originalDocumentId` when re-uploading the same document.
      * 
      * @param files Document files to upload.
      */
     async documentsSubmit(files: WDODocumentFile[]): Promise<WDOVerificationState> {
         
         const pid = this.verifyHasActiveProcess()
+
+        const processedFiles = files.map(f => {
+            return new WDODocumentFile(f.data, f.type, f.side, f.originalDocumentId, f.dataSignature) // clone the file to avoid mutating the original one with resolved originalDocumentId
+        })
 
         // --
         // Following block fills in originalDocumentId for documents being re-uploaded without it.
@@ -316,8 +322,8 @@ export abstract class WDOBaseVerificationService<
         // The recommended way is to always provide the originalDocumentId when re-uploading the same document.
         // Note that this will be improved on the backend in the future via https://github.com/wultra/enrollment-server/issues/1650
         {
-            const filesWithoutOriginalId = files.filter(f => f.originalDocumentId == undefined)
-            const cachedProcess = filesWithoutOriginalId.length > 0 ? await this.getCachedProcess() : undefined
+            const filesWithoutOriginalId = processedFiles.filter(f => f.originalDocumentId == undefined)
+            const cachedProcess = filesWithoutOriginalId.length > 0 ? await this.getCachedProcess(pid) : undefined
             if (cachedProcess) {
                 WDOLogger.debug(`Found cached process with documents: ${cachedProcess.documents.map(d => d.type + " " + `${d.sides.length} sides ` + d.sides.map(s => s.type).join("/")).join(", ")}`)
                 for (const file of filesWithoutOriginalId) {
@@ -334,9 +340,9 @@ export abstract class WDOBaseVerificationService<
         }
         // -- All documents should now have originalDocumentId if they are re-uploads, otherwise they will be treated as new uploads.
 
-        const resubmit = files.some(f => f.originalDocumentId != undefined)
+        const resubmit = processedFiles.some(f => f.originalDocumentId != undefined)
 
-        const submitFiles: WDODocumentSubmitFile[] = files.map(f => {
+        const submitFiles: WDODocumentSubmitFile[] = processedFiles.map(f => {
 
             return {
                 filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
@@ -375,7 +381,7 @@ export abstract class WDOBaseVerificationService<
     async restartVerification(): Promise<WDOVerificationState> {
         const pid = this.verifyHasActiveProcess()
         await this.handleError(this.api.verificationCleanup(pid))
-        await this.setCachedProcess(undefined)
+        await this.setCachedProcess(pid, undefined)
         WDOLogger.info("Verification process restarted.")
         // return new status
         return await this.status()
@@ -388,7 +394,7 @@ export abstract class WDOBaseVerificationService<
     async cancelWholeProcess(): Promise<void> {
         const pid = this.verifyHasActiveProcess()
         await this.handleError(this.api.verificationCleanup(pid))
-        await this.setCachedProcess(undefined)
+        await this.setCachedProcess(pid, undefined)
         WDOLogger.info("Verification process canceled.")
     }
 
