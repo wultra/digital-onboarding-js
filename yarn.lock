@@ -1510,8 +1510,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 1.0.0
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=fc119e&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/d244f8c7c4ff689759d0f4284c3146be45a73d6a58a1b6d2dea3626ca2577d255c5fde12d415e1ba7f40e4a83b2f78c432527a32bad5d123e18e09e2d47b6056
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=d1d9e7&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/7f4bc70bd8fd1ce4947e1491415be8e9531dc455cdf0fc401107c9a7e039fc69abee2e223eea69e8c7ec5ffc03dd50899071ba782f9497c27142fc7a3202861c
   languageName: node
   linkType: hard
 
@@ -3150,9 +3150,9 @@ __metadata:
   linkType: hard
 
 "lodash@npm:^4.17.12, lodash@npm:^4.17.14, lodash@npm:^4.17.15":
-  version: 4.17.23
-  resolution: "lodash@npm:4.17.23"
-  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
+  version: 4.18.1
+  resolution: "lodash@npm:4.18.1"
+  checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
   languageName: node
   linkType: hard
 
