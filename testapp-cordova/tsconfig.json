@@ -2,15 +2,15 @@
   "exclude": ["node_modules"],
   "include": [ "src/**/*.ts" ],
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2022",
     "module": "es2015",
     "lib": ["DOM", "ES2020"],
+    "rootDir": ".",
     "strict": true,
     "declaration": false,
     "sourceMap": true,
     "removeComments": false, // Keep comments for better documentation
     "noImplicitAny": true,
-    "moduleResolution": "node",
     "skipLibCheck": true
   }
 }
