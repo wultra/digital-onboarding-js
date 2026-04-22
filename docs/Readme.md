@@ -52,6 +52,7 @@ The code of the library is open source and you can freely browse it in our GitHu
 - [Verifying User With Document Scan And Genuine Presence Check](Verifying-User.md)
 - [Language Configuration](Language-Configuration.md)
 - [Logging](Logging.md)
+- [Migration Guides](Migration-Guides.md)
 - [Changelog](Changelog.md)
 
 <!-- end -->

@@ -1,6 +1,11 @@
 # Changelog
 
-## X.X.X (TBD)
+## 3.0.0 (TBA)
+
+- **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
+- `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
+
+## 2.0.2 (Mar, 2026)
 
 - When re-uploading a rejected document without providing `originalDocumentId`, the SDK now resolves it automatically.
   - Matching is based on the server data provided during the `status()` call, which includes the list of documents and their sides that the user already uploaded.
