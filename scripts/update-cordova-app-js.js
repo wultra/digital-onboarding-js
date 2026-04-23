@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// This script watches for changes in the built app.js file in lib-cordova package
-// and copies it into the Cordova app's www/plugins/cordova-digital-onboarding directory,
-// wrapping it in a Cordova define call so that it can be properly loaded by Cordova.
+// This script keeps generated JavaScript in sync with the already-installed Cordova platforms.
+// It wraps the SDK bundle so Cordova can load it as a plugin module, mirrors the test app bundle
+// into native platform assets, and applies one-time file overrides from testapp-cordova/patchfiles.
 //
 // This is a workaround, because Cordova creates a copy of the .js file only during the platform installation.
 
@@ -18,10 +18,16 @@ const destIos1 = path.resolve(__dirname, `../testapp-cordova/platforms/ios/www/p
 const destIos2 = path.resolve(__dirname, `../testapp-cordova/platforms/ios/platform_www/plugins/cordova-digital-onboarding/${outputFile}`);
 const androidDest1 = path.resolve(__dirname, `../testapp-cordova/platforms/android/app/src/main/assets/www/plugins/cordova-digital-onboarding/${outputFile}`);
 const androidDest2 = path.resolve(__dirname, `../testapp-cordova/platforms/android/platform_www/plugins/cordova-digital-onboarding/${outputFile}`);
+// Files in patchfiles mirror the structure under testapp-cordova and are copied over on startup.
+const patchFilesRoot = path.resolve(__dirname, '../testapp-cordova/patchfiles');
+const patchTargetRoot = path.resolve(__dirname, '../testapp-cordova');
+
+// Apply platform overrides once when the script starts (for example modified CDVWebViewEngine.m to disable CORS in iOS App). 
+applyPatchFiles();
 
 console.log(`Watching for changes in ${filePath}...`);
 
-// Use fs.watchFile to monitor changes in the file (500ms interval)
+// Keep the plugin bundle in sync inside already-generated Cordova platform folders.
 fs.watchFile(filePath, { interval: 500 }, (curr, prev) => {
     
     try {
@@ -48,11 +54,11 @@ const appDestAndroid = path.resolve(__dirname, `../testapp-cordova/platforms/and
 
 console.log(`Watching for changes in ${appFilePath}...`);
 
-// Use fs.watchFile to monitor changes in the file (500ms interval)
+// Keep the compiled test app entrypoint mirrored into native platform assets.
 fs.watchFile(appFilePath, { interval: 500 }, (curr, prev) => {
     
     try {
-        console.log(`\n\x1b[34mLoading ${appOutputFile} content and wrapping it in a Cordova define...\x1b[0m`);
+        console.log(`\n\x1b[34mLoading ${appOutputFile} content and copying it to Cordova platform assets...\x1b[0m`);
         // Copy the file to the destination file (iOS platform)
         fs.copyFileSync(appFilePath, appDestIos)
         fs.copyFileSync(appFilePath, appDestAndroid)
@@ -61,3 +67,50 @@ fs.watchFile(appFilePath, { interval: 500 }, (curr, prev) => {
         console.error(`\x1b[31mFailed to write the file: ${err}\x1b[0m\n`);
     }
 }); 
+
+function applyPatchFiles() {
+    // Collect every file from patchfiles so the same relative path can be copied into testapp-cordova.
+    function getFilesRecursively(directory) {
+        const files = [];
+
+        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+            const entryPath = path.resolve(directory, entry.name);
+
+            if (entry.isDirectory()) {
+                files.push(...getFilesRecursively(entryPath));
+                continue;
+            }
+
+            files.push(entryPath);
+        }
+
+        return files;
+    }
+
+    if (!fs.existsSync(patchFilesRoot)) {
+        console.log(`\x1b[33mPatchfiles directory not found, skipping patch merge.\x1b[0m`);
+        return;
+    }
+
+    const patchFiles = getFilesRecursively(patchFilesRoot);
+
+    if (patchFiles.length === 0) {
+        console.log(`\x1b[33mNo patch files found in ${patchFilesRoot}, skipping patch merge.\x1b[0m`);
+        return;
+    }
+
+    console.log(`\n\x1b[34mApplying patch files from ${patchFilesRoot}...\x1b[0m`);
+
+    for (const patchFile of patchFiles) {
+        const relativePath = path.relative(patchFilesRoot, patchFile);
+        const destinationPath = path.resolve(patchTargetRoot, relativePath);
+        const action = fs.existsSync(destinationPath) ? 'Replaced' : 'Added';
+
+        fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+        fs.copyFileSync(patchFile, destinationPath);
+
+        console.log(`\x1b[32m${action}: ${relativePath}\x1b[0m`);
+    }
+
+    console.log(`\x1b[32mPatch file merge completed.\x1b[0m\n`);
+}
