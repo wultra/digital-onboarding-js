@@ -4,6 +4,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "es2015",
+    "moduleResolution": "bundler",
     "lib": ["DOM", "ES2020"],
     "rootDir": ".",
     "strict": true,

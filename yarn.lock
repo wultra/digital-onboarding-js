@@ -968,10 +968,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"blinkid-cordova-plugin@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "blinkid-cordova-plugin@npm:1.0.0"
-  checksum: 10c0/222a2f5b4c3d7087501df028beb8416f5d2ce182b80ebe8298633f1073c243fae0ab4c2cf940aeefbc15022b57841db34313a00ab2d49781c364ee30a2b292c2
+"blinkid-cordova-plugin@npm:^7.7.0":
+  version: 7.7.0
+  resolution: "blinkid-cordova-plugin@npm:7.7.0"
+  checksum: 10c0/20b991758e31bb8dff8eaea821b697e9b43f88d2f247d80c7a911f0be437b84b2b401252687f9f5b11d5b56ff5579d506fa6bb5c700bb9279f2a6ee9264cfa8a
   languageName: node
   linkType: hard
 
@@ -1273,13 +1273,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "com.wultra.cordova.onboardingtestapp@workspace:testapp-cordova"
   dependencies:
-    blinkid-cordova-plugin: "npm:^1.0.0"
+    blinkid-cordova-plugin: "npm:^7.7.0"
     cordova-android: "npm:^14.0.1"
     cordova-digital-onboarding: "file:../packages/lib-cordova"
     cordova-ios: "npm:^7.1.1"
     cordova-powerauth-mobile-sdk: "npm:^4.2.0"
     cordova-powerauth-networking: "npm:^1.0.1"
-    iproov-cordova-plugin: "npm:^1.0.1"
+    iproov-cordova-plugin: "npm:^1.0.2"
   languageName: unknown
   linkType: soft
 
@@ -1481,8 +1481,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 1.0.0
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=a6cea1&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/e41d69c34c2886f7c13d893e3a0dafb4bb6341c959e14ac35e576fba54d4e9765a067dd899fd91f6d72e238bd71467ebee8bcfa7110267828440fa0dffabf314
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=35e4c9&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/98420e47f4c73de97aceb6d04fce2f2d0f5cb66c9a8c02317c0b31d591b066900de8490884fe1b6dbcd5b82f0c6bfa29d04d70353054fdda0abe33e60df0d9d8
   languageName: node
   linkType: hard
 
@@ -1494,7 +1494,7 @@ __metadata:
     cordova: "npm:^12.0.0"
     cordova-powerauth-mobile-sdk: "npm:^4.2.0"
     cordova-powerauth-networking: "npm:^1.0.1"
-    typescript: "npm:^5.9.2"
+    typescript: "npm:^6.0.3"
   languageName: unknown
   linkType: soft
 
@@ -2800,7 +2800,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iproov-cordova-plugin@npm:^1.0.1":
+"iproov-cordova-plugin@npm:^1.0.2":
   version: 1.0.2
   resolution: "iproov-cordova-plugin@npm:1.0.2"
   checksum: 10c0/660430c1071b77a73c9e8a39e2c1dd74a8c387b5672870ee60306cd61d42cf2a8bc170f76267332eeae2156779ca9c73ce640b6dbe79ecaf7d631ba469531f36
@@ -5256,16 +5256,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.9.2":
-  version: 5.9.3
-  resolution: "typescript@npm:5.9.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
-  languageName: node
-  linkType: hard
-
 "typescript@npm:^6.0.3":
   version: 6.0.3
   resolution: "typescript@npm:6.0.3"
@@ -5273,16 +5263,6 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 10c0/4a25ff5045b984370f48f196b3a0120779b1b343d40b9a68d114ea5e5fff099809b2bb777576991a63a5cd59cf7bffd96ff6fe10afcefbcb8bd6fb96ad4b6606
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@npm%3A^5.9.2#optional!builtin<compat/typescript>":
-  version: 5.9.3
-  resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=379a07"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/6f7e53bf0d9702350deeb6f35e08b69cbc8b958c33e0ec77bdc0ad6a6c8e280f3959dcbfde6f5b0848bece57810696489deaaa53d75de3578ff255d168c1efbd
   languageName: node
   linkType: hard
 
