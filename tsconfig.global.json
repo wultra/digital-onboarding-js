@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "module": "es2015",
     "lib": ["es2015"],
     "strict": true,
-    "declaration": false,
     "sourceMap": true,
     "removeComments": false, // Keep comments for better documentation
     "noImplicitAny": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
   }
 }
