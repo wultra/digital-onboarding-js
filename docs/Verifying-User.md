@@ -200,8 +200,6 @@ export interface WDOOtpState {
     type: WDOVerificationStateType.otp
     /** Number of remaining attempts to enter the correct OTP. Available after a failed OTP attempt */
     remainingAttempts?: number
-    /** Time in seconds that user needs to wait between OTP resend calls. Undefined when not provided by the server */
-    otpResendPeriodSeconds?: number
 }
 
 /**
@@ -509,7 +507,7 @@ When this state is obtained, the following steps need to be done:
 
 After the presence check is finished, the user will receive an SMS/email OTP and the `otp` state will be reported. When this state is received, prompt the user for the OTP and verify it via `verifyOTP` method.
 
-The `otp` state also contains the number of possible OTP attempts. When attempts are depleted, the error state is returned.
+The `otp` state contains the number of possible OTP attempts. The resend cooldown is available from `WDOConfigurationResponse.otpResendPeriodSeconds`, returned by `WDOConfigurationService.getConfiguration(processType)`. When attempts are depleted, the error state is returned.
 
 Example:
 

@@ -3,6 +3,7 @@
   "exclude": ["node_modules"],
   "include": [ "src/**/*.ts" ],
   "compilerOptions": {
+    "rootDir": "..",
     "lib": ["DOM", "es2015"]
   }
 }

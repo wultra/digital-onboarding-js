@@ -90,6 +90,7 @@ async function simulateActivation() {
             otpForIdentification: true,
             otpForIdentityVerification: true,
             useTemporaryActivation: false,
+            otpResendPeriodSeconds: 30,
             documents: {
                 totalRequiredDocumentsCount: 1,
                 groups: [
@@ -123,6 +124,7 @@ async function simulateActivation() {
             if (typeof config.useTemporaryActivation !== "boolean") {
                 throw new Error("Invalid configuration for temporary activation!")
             }
+            console.log(`OTP resend cooldown from configuration: ${config.otpResendPeriodSeconds ?? "not provided"}`)
         } else {
             console.log("No process type specified, skipping configuration fetch.")
             config = defaultConfig
@@ -452,6 +454,7 @@ async function simulateActivation() {
 
         if (config.otpForIdentityVerification) {
             guardState(afterPresenceCheckStatus.type, WDOVerificationStateType.otp)
+            console.log(`OTP resend cooldown from configuration: ${config.otpResendPeriodSeconds ?? "not provided"}`)
 
             // submit wrong OTP to test failure
             try {

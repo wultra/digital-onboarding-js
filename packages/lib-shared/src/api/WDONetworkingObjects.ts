@@ -39,14 +39,7 @@ export interface WDOIdentityStatusResponse {
     rejectReason?: string
     identityVerificationStatus: WDOIdentityVerificationStatus
     identityVerificationPhase?: WDOIdentityVerificationPhase
-    config?: WDOIdentityConfig
     consentRequired: boolean
-}
-
-/* @internal */
-export interface WDOIdentityConfig {
-    /** Period after which the OTP can be resent, in seconds */
-    otpResendPeriodSeconds: number
 }
 
 /* @internal */
@@ -185,6 +178,8 @@ export interface WDOConfigurationResponse {
     otpForIdentityVerification: boolean
     /** Is the onboarding process configured with temporary activation that should be exchanged for the permanent one. */
     useTemporaryActivation: boolean
+    /** Time in seconds that user needs to wait between OTP resend calls. Undefined when not provided by the server. */
+    otpResendPeriodSeconds?: number
     /** Documents required for identity verification. */
     documents: {
         /** Number of total required documents */

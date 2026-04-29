@@ -38,6 +38,10 @@ interface WDOConfigurationResponse {
     otpForIdentification: boolean
     /** Is OTP required for the second part - identity verification. */
     otpForIdentityVerification: boolean
+    /** Is the onboarding process configured with temporary activation that should be exchanged for the permanent one. */
+    useTemporaryActivation: boolean
+    /** Time in seconds the user needs to wait between OTP resend calls. Undefined when the backend does not provide the value. */
+    otpResendPeriodSeconds?: number
     /** Documents required for identity verification. */
     documents: {
         /** Number of total required documents */
@@ -63,6 +67,8 @@ interface WDOConfigurationDocument {
     sideCount: number
 }
 ```
+
+Use `otpResendPeriodSeconds` to drive the cooldown for `resendOTP()` in your activation or verification UI.
 
 ## Read next
 - [Device Activation](Device-Activation.md)
