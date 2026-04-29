@@ -122,10 +122,15 @@ function applyPatchFiles() { // Copy every override from patchfiles into the mat
 }
 
 function assertInstalledPlatforms() { // Make sure both generated Cordova platform folders already exist.
-    for (const [platformName, platformPath] of Object.entries(paths.platforms).filter(([platformName]) => platformName !== 'androidAssets')) {
-        if (!fs.existsSync(platformPath) || !fs.statSync(platformPath).isDirectory()) {
-            throw new Error(`Missing Cordova platform folder: ${platformName}. Install both iOS and Android platforms before running this script.`);
-        }
+  for (const [name, path] of Object.entries(paths.platforms)) {
+    if (name === 'androidAssets') continue;
+      
+    if (!fs.existsSync(path) || !fs.statSync(path).isDirectory()) {
+      throw new Error(
+        `Missing Cordova platform folder: ${name}. Install both iOS and Android platforms before running this script.`
+        );
+      }
+    }
     }
 }
 
