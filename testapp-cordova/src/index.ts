@@ -54,28 +54,28 @@ async function simulateActivation() {
     const powerAuth = new PowerAuth(generateRandomNumericString())
     powerAuth.configure({
         configuration: serverCredentials.paConfig,
-        baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
+        baseEndpointUrl: serverCredentials.esUrl
     })
 
     const powerAuth2 = new PowerAuth(generateRandomNumericString())
     powerAuth2.configure({
         configuration: serverCredentials.paConfig,
-        baseEndpointUrl: `${serverCredentials.server}/enrollment-server/`
+        baseEndpointUrl: serverCredentials.esUrl
     })
     
     let activationService = new WDOActivationService(
         powerAuth,
-        `${serverCredentials.server}/enrollment-server-onboarding/`
+        serverCredentials.esoUrl
     )
 
     let verificationService = new WDOVerificationService(
         powerAuth, 
-        `${serverCredentials.server}/enrollment-server-onboarding/`
+        serverCredentials.esoUrl
     )
 
     const configurationService = new WDOConfigurationService(
         powerAuth,
-        `${serverCredentials.server}/enrollment-server-onboarding/`
+        serverCredentials.esoUrl
     )
 
     let testFinishedWithSuccess = false
@@ -209,7 +209,7 @@ async function simulateActivation() {
         console.log("Creating new activation service instance to verify cached process...")
         activationService = new WDOActivationService(
             powerAuth, 
-            `${serverCredentials.server}/enrollment-server-onboarding/`
+            serverCredentials.esoUrl
         )
 
         const statusAfterChange = await activationService.status()
@@ -346,7 +346,7 @@ async function simulateActivation() {
         console.log("Creating new verification service instance to verify cached scanning process...")
         verificationService = new WDOVerificationService(
             powerAuth, 
-            `${serverCredentials.server}/enrollment-server-onboarding/`
+            serverCredentials.esoUrl
         )
 
         // get verification status again
@@ -648,7 +648,7 @@ async function approveOnboarding(processId: string, userId: string, approve: boo
         headers: myHeaders
     }
 
-    const result = await fetch(`${serverCredentials.server}/enrollment-server-onboarding/api/private/test/process/${processId}/identityVerifications`, requestOptions)
+    const result = await fetch(`${serverCredentials.esoUrl}api/private/test/process/${processId}/identityVerifications`, requestOptions)
     const data = await result.json()
     console.log(`Onboarding verifications for process ${processId}: ${JSON.stringify(data)}`)
     const verificationId = data[0]
@@ -675,7 +675,7 @@ async function approveOnboarding(processId: string, userId: string, approve: boo
     }
 
     console.log(`Submitting onboarding approval with body: ${raw}`)
-    const result2 = await fetch(`${serverCredentials.server}/enrollment-server-onboarding/api/private/client/approve`, requestOptions2)
+    const result2 = await fetch(`${serverCredentials.esoUrl}api/private/client/approve`, requestOptions2)
     console.log(`Onboarding approval response status for process ${processId} and verification ${verificationId}: ${result2.status}`)
     console.log(`${await result2.text()}`)
 
