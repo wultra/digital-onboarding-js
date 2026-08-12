@@ -23,6 +23,13 @@ export class WDOActivationEndpoints {
         returnsData: true
     }
 
+    static readonly startReVerification: WDOEndpoint = {
+        path: "/api/onboarding/start",
+        uriId: "/api/onboarding/start",
+        e2eeScope: "ACTIVATION",
+        returnsData: true
+    }
+
     static readonly cancel: WDOEndpoint = {
         path: "/api/onboarding/cleanup",
         e2eeScope: "APPLICATION",
