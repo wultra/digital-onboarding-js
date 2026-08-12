@@ -63,6 +63,22 @@ export abstract class WDOBaseVerificationService<
      * regular verification, unless the backend's process configuration uses a dedicated flag instead (e.g.
      * `RE_KYC_IN_PROGRESS`). Either way, once this returns `true`, call `status()` to determine the next
      * step - the same result regardless of whether it's a regular verification or a Re-KYC.
+     *
+     * This check is typically performed independently of `startReVerification` - most commonly right after
+     * app launch/PowerAuth activation restore, to find out whether a previously started verification (or
+     * Re-KYC) needs to be resumed.
+     *
+     * @example
+     * ```typescript
+     * const powerAuth: PowerAuth // configured and activated PowerAuth instance
+     * const verificationService: WDOVerificationService // configured instance, powered by the same PowerAuth instance
+     *
+     * const status = await powerAuth.fetchActivationStatus()
+     * if (WDOVerificationService.isVerificationRequired(status)) {
+     *     // a verification (regular or Re-KYC) is pending or in progress - continue with the
+     *     // regular verification flow, e.g. `verificationService.status()`, to determine the next state
+     * }
+     * ```
      */
     protected static isVerificationRequiredInternal(paStatus: WDOPowerAuthActivationStatus): boolean {
         const flags = paStatus.customObject?.activationFlags as Array<string> | undefined
@@ -285,9 +301,26 @@ export abstract class WDOBaseVerificationService<
      * This automatically fetches the verification status after a successful start, same as `status()` would,
      * so the returned result can be used directly to display the next state (usually `intro`).
      *
+     * Your app decides on its own when a Re-KYC should be triggered (e.g. a business rule, a server-driven
+     * prompt, or a dedicated backend call outside of this SDK) - this is not something `isVerificationRequired`
+     * tells you to do. `isVerificationRequired` is only used afterwards (e.g. after an app restart) to resume
+     * an already-started Re-KYC via the regular verification flow.
+     *
      * @param additionalData Custom payload sent to the server together with the Re-KYC start request (analogous to `credentials` in `WDOActivationService.start`).
      *                        Defaults to `{ source: "re-verification" }` when omitted.
      * @param processType The process type identification. If not specified, the default process type will be used.
+     *
+     * @example
+     * ```typescript
+     * const verificationService: WDOVerificationService // configured instance, powered by an already-active PowerAuth instance
+     *
+     * try {
+     *     const state = await verificationService.startReVerification()
+     *     // display the next state, same as with a regular verification flow (usually `intro`)
+     * } catch (error) {
+     *     // handle error
+     * }
+     * ```
      */
     async startReVerification<T = any>(additionalData?: T, processType?: string): Promise<WDOVerificationState & WDOVerificationStateServerData> {
         WDOLogger.debug(`Starting re-verification, processType: ${processType ?? "default"}`)
