@@ -532,18 +532,6 @@ export abstract class WDOBaseVerificationService<
         await this.handleError(this.api.verificationResendOTP(pid))
     }
 
-    /**
-     * @internal
-     * Demo endpoint available only in Wultra Demo systems.
-     * 
-     * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
-     */
-    private async getOTP(): Promise<String> {
-        WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
-        const pid = this.verifyHasActiveProcess()
-        return (await this.api.activationGetOTP(pid, "USER_VERIFICATION")).otpCode
-    }
-
     // PRIVATE METHODS
 
     /* @internal */

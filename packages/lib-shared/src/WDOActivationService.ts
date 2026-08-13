@@ -169,18 +169,6 @@ export abstract class WDOBaseActivationService<TPowerAuth extends WDOPowerAuth> 
     }
 
     /**
-     * @internal
-     * Demo endpoint available only in Wultra Demo systems.
-     * 
-     * If the app is running against our demo server, you can retrieve the OTP without needing to send SMS or emails.
-     */
-    private async getOTP(): Promise<String> {
-        WDOLogger.debug("Activation: getting OTP from server (only for testing purposes)")
-        const pid = await this.verifyHasActiveProcess()
-        return (await this.api.activationGetOTP(pid, "ACTIVATION")).otpCode
-    }
-
-    /**
      * Activate the PowerAuth instance that was passed in the initializer.
      * 
      * @param activationName Name of the activation. Usually something like John's iPhone or similar.

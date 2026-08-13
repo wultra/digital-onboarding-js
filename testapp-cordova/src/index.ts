@@ -1,12 +1,11 @@
 
 import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "./demodata"
-import { DemoEndpoints } from "./demoEndpoints"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
-    WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType,
+    WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService,
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse, WDOError, 
-    WDOStatusCheckReason} from "cordova-digital-onboarding"
+    WDOIntroState, WDOConsentResponse, WDOError,
+    WDOStatusCheckReason, WDODemoEndpointsService} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
 import { IProov } from "iproov-cordova-plugin"
 import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
@@ -75,6 +74,11 @@ async function simulateActivation() {
     )
 
     const configurationService = new WDOConfigurationService(
+        powerAuth,
+        serverCredentials.esoUrl
+    )
+
+    const demoEndpointsService = new WDODemoEndpointsService(
         powerAuth,
         serverCredentials.esoUrl
     )
@@ -249,7 +253,7 @@ async function simulateActivation() {
         if (config.otpForIdentification) {
             console.log("Retrieving OTP from server...")
             try {
-                otpCode = await DemoEndpoints.getOTPForActivation(activationService, serverCredentials.esoUrl, otpMockStrategy)
+                otpCode = await demoEndpointsService.getOTP(activationService, otpMockStrategy)
             } catch (error) {
                 // NOTE: the debug OTP endpoint may not be enabled/reachable in all environments.
                 // This is unrelated to Re-KYC, so don't abort.
@@ -518,7 +522,7 @@ async function simulateActivation() {
 
             // retrieve OTP from server (in real app, user would input it)
             console.log("Retrieving OTP from server for verification...")
-            const otpVerification: string = await DemoEndpoints.getOTPForVerification(verificationService, serverCredentials.esoUrl, otpMockStrategy)
+            const otpVerification: string = await demoEndpointsService.getOTP(verificationService, otpMockStrategy)
             console.log(`OTP retrieved for verification: ${otpVerification}`)
 
             // submit OTP
