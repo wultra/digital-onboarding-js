@@ -55,6 +55,9 @@ async function getOTP(processId: string | undefined, esoUrl: string, otpType: "A
 
 function mockUrlFromEsoUrl(esoBaseUrl: string): string {
     const eso = new URL(esoBaseUrl)
+    if (!eso.host.includes("-eso")) {
+        throw new Error(`Cannot derive mock host from ESO host '${eso.host}'. Use { type: "custom", url: ... } strategy instead.`)
+    }
     const mockHost = eso.host.replace("-eso", "-eso-mock")
     return `${eso.protocol}//${mockHost}/otp/detail`
 }
