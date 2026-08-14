@@ -36,7 +36,7 @@ In some cases, you might require the user to repeat identity verification even t
 
 To start such a process, call `startReVerification`. Unlike `WDOActivationService.start`, this call does not create a new PowerAuth activation - it reuses the current one and is authenticated with a PowerAuth POSSESSION (1FA) signature instead of user-provided credentials. You can pass `additionalData` in a similar manner as passing `credentials` to `start`.
 
-Once `startReVerification` succeeds, progress is tracked the same way as with a regular verification: `WDOVerificationService.isVerificationRequired(status)` becomes `true` and stays `true` until the process finishes.
+Once the backend marks the activation with a verification-in-progress flag, progress is tracked the same way as with a regular verification: `WDOVerificationService.isVerificationRequired(status)` becomes `true` and stays `true` until the process finishes.
 
 ```typescript
 /**
