@@ -7,5 +7,3 @@ export const serverCredentials = {
 }
 
 export const otpMockStrategy = { type: "automaticMock" } as const
-export const blinkIdIos = ""
-export const blinkIdAndroid = ""

@@ -12,10 +12,10 @@ if [[ "$1" == "-dev" ]]; then
     echo "Starting to continuously build cordova package..."
 
     # Start rollup (TS -> JS) in watch mode
-    rollup -c "rollup.config.lib.js" -w &
+    npx rollup -c "rollup.config.lib.js" -w &
     ROLLUP_LIB_TASK_PID=$!
 
-    rollup -c "rollup.config.app.js" -w &
+    npx rollup -c "rollup.config.app.js" -w &
     ROLLUP_APP_TASK_PID=$!
 
     # Start the script that updates the cordova app JS files
@@ -40,7 +40,7 @@ else
 
     echo "Building cordova package..."
     # Build the package once (TS -> JS)
-    rollup -c "rollup.config.lib.js"
+    npx rollup -c "rollup.config.lib.js"
 fi
 
 popd

@@ -1,15 +1,13 @@
 
-import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "./demodata"
+import { serverCredentials, otpMockStrategy } from "./demodata"
 import { DemoEndpoints } from "./demoEndpoints"
 import "cordova-powerauth-mobile-sdk"
-import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType, 
-    WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService, 
+import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType,
+    WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService,
     WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
-    WDOIntroState, WDOConsentResponse, WDOError, 
+    WDOIntroState, WDOConsentResponse, WDOError,
     WDOStatusCheckReason} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
-import { IProov } from "iproov-cordova-plugin"
-import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
 import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking"
 
 document.addEventListener('deviceready', onDeviceReady, false)
@@ -63,7 +61,11 @@ async function simulateActivation() {
         configuration: serverCredentials.paConfig,
         baseEndpointUrl: serverCredentials.esUrl
     })
-    
+
+    // Tracks whichever PowerAuth instance ends up active and fully verified - stays `powerAuth` unless
+    // the flow reaches `finishActivation`, which swaps to `powerAuth2` and removes `powerAuth`.
+    let activePowerAuth = powerAuth
+
     let activationService = new WDOActivationService(
         powerAuth,
         serverCredentials.esoUrl
@@ -132,7 +134,7 @@ async function simulateActivation() {
         }
 
         // PREPARE DOCUMENT TYPES FOR SCANNING BASED ON CONFIGURATION
-        type DocumentTypeToScan = { type: WDODocumentType, sideCount: number }
+        type DocumentTypeToScan = { type: WDODocumentType, sideCount: number, country?: string }
         const documentTypesToScan: DocumentTypeToScan[] = []
 
         // first go-through to add mandatory documents from all groups
@@ -297,40 +299,6 @@ async function simulateActivation() {
             throw new Error("Verification is not required according to WDOVerificationService after onboarding activation!")
         }
 
-        // RE-KYC (RE-VERIFICATION) TEST
-        console.log("Starting re-verification (Re-KYC) on a fresh service instance...")
-        const reKycProcessType = "re-kyc"
-        const reKycVerificationService = new WDOVerificationService(
-            powerAuth,
-            serverCredentials.esoUrl
-        )
-
-        const reKycIntroResult = await reKycVerificationService.startReVerification(undefined, reKycProcessType)
-        console.log(`Re-verification started, status: ${reKycIntroResult.type}`)
-        guardState(reKycIntroResult.type, WDOVerificationStateType.intro)
-        const reKycIntroState = reKycIntroResult as WDOIntroState
-
-        // Note: the server does not set the "verification required" activation flag right after
-        // startReVerification - it is only set once /api/identity/init is called (i.e. after start() below).
-        console.log("Starting identification process for Re-KYC...")
-        const reKycStartResult = await reKycVerificationService.start(reKycIntroState.consentRequired ? WDOConsentResponse.approved : WDOConsentResponse.notRequired)
-        guardState(reKycStartResult.type, WDOVerificationStateType.documentsToScanSelect)
-        console.log("Re-KYC identification process started.")
-
-        console.log("Fetching PowerAuth SDK activation status after Re-KYC start...")
-        const reKycPaStatus = await powerAuth.fetchActivationStatus()
-        const reKycFlags = reKycPaStatus.customObject?.activationFlags as Array<string> | undefined
-        console.log(`PowerAuth SDK activation flags after Re-KYC start: ${reKycFlags ? reKycFlags.join(", ") : "none"}`)
-
-        // This is the reliable check regardless of which flag name the backend uses.
-        const isVerificationRequiredAfterReKyc = WDOVerificationService.isVerificationRequired(reKycPaStatus)
-        console.log(`Is verification required after Re-KYC start: ${isVerificationRequiredAfterReKyc ? "yes" : "no"}`)
-        if (!isVerificationRequiredAfterReKyc) {
-            throw new Error("Verification is not required according to WDOVerificationService after Re-KYC start!")
-        }
-
-        console.log("Re-KYC test completed successfully.")
-
         // VERIFICATION STARTS HERE
 
         // get verification status
@@ -363,10 +331,12 @@ async function simulateActivation() {
         guardState(startResult.type, WDOVerificationStateType.documentsToScanSelect)
         console.log("Identification process started.")
 
-        // init document scanning SDK
-        console.log("Initializing document scanning SDK...")
-        const initResult = await verificationService.documentsInitSDK()
-        console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
+        // init document scanning SDK - this is commented out because the test app does not include 
+        // any 3rd party document scanning SDK, but the integration tests do. 
+        // The backend's mock document-scan provider (servicesMock) does not require a real scan, so this step can be skipped in the test app.
+        // console.log("Initializing document scanning SDK...")
+        // const initResult = await verificationService.documentsInitSDK()
+        // console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
 
         // set selected document types
         console.log(`Setting selected document types: ${JSON.stringify(documentTypesToScan)}`)
@@ -414,81 +384,31 @@ async function simulateActivation() {
             })
         }
 
-        // retrieve license key for BlinkID
-        const licenseKey = initResult.blinkIDKey
-        console.log(`Retrieved BlinkID license key: ${licenseKey}`)
-        console.log("Using hardcoded BlinkID iOS license key for testing...")
+        // Submit documents: instead of a real scan via a 3rd party SDK, send a small JSON "instruction" 
+        // as the image data. The backend's mock document-scan provider (servicesMock) recognizes this shape
+        // and responds as if a real document had been captured and accepted, without needing any document-scanning SDK at all.
+        let mockUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
 
-        // perform BlinkID scan for documents
-        const sdkSettings = new BlinkIdSdkSettings(cordova.platformId == "ios" ? blinkIdIos : blinkIdAndroid)
-        const sessionSettings = new BlinkIdSessionSettings()
-        sessionSettings.scanningSettings = new BlinkIdScanningSettings()
-        sessionSettings.scanningSettings.returnInputImages = true
-        sessionSettings.scanningSettings.croppedImageSettings = new CroppedImageSettings()
-        sessionSettings.scanningSettings.croppedImageSettings.returnDocumentImage = true
-        const uxSettings = new BlinkIdScanningUxSettings()
-        uxSettings.showHelpButton = false
-        uxSettings.showOnboardingDialog = false
-
-        let blinkIDUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
-        
         for (const doc of documentTypesToScan) {
-
-            // upload pictures that are expected to be rejected to test the re-upload mechanism.
-            console.log(`First upload dummy document for document type ${doc.type} to test upload failure and reupload mechanism...`)
-            let dummyJpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q=="
-            const dummyImagesToUpload = [new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.front)]
+            console.log(`Submitting mocked document data for document type: ${doc.type}...`)
+            const imagesToUpload = [buildMockDocumentFile(doc, WDODocumentSide.front)]
             if (doc.sideCount > 1) {
-                dummyImagesToUpload.push(new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.back))
+                imagesToUpload.push(buildMockDocumentFile(doc, WDODocumentSide.back))
             }
 
-            const dummyUploadResult = await uploadDocumentsFromBlinkId(verificationService, dummyImagesToUpload)
-            console.log(`Verification status after dummy document upload: ${dummyUploadResult.type}`)
-            // we expect the dummy upload to fail and the state to remain the same, if it changed, it means that the dummy document was accepted which is not expected
-            guardState(dummyUploadResult.type, WDOVerificationStateType.scanDocument)
-
-            // not we perform the real scan and upload the captured images
-            // the mechanism in the SDK should match the captured document type with the rejected dummy document and allow re-upload automatically without the need to set originalDocumentId
-            console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
-            const result = await BlinkID.performScan(sdkSettings, sessionSettings, uxSettings)
-        
-            const image1 = result.firstInputImage
-            if (!image1) {
-                throw { message: "No 1st side of document captured from BlinkID scan!" }
-            }
-
-            const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front)]
-
-            const image2 = result.secondInputImage
-            if (!image2) {
-                console.log("No 2nd side of document captured from BlinkID scan!")
-                if (doc.sideCount > 1) {
-                    throw { message: "2nd side of document required but not captured from BlinkID scan!" }
-                }
-            } else {
-                console.log("2nd side of document captured from BlinkID scan.")
-                imagesToUpload.push(new WDODocumentFile(image2, doc.type, WDODocumentSide.back))
-            }
-
-            blinkIDUploadResult = await uploadDocumentsFromBlinkId(verificationService, imagesToUpload)
-            console.log(`Verification status after BlinkID ${doc.type} scan: ${blinkIDUploadResult.type}`)   
+            mockUploadResult = await uploadDocuments(verificationService, imagesToUpload)
+            console.log(`Verification status after mock ${doc.type} upload: ${mockUploadResult.type}`)
         }
 
-        guardState(blinkIDUploadResult.type, WDOVerificationStateType.presenceCheck)
+        guardState(mockUploadResult.type, WDOVerificationStateType.presenceCheck)
 
-        // init presence check
+        // Presence check - same approach as the Android/iOS integration tests: the backend's mock
+        // presence-check provider (servicesMock) does not require a real presence-check SDK session,
+        // a plain init + submit is sufficient.
         console.log("Initializing presence check...")
         const presenceInitResult = await verificationService.presenceCheckInit()
         console.log(`Presence check result: ${JSON.stringify(presenceInitResult)}`)
 
-        // Run iProov SDK
-        console.log("Starting iProov presence check...")
-        const iProovResult = await IProov.launch("wss://eu3.rp.secure.iproov.me/ws", presenceInitResult.iProovVerificationToken!, null, (event) => {
-            console.log(`iProov event: ${event.name}`)
-        })
-        console.log(`iProov presence check completed with result: ${JSON.stringify(iProovResult)}`)
-
-        // submit presence check result
         console.log("Submitting presence check result...")
         await verificationService.presenceCheckSubmit()
         console.log(`Verification status after presence check submitted.`)
@@ -577,6 +497,8 @@ async function simulateActivation() {
                 throw new Error(`Original PowerAuth instance activation is not removed after finishActivation: ${removedStatus.state}`)
             }
 
+            activePowerAuth = powerAuth2
+
         } else {
             guardState(anotherStatus.type, WDOVerificationStateType.success)
             console.log("Onboarding process completed successfully.")
@@ -586,6 +508,58 @@ async function simulateActivation() {
             console.log(`PowerAuth SDK activation status: ${JSON.stringify(finalPaStatus)}`)
         }
 
+        // RE-KYC (RE-VERIFICATION) TEST
+        //
+        // Started from fully activated pa
+        console.log("Fetching PowerAuth SDK activation status before Re-KYC...")
+        const preReKycStatus = await activePowerAuth.fetchActivationStatus()
+        const preReKycRequired = WDOVerificationService.isVerificationRequired(preReKycStatus)
+        console.log(`Is verification required before Re-KYC: ${preReKycRequired ? "yes" : "no"}`)
+        if (preReKycRequired) {
+            throw new Error("Verification is still required before starting Re-KYC - the original verification did not finish cleanly!")
+        }
+
+        console.log("Starting re-verification (Re-KYC) on the now fully-verified activation...")
+        const reKycProcessType = "re-kyc"
+        const reKycVerificationService = new WDOVerificationService(
+            activePowerAuth,
+            serverCredentials.esoUrl
+        )
+
+        const reKycIntroResult = await reKycVerificationService.startReVerification(undefined, reKycProcessType)
+        console.log(`Re-verification started, status: ${reKycIntroResult.type}`)
+        guardState(reKycIntroResult.type, WDOVerificationStateType.intro)
+        const reKycIntroState = reKycIntroResult as WDOIntroState
+
+        // startReVerification alone must not flip isVerificationRequired yet - only /api/identity/init
+        // (triggered by the subsequent start() call below) does that.
+        console.log("Fetching PowerAuth SDK activation status after startReVerification (before identity/init)...")
+        const statusAfterReVerification = await activePowerAuth.fetchActivationStatus()
+        const isVerificationRequiredAfterReVerification = WDOVerificationService.isVerificationRequired(statusAfterReVerification)
+        console.log(`Is verification required after startReVerification (before identity/init): ${isVerificationRequiredAfterReVerification ? "yes" : "no"}`)
+        if (isVerificationRequiredAfterReVerification) {
+            throw new Error("Verification is required right after startReVerification - it should only flip after identity/init!")
+        }
+
+        console.log("Starting identification process for Re-KYC...")
+        const reKycStartResult = await reKycVerificationService.start(reKycIntroState.consentRequired ? WDOConsentResponse.approved : WDOConsentResponse.notRequired)
+        guardState(reKycStartResult.type, WDOVerificationStateType.documentsToScanSelect)
+        console.log("Re-KYC identification process started.")
+
+        console.log("Fetching PowerAuth SDK activation status after Re-KYC start...")
+        const reKycPaStatus = await activePowerAuth.fetchActivationStatus()
+        const reKycFlags = reKycPaStatus.customObject?.activationFlags as Array<string> | undefined
+        console.log(`PowerAuth SDK activation flags after Re-KYC start: ${reKycFlags ? reKycFlags.join(", ") : "none"}`)
+
+        // This is the reliable check regardless of which flag name the backend uses.
+        const isVerificationRequiredAfterReKyc = WDOVerificationService.isVerificationRequired(reKycPaStatus)
+        console.log(`Is verification required after Re-KYC start: ${isVerificationRequiredAfterReKyc ? "yes" : "no"}`)
+        if (!isVerificationRequiredAfterReKyc) {
+            throw new Error("Verification is not required according to WDOVerificationService after Re-KYC start!")
+        }
+
+        console.log("Re-KYC test completed successfully.")
+        console.log("Now it should just finish.")
         testFinishedWithSuccess = true
     } catch (error) {
         console.log(`Error during activation:`)
@@ -596,7 +570,7 @@ async function simulateActivation() {
         // REMOVING POWERAUTH SDK ACTIVATION
 
         console.log("Removing PowerAuth SDK activation...")
-        await powerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
+        await activePowerAuth.removeActivationWithAuthentication(PowerAuthAuthentication.password(pin))
         console.log("PowerAuth SDK activation removed.")
     }
 
@@ -614,7 +588,7 @@ function getRandomAttributes(): { clientNumber: string, birthDate: string } {
     }
 }
 
-async function uploadDocumentsFromBlinkId(verificationService: WDOVerificationService, documents: WDODocumentFile[]): Promise<WDOVerificationState> {
+async function uploadDocuments(verificationService: WDOVerificationService, documents: WDODocumentFile[]): Promise<WDOVerificationState> {
     console.log("Submitting images...")
     const scanResult = await verificationService.documentsSubmit(
         documents
@@ -623,6 +597,26 @@ async function uploadDocumentsFromBlinkId(verificationService: WDOVerificationSe
     console.log("Document scans submitted, fetching status.")
 
     return await waitForStatusChange(verificationService)
+}
+
+// Builds a mocked document payload matching what Android/iOS integration tests send: a small JSON
+// "instruction" (base64-encoded, since WDODocumentFile expects base64 image data) describing the
+// document type and country, recognized by the backend's mock document-scan provider instead of a
+// real scanned image.
+function buildMockDocumentFile(doc: { type: WDODocumentType, country?: string }, side: WDODocumentSide): WDODocumentFile {
+    const mockType = mockTypeFor(doc.type)
+    const json = JSON.stringify({ type: mockType, isoAlpha3CountryCode: doc.country ?? "CZE" })
+    const base64 = btoa(json)
+    return new WDODocumentFile(base64, doc.type, side)
+}
+
+function mockTypeFor(type: WDODocumentType): string {
+    switch (type) {
+        case "DRIVING_LICENSE": return "Dl"
+        case "ID_CARD": return "Id"
+        case "PASSPORT": return "Passport"
+        default: throw new Error(`Unsupported document type for mock upload: ${type}`)
+    }
 }
 
 async function waitForStatusChange(verificationService: WDOVerificationService): Promise<WDOVerificationState> {
