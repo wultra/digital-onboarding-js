@@ -7,3 +7,7 @@ export const serverCredentials = {
 }
 
 export const otpMockStrategy = { type: "automaticMock" } as const
+
+// Leave empty to skip the real BlinkID document-scanning SDK and fall back to the mocked documentupload
+export const blinkIdIos: string = ""
+export const blinkIdAndroid: string = ""

@@ -1,5 +1,5 @@
 
-import { serverCredentials, otpMockStrategy } from "./demodata"
+import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "./demodata"
 import { DemoEndpoints } from "./demoEndpoints"
 import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType,
@@ -8,6 +8,8 @@ import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType
     WDOIntroState, WDOConsentResponse, WDOError,
     WDOStatusCheckReason} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
+import { IProov } from "iproov-cordova-plugin"
+import { BlinkID, BlinkIdScanningSettings, BlinkIdScanningUxSettings, BlinkIdSdkSettings, BlinkIdSessionSettings, CroppedImageSettings } from "blinkid-cordova-plugin"
 import { WPNLoggerConfig, WPNLoggerVerbosity } from "cordova-powerauth-networking"
 
 document.addEventListener('deviceready', onDeviceReady, false)
@@ -331,13 +333,6 @@ async function simulateActivation() {
         guardState(startResult.type, WDOVerificationStateType.documentsToScanSelect)
         console.log("Identification process started.")
 
-        // init document scanning SDK - this is commented out because the test app does not include 
-        // any 3rd party document scanning SDK, but the integration tests do. 
-        // The backend's mock document-scan provider (servicesMock) does not require a real scan, so this step can be skipped in the test app.
-        // console.log("Initializing document scanning SDK...")
-        // const initResult = await verificationService.documentsInitSDK()
-        // console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
-
         // set selected document types
         console.log(`Setting selected document types: ${JSON.stringify(documentTypesToScan)}`)
         const docTypesResult = await verificationService.documentsSetSelectedTypes(documentTypesToScan.map(d => d.type))
@@ -384,30 +379,101 @@ async function simulateActivation() {
             })
         }
 
-        // Submit documents: instead of a real scan via a 3rd party SDK, send a small JSON "instruction" 
-        // as the image data. The backend's mock document-scan provider (servicesMock) recognizes this shape
-        // and responds as if a real document had been captured and accepted, without needing any document-scanning SDK at all.
-        let mockUploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
+        // Decide whether to use the real BlinkID scanning SDK or the mocked document upload based 
+        // on whether a BlinkID license key is actually configured for this platform in demodata.ts.
+        const blinkIdKey = cordova.platformId == "ios" ? blinkIdIos : blinkIdAndroid
+        const useRealDocumentScan = !!blinkIdKey && blinkIdKey.trim().length > 0
 
-        for (const doc of documentTypesToScan) {
-            console.log(`Submitting mocked document data for document type: ${doc.type}...`)
-            const imagesToUpload = [buildMockDocumentFile(doc, WDODocumentSide.front)]
-            if (doc.sideCount > 1) {
-                imagesToUpload.push(buildMockDocumentFile(doc, WDODocumentSide.back))
+        let uploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
+
+        if (useRealDocumentScan) {
+            console.log("BlinkID license key configured for this platform - using the real document scanning SDK.")
+
+            // init document scanning SDK
+            console.log("Initializing document scanning SDK...")
+            const initResult = await verificationService.documentsInitSDK()
+            console.log(`Document scanning SDK initialized: ${JSON.stringify(initResult)}`)
+
+            // perform BlinkID scan for documents
+            const sdkSettings = new BlinkIdSdkSettings(blinkIdKey)
+            const sessionSettings = new BlinkIdSessionSettings()
+            sessionSettings.scanningSettings = new BlinkIdScanningSettings()
+            sessionSettings.scanningSettings.returnInputImages = true
+            sessionSettings.scanningSettings.croppedImageSettings = new CroppedImageSettings()
+            sessionSettings.scanningSettings.croppedImageSettings.returnDocumentImage = true
+            const uxSettings = new BlinkIdScanningUxSettings()
+            uxSettings.showHelpButton = false
+            uxSettings.showOnboardingDialog = false
+
+            for (const doc of documentTypesToScan) {
+
+                // upload pictures that are expected to be rejected to test the re-upload mechanism.
+                console.log(`First upload dummy document for document type ${doc.type} to test upload failure and reupload mechanism...`)
+                let dummyJpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q=="
+                const dummyImagesToUpload = [new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.front)]
+                if (doc.sideCount > 1) {
+                    dummyImagesToUpload.push(new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.back))
+                }
+
+                const dummyUploadResult = await uploadDocuments(verificationService, dummyImagesToUpload)
+                console.log(`Verification status after dummy document upload: ${dummyUploadResult.type}`)
+                // we expect the dummy upload to fail and the state to remain the same, if it changed, it means that the dummy document was accepted which is not expected
+                guardState(dummyUploadResult.type, WDOVerificationStateType.scanDocument)
+
+                // now we perform the real scan and upload the captured images
+                // the mechanism in the SDK should match the captured document type with the rejected dummy document and allow re-upload automatically without the need to set originalDocumentId
+                console.log(`Starting BlinkID scan for document type: ${doc.type}...`)
+                const result = await BlinkID.performScan(sdkSettings, sessionSettings, uxSettings)
+
+                const image1 = result.firstInputImage
+                if (!image1) {
+                    throw { message: "No 1st side of document captured from BlinkID scan!" }
+                }
+
+                const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front)]
+
+                const image2 = result.secondInputImage
+                if (!image2) {
+                    console.log("No 2nd side of document captured from BlinkID scan!")
+                    if (doc.sideCount > 1) {
+                        throw { message: "2nd side of document required but not captured from BlinkID scan!" }
+                    }
+                } else {
+                    console.log("2nd side of document captured from BlinkID scan.")
+                    imagesToUpload.push(new WDODocumentFile(image2, doc.type, WDODocumentSide.back))
+                }
+
+                uploadResult = await uploadDocuments(verificationService, imagesToUpload)
+                console.log(`Verification status after BlinkID ${doc.type} scan: ${uploadResult.type}`)
             }
+        } else {
+            console.log("No BlinkID license key configured for this platform - falling back to the mocked document upload (matching the Android/iOS integration tests).")
 
-            mockUploadResult = await uploadDocuments(verificationService, imagesToUpload)
-            console.log(`Verification status after mock ${doc.type} upload: ${mockUploadResult.type}`)
+            for (const doc of documentTypesToScan) {
+                console.log(`Submitting mocked document data for document type: ${doc.type}...`)
+                const imagesToUpload = [buildMockDocumentFile(doc, WDODocumentSide.front)]
+                if (doc.sideCount > 1) {
+                    imagesToUpload.push(buildMockDocumentFile(doc, WDODocumentSide.back))
+                }
+
+                uploadResult = await uploadDocuments(verificationService, imagesToUpload)
+                console.log(`Verification status after mock ${doc.type} upload: ${uploadResult.type}`)
+            }
         }
 
-        guardState(mockUploadResult.type, WDOVerificationStateType.presenceCheck)
+        guardState(uploadResult.type, WDOVerificationStateType.presenceCheck)
 
-        // Presence check - same approach as the Android/iOS integration tests: the backend's mock
-        // presence-check provider (servicesMock) does not require a real presence-check SDK session,
-        // a plain init + submit is sufficient.
+        // init presence check
         console.log("Initializing presence check...")
         const presenceInitResult = await verificationService.presenceCheckInit()
         console.log(`Presence check result: ${JSON.stringify(presenceInitResult)}`)
+
+        // Run iProov SDK
+        console.log("Starting iProov presence check...")
+        const iProovResult = await IProov.launch("wss://eu3.rp.secure.iproov.me/ws", presenceInitResult.iProovVerificationToken!, null, (event) => {
+            console.log(`iProov event: ${event.name}`)
+        })
+        console.log(`iProov presence check completed with result: ${JSON.stringify(iProovResult)}`)
 
         console.log("Submitting presence check result...")
         await verificationService.presenceCheckSubmit()
@@ -559,7 +625,6 @@ async function simulateActivation() {
         }
 
         console.log("Re-KYC test completed successfully.")
-        console.log("Now it should just finish.")
         testFinishedWithSuccess = true
     } catch (error) {
         console.log(`Error during activation:`)
