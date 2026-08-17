@@ -385,7 +385,7 @@ async function simulateActivation() {
         // Decide whether to use the real BlinkID scanning SDK or the mocked document upload based 
         // on whether a BlinkID license key is actually configured for this platform in demodata.ts.
         const blinkIdKey = cordova.platformId == "ios" ? blinkIdIos : blinkIdAndroid
-        const useRealDocumentScan = !!blinkIdKey && blinkIdKey.trim().length > 0
+        const useRealDocumentScan = (blinkIdKey?.trim().length ?? 0) > 0
 
         let uploadResult: WDOVerificationState = docTypesResult // initial value to please the compiler
 
