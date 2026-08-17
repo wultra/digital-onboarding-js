@@ -3,7 +3,7 @@ import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "
 import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType,
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService,
-    WDOLogger, WDOLogLevel, WDOConfigurationResponse, WDOConfigurationDocument,
+    WDOLogger, WDOLogLevel, WDOConfigurationResponse,
     WDOIntroState, WDOConsentResponse, WDOError,
     WDOStatusCheckReason, WDODemoEndpointsService} from "cordova-digital-onboarding"
 import "cordova-powerauth-networking"
