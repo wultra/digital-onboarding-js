@@ -294,12 +294,9 @@ export abstract class WDOBaseVerificationService<
 
 
     /**
-     * Starts a Re-KYC (re-verification) process for an already active PowerAuth instance, signed with a
-     * PowerAuth POSSESSION (1FA) signature instead of user-provided credentials. Unlike `WDOActivationService.start`,
-     * this does not create a new PowerAuth activation - it reuses the current one.
+     * Starts a Re-KYC (re-verification) process for an already active PowerAuth instance.
      *
-     * This automatically fetches the verification status after a successful start, same as `status()` would,
-     * so the returned result can be used directly to display the next state (usually `intro`).
+     * This automatically fetches the verification status after a successful start, same as `status()` would.
      *
      * Your app decides on its own when a Re-KYC should be triggered (e.g. a business rule, a server-driven
      * prompt, or a dedicated backend call outside of this SDK) - this is not something `isVerificationRequired`
