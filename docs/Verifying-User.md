@@ -40,8 +40,7 @@ Once the backend marks the activation with a verification-in-progress flag, prog
 
 ```typescript
 /**
- * Starts a re-verification (Re-KYC) process for an already active PowerAuth instance, without creating a
- * new activation. The call is signed with the POSSESSION factor instead of user credentials.
+ * Starts a Re-KYC (re-verification) process for an already active PowerAuth instance.
  *
  * @param additionalData Optional custom payload sent to the server (analogous to `credentials` in `WDOActivationService.start`).
  *                        Defaults to `{ source: "re-verification" }` when omitted.
