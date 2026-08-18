@@ -292,7 +292,6 @@ export abstract class WDOBaseVerificationService<
         return this.processState({ type: WDOVerificationStateType.documentsToScanSelect })
     }
 
-
     /**
      * Starts a Re-KYC (re-verification) process for an already active PowerAuth instance.
      *

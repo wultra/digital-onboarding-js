@@ -610,6 +610,20 @@ async function simulateActivation() {
             throw new Error("Verification is required right after startReVerification - it should only flip after identity/init!")
         }
 
+        // Calling startReVerification twice in a row (each on a fresh service instance) must be idempotent -
+        // second not returning ONBOARDING_FAILED
+        console.log("Starting re-verification (Re-KYC) twice in a row to verify idempotency...")
+        const reKycHelperService1 = new WDOVerificationService(activePowerAuth, serverCredentials.esoUrl)
+        const reKycTwiceFirstResult = await reKycHelperService1.startReVerification(undefined, reKycProcessType)
+        console.log(`First startReVerification (twice-in-a-row test) status: ${reKycTwiceFirstResult.type}`)
+        guardState(reKycTwiceFirstResult.type, WDOVerificationStateType.intro)
+
+        const reKycHelperService2 = new WDOVerificationService(activePowerAuth, serverCredentials.esoUrl)
+        const reKycTwiceSecondResult = await reKycHelperService2.startReVerification(undefined, reKycProcessType)
+        console.log(`Second startReVerification (twice-in-a-row test) status: ${reKycTwiceSecondResult.type}`)
+        guardState(reKycTwiceSecondResult.type, WDOVerificationStateType.intro)
+        console.log("startReVerification called twice in a row succeeded both times.")
+
         console.log("Starting identification process for Re-KYC...")
         const reKycStartResult = await reKycVerificationService.start(reKycIntroState.consentRequired ? WDOConsentResponse.approved : WDOConsentResponse.notRequired)
         guardState(reKycStartResult.type, WDOVerificationStateType.documentsToScanSelect)
@@ -720,7 +734,7 @@ async function waitForStatusChange(verificationService: WDOVerificationService):
         await new Promise(resolve => setTimeout(resolve, 3000))
        
         repeatedStatus = await verificationService.status()
-}    
+    }
 
     return repeatedStatus
 }
