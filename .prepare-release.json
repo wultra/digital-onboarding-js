@@ -12,18 +12,35 @@
         ],
         "buildscript": "corepack enable && yarn install && yarn packCordova"
     },
+    "scriptVersion": 2,
+    "devVersion": "0.0.1-dev",
     "files": [
         {
-            "description": "Cordova package definition file.",
-            "path": "packages/lib-cordova/package.json",
+            "description": "Package definition files.",
+            "paths": ["packages/lib-cordova/package.json", "package.json"],
             "type": "version_replace",
-            "match": "\"version\": \"%VERSION%\",\n"
+            "match": "\"version\": \"%VERSION%\",\n",
+            "devChange": true
         },
         {
             "description": "Cordova plugin.xml file.",
             "path": "packages/lib-cordova/plugin.xml",
             "type": "version_replace",
-            "match": "id=\"cordova-digital-onboarding\" version=\"%VERSION%\""
+            "match": "id=\"cordova-digital-onboarding\" version=\"%VERSION%\"",
+            "devChange": true
+        },
+        {
+            "description": "Changelog for the Wultra documentation.",
+            "path": "docs/Changelog.md",
+            "type": "tba_replace",
+            "match": "## TBA",
+            "devChangelog": true
+        },
+        {
+            "description": "Verify that the changelog does not contain a TBA placeholder.",
+            "path": "docs/Changelog.md",
+            "type": "verify_not_containing",
+            "match": "- TBA"
         }
     ]
 }
