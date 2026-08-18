@@ -131,7 +131,6 @@ function assertInstalledPlatforms() { // Make sure both generated Cordova platfo
         );
       }
     }
-    }
 }
 
 function watchPluginBundleChanges() { // Watch the built SDK bundle and propagate it into generated plugin assets.

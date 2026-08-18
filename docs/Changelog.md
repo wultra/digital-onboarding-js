@@ -4,6 +4,8 @@
 
 - **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
+- Added `WDOVerificationService.startReVerification` to support Re-KYC (repeated identity verification) for an already active PowerAuth instance, without creating a new activation.
+- `WDOProcessResponse` now contains an optional `activationType` property indicating whether a new activation was created or an existing one was reused.
 
 ## 2.0.2 (Mar, 2026)
 
