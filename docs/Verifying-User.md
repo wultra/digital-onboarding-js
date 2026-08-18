@@ -34,7 +34,7 @@ try {
 
 In some cases, you might require the user to repeat identity verification even though the `PowerAuth` instance is already fully activated and does not need any verification (`WDOVerificationService.isVerificationRequired` is `false`).
 
-To start such a process, call `startReVerification`. Unlike `WDOActivationService.start`, this call does not create a new PowerAuth activation - it reuses the current one and is authenticated with a PowerAuth POSSESSION (1FA) signature instead of user-provided credentials. You can pass `additionalData` in a similar manner as passing `credentials` to `start`.
+To start such a process, call `startReVerification`. Unlike `WDOActivationService.start`, this call does not create a new PowerAuth activation - it reuses the current one. You can pass `additionalData` in a similar manner as passing `credentials` to `start`.
 
 Once the backend marks the activation with a verification-in-progress flag, progress is tracked the same way as with a regular verification: `WDOVerificationService.isVerificationRequired(status)` becomes `true` and stays `true` until the process finishes.
 
@@ -50,7 +50,7 @@ Once the backend marks the activation with a verification-in-progress flag, prog
 async startReVerification<T = any>(additionalData?: T, processType?: string): Promise<WDOVerificationState & WDOVerificationStateServerData>
 ```
 
-`startReVerification` automatically fetches the verification status right after a successful start (same as calling `status()` would), so the returned result can be used directly to display the next state (usually `intro`), followed by `consentGet()`/`start(consentApprovedByUser)` as usual.
+`startReVerification` automatically fetches the verification status right after a successful start (same as calling `status()` would).
 
 Your app decides on its own when a Re-KYC should be triggered (e.g. a business rule, a server-driven prompt, or a dedicated backend call outside of this SDK) - this is not something `isVerificationRequired` tells you to do.
 

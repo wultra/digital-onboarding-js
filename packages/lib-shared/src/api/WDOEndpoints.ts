@@ -23,6 +23,7 @@ export class WDOActivationEndpoints {
         returnsData: true
     }
 
+    // Same path as `start`, but with ACTIVATION e2ee scope and a `uriId` so the request is signed with the POSSESSION factor
     static readonly startReVerification: WDOEndpoint = {
         path: "/api/onboarding/start",
         uriId: "/api/onboarding/start",
