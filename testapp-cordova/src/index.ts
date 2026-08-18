@@ -608,8 +608,7 @@ async function simulateActivation() {
         }
 
         // Calling startReVerification twice in a row (each on a fresh service instance) must be idempotent -
-        // both calls should return the intro state, without the second call failing because a Re-KYC is
-        // already in progress on the server.
+        // second not returning ONBOARDING_FAILED
         console.log("Starting re-verification (Re-KYC) twice in a row to verify idempotency...")
         const reKycHelperService1 = new WDOVerificationService(activePowerAuth, serverCredentials.esoUrl)
         const reKycTwiceFirstResult = await reKycHelperService1.startReVerification(undefined, reKycProcessType)
