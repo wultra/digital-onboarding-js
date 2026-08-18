@@ -18,6 +18,18 @@ export interface WDOProcessResponse {
      * If not present, the activation is created later on in the onboarding process. 
      */
     activationCode?: string
+    /** Type of the activation used for this process. */
+    activationType?: WDOActivationType
+}
+
+/** Type of activation linkage used for a process. */
+export enum WDOActivationType {
+    /** Activation is initialized by the onboarding server; the activation code is returned when the process starts. */
+    code = "CODE",
+    /** Activation is initialized by the SDK. */
+    identity = "IDENTITY",
+    /** An already existing (and active) PowerAuth activation is reused for this process (Re-KYC). */
+    alreadyExists = "ACTIVATION_ALREADY_EXISTS"
 }
 
 /** Status of the onboarding */

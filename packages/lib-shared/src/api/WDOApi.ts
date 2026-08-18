@@ -35,6 +35,11 @@ export class WDOApi<TPowerAuth extends WDOPowerAuth> {
         return this.callApi(requestObject, WDOActivationEndpoints.start)
     }
 
+    activationStartReVerification(additionalData: any, processType?: string): Promise<WDOProcessResponse> {
+        const requestObject = { identification: additionalData, processType: processType }
+        return this.callApi(requestObject, WDOActivationEndpoints.startReVerification)
+    }
+
     activationCancel(processId: string): Promise<void> {
         const requestObject = { processId: processId }
         return this.callApi(requestObject, WDOActivationEndpoints.cancel)

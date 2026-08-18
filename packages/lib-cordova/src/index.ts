@@ -14,6 +14,7 @@ export * from '../../lib-shared/src/WDODocumentFile'
 export * from '../../lib-shared/src/WDOLogger'
 export * from '../../lib-shared/src/api/WDONetworkingObjects'
 export * from '../../lib-shared/src/WDOError'
+export { WDOGetOTPEndpointStrategy } from '../../lib-shared/src/api/WDODemoEndpoints'
 
 // setup platform specific implementations
 import { WDOCordovaCache, WDOCordovaPlatformUtils, WDONetworkingCordovaIntegration, WDOPowerAuthCordovaIntegration } from './WDOCordovaPlatform'
@@ -27,6 +28,7 @@ WDOPlatform.utils = new WDOCordovaPlatformUtils()
 import { WDOBaseActivationService } from '../../lib-shared/src/WDOActivationService'
 import { WDOBaseConfigurationService } from '../../lib-shared/src/WDOConfigurationService'
 import { WDOBaseVerificationService } from '../../lib-shared/src/WDOVerificationService'
+import { WDOBaseDemoEndpointsService } from '../../lib-shared/src/api/WDODemoEndpoints'
 
 /**
  * Service that can activate PowerAuth instance by user weak credentials (like his email, phone number or client ID) + optional SMS OTP.
@@ -54,3 +56,11 @@ export class WDOVerificationService extends WDOBaseVerificationService<PowerAuth
 
 /** Service that provides configuration for the Wultra Digital Onboarding SDK. */
 export class WDOConfigurationService extends WDOBaseConfigurationService<PowerAuth> { }
+
+/**
+ * Demo endpoints available only in Wultra Demo systems.
+ *
+ * This service operates against the same Wultra Onboarding server as `WDOActivationService`/`WDOVerificationService` -
+ * construct it with the same `powerauth` instance and `baseUrl`.
+ */
+export class WDODemoEndpointsService extends WDOBaseDemoEndpointsService<PowerAuth> { }
