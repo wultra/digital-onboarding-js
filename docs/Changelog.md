@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 (TBA)
+## TBA
 
 - **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
@@ -8,17 +8,17 @@
 - `WDOProcessResponse` now contains an optional `activationType` property indicating whether a new activation was created or an existing one was reused.
 - Demo `getOTP` methods on `WDOActivationService`/`WDOVerificationService` were removed and moved to the new `WDODemoEndpointsService` (`new WDODemoEndpointsService(powerauth, baseUrl).getOTP(service, strategy)`), with the OTP retrieval location configurable via `WDOGetOTPEndpointStrategy`.
 
-## 2.0.2 (Mar, 2026)
+## 2.0.2
 
 - When re-uploading a rejected document without providing `originalDocumentId`, the SDK now resolves it automatically.
   - Matching is based on the server data provided during the `status()` call, which includes the list of documents and their sides that the user already uploaded.
 - `WDODocumentSide` enum values changed from lowercase (`"front"`, `"back"`) to uppercase (`"FRONT"`, `"BACK"`) to match server API values.
 
-## 2.0.1 (Mar, 2026)
+## 2.0.1
 
 - Fixed: Document scan flow no longer proceeds to processing when additional documents are still selected locally.
 
-## 2.0.0 (Mar, 2026)
+## 2.0.0
 
 - ⚠️ Minimal required enrollment server version is now `2.1.0`
 - `WDODocumentType` changed from an enum to a type alias of `string` (see `WDODocumentFile.ts`) to better accommodate dynamic configuration of scanned documents. Also removed the `WDODocumentSubmitFileType` enum for the same reason.
@@ -29,18 +29,18 @@
 - `WDOConfigurationResponse` now contains `useTemporaryActivation` to indicate if the onboarding process is configured with temporary activation that should be exchanged for the permanent one via the new `finishActivation` method in the verification flow.
 - `WDOConfigurationDocument` now contains optional `country` property to specify the country of origin of the document as ISO 3166-1 alpha-3 code.
 
-## 1.3.0 (Feb, 2026)
+## 1.3.0
 
 - Added `onboardingApproval` to the `WDOStatusCheckReason` when the process is waiting for institution approval.
 - SDK now supports a server that is configured to support multiple BlinkID applications (bundle IDs/Package Names). The `origin` parameter is now sent to the server to identify the application.
 
-## 1.2.0 (Jan, 2026)
+## 1.2.0
 
 - **Breaking:** New `finishActivation` state in `WDOVerificationService` to complete the user verification process by activating a new PowerAuth instance.
   - New method must be called by the client when handling the `finishActivation` state in the verification flow, i.e. after all verification steps (identity, documents, presence, etc.) have succeeded but before the new `PowerAuth` instance is used anywhere else in the app: `finishActivation(newPaInstance: PowerAuth, activationName: string, password: WDOPowerAuthPassword, validatePassword: boolean)`.
 - **Breaking:** Changed configuration endpoint response to include document groups instead of a flat list of documents.
 
-## 1.1.0 (Dec, 2025)
+## 1.1.0
 
 - PowerAuth Cordova SDK dependency now requires v. `4.2.0`.
 - Process cache is now persistent across app restarts.
@@ -59,6 +59,6 @@
    - `presenceCheckInit` method now returns strongly typed response.
    - `intro` state now contains `consentRequired: boolean` property in the corresponding union type.
 
-## 1.0.0 (Nov, 2025)
+## 1.0.0
 
 Initial release.
