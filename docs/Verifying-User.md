@@ -32,6 +32,10 @@ try {
 
 ## Starting a re-verification (Re-KYC)
 
+<!-- begin box warning -->
+Requires **PA Enrollment Onboarding Server `2.2.3`** or newer. Calling `startReVerification` against an older PA Enrollment Onboarding Server will fail.
+<!-- end -->
+
 In some cases, you might require the user to repeat identity verification even though the `PowerAuth` instance is already fully activated and does not need any verification (`WDOVerificationService.isVerificationRequired` is `false`).
 
 To start such a process, call `startReVerification`. Unlike `WDOActivationService.start`, this call does not create a new PowerAuth activation - it reuses the current one. You can pass `additionalData` in a similar manner as passing `credentials` to `start`.
