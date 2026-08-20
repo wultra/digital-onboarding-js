@@ -1,6 +1,6 @@
 ---
-name: digital-onboarding-js-code-review
-description: Review Cordova Digital Onboarding changes for server-driven state, secure persistence, and protocol integrity.
+name: code-review
+description: Review pull requests in the Cordova Digital Onboarding SDK repository. Use when reviewing public APIs, server-driven state, secure persistence, protocol integrity, or documentation changes.
 ---
 
 # digital-onboarding-js review
