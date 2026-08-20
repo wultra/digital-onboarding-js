@@ -5,7 +5,9 @@ description: Review pull requests in the Cordova Digital Onboarding SDK reposito
 
 # digital-onboarding-js review
 
-Confirm PR target, head, and current checkout before reviewing; normal work targets `develop`. Default to **approve**. A finding must be a concrete PR-introduced defect with `path:line`, demonstrated impact, and a precise correction. Do not give formatting, style, or CI advice.
+This is a strictly read-only review. Review only PR and repository content already available. Do not run or suggest commands, scripts, builds, tests, linters, formatters, validation tasks, or Git operations.
+
+Use the already available PR metadata to identify the target and head; normal work targets `develop`. Default to **approve**. A finding must be a concrete PR-introduced defect with `path:line`, demonstrated impact, and a precise correction. Do not give formatting, style, or CI advice.
 
 Do not post or submit GitHub content without explicit user approval. Prefix any postable wording with `🤖`.
 
@@ -38,7 +40,7 @@ The Cordova bundle intentionally strips runtime modules (`cordova-powerauth-mobi
 
 ## Release, docs, and review evidence
 
-Use `sh scripts/build.sh` for the focused compile and `yarn packCordova` for the CI/package path. The `testapp-cordova` project is a live-backend manual harness, not an automated test suite.
+The tracked build, packaging, and workflow files may be inspected as review evidence only. The `testapp-cordova` project is a live-backend manual harness, not an automated test suite.
 
 For a release-to-`develop` transition, root `package.json`, `packages/lib-cordova/package.json`, and `packages/lib-cordova/plugin.xml` must all declare `0.0.1-dev`. `.prepare-release.json` also requires the `docs/Changelog.md` TBA/release transition; check that public docs reflect changed API, server compatibility, state flow, or integration behavior.
 
