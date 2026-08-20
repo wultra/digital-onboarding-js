@@ -1,6 +1,6 @@
 # Changelog
 
-## TBA
+## 3.0.0
 
 - **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
