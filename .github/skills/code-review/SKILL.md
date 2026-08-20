@@ -20,7 +20,7 @@ Shared flow code is in `packages/lib-shared/src/`:
 - `WDOBaseActivationService`: start, status, cancel, resend OTP, and activation resume data.
 - `WDOBaseVerificationService`: server-driven verification status and consent, scanning, document submission, presence, OTP, and finish-activation steps.
 - `api/WDOApi.ts` and `api/WDOEndpoints.ts`: request wrapping, authentication, E2EE scope, and response mapping.
-- `WDOPlatform.ts`: platform abstraction; `lib-cordova/src/WDOCordovaPlatform.ts` supplies cache, PowerAuth, networking, and device integration.
+- `WDOPlatform.ts`: platform abstraction; `packages/lib-cordova/src/WDOCordovaPlatform.ts` supplies cache, PowerAuth, networking, and device integration.
 
 The flow is not a fixed local wizard: `status()` selects the next `WDOVerificationState`. A new verification service must obtain status before methods that use cached `processId`. Flag a proven change that enables an action with missing/stale process state, skips a server transition, or reports a state inconsistent with server data.
 
