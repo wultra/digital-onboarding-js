@@ -97,8 +97,8 @@ export class WDOPowerAuthCordovaIntegration {
         return PowerAuthActivation.createWithIdentityAttributes(identityAttributes, activationName)
     }
 
-    authenticationWithPassword(password: PowerAuthPassword): PowerAuthAuthentication {
-        return PowerAuthAuthentication.password(password)
+    authenticationForActivationPersist(password: PowerAuthPassword): PowerAuthAuthentication {
+        return PowerAuthAuthentication.persistWithPassword(password)
     }
 
     authenticationWithPossession(): PowerAuthAuthentication {
