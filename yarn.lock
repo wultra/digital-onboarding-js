@@ -1278,7 +1278,7 @@ __metadata:
     cordova-digital-onboarding: "file:../packages/lib-cordova"
     cordova-ios: "npm:^7.1.1"
     cordova-powerauth-mobile-sdk: "https://github.com/wultra/react-native-powerauth-mobile-sdk/releases/download/5.0.0-beta-1/cordova-powerauth-mobile-sdk-5.0.0.tgz"
-    cordova-powerauth-networking: "https://github.com/wultra/networking-js.git#commit=eaa4c4b815d74c986aa83344ffdca77dee9e7561&workspace=cordova-powerauth-networking"
+    cordova-powerauth-networking: "https://github.com/wultra/networking-js/releases/download/2.0.0-beta-1/cordova-powerauth-networking-v2.0.0.tgz"
     iproov-cordova-plugin: "npm:^1.0.2"
   languageName: unknown
   linkType: soft
@@ -1481,8 +1481,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 0.0.1-dev
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=d3c92f&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/9f6660236b0596fef305af164a30feed2b04cd79798342381c541caf8b84f925d75b49a734e719496a948bd76e6fd5a1dd2dc46b92928675d52f3018ba9f1c79
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=3adf8e&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/aba1b6c38f24e841af85fbdd5d89041838beb392388f163df274fc2c4931b9184c6205d525b60d89393eb343cd79fc412b135bfb78dbeda35a81273e7fb48041
   languageName: node
   linkType: hard
 
@@ -1493,7 +1493,7 @@ __metadata:
     clean-package: "npm:^2.2.0"
     cordova: "npm:^12.0.0"
     cordova-powerauth-mobile-sdk: "https://github.com/wultra/react-native-powerauth-mobile-sdk/releases/download/5.0.0-beta-1/cordova-powerauth-mobile-sdk-5.0.0.tgz"
-    cordova-powerauth-networking: "https://github.com/wultra/networking-js.git#commit=eaa4c4b815d74c986aa83344ffdca77dee9e7561&workspace=cordova-powerauth-networking"
+    cordova-powerauth-networking: "https://github.com/wultra/networking-js/releases/download/2.0.0-beta-1/cordova-powerauth-networking-v2.0.0.tgz"
     typescript: "npm:^6.0.3"
   languageName: unknown
   linkType: soft
@@ -1562,10 +1562,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cordova-powerauth-networking@https://github.com/wultra/networking-js.git#commit=eaa4c4b815d74c986aa83344ffdca77dee9e7561&workspace=cordova-powerauth-networking":
-  version: 0.0.1-dev
-  resolution: "cordova-powerauth-networking@https://github.com/wultra/networking-js.git#workspace=cordova-powerauth-networking&commit=eaa4c4b815d74c986aa83344ffdca77dee9e7561"
-  checksum: 10c0/3c2095e41da6a432c8f83244db98c4dbc5f30d4fd89a93f575e6123a3d338f73305fce13a867f9acfe5e0d9f871fe0c1a1b8271c244cdaf16f95f9da03f3342f
+"cordova-powerauth-networking@https://github.com/wultra/networking-js/releases/download/2.0.0-beta-1/cordova-powerauth-networking-v2.0.0.tgz":
+  version: 2.0.0
+  resolution: "cordova-powerauth-networking@https://github.com/wultra/networking-js/releases/download/2.0.0-beta-1/cordova-powerauth-networking-v2.0.0.tgz"
+  checksum: 10c0/2f689aa3ba0d41337c3f83da21190e9a1a13c333cf7cbb57a2bab00279a177c7e40fb82c78324c9119861650856a9d9a1b53efaebb01ce33d979aa30b51a89d7
   languageName: node
   linkType: hard
 

@@ -59,6 +59,5 @@
 ## Releases and branching
 
 - Branch from and open pull requests into `develop`.
-- The PQA integration PR must wait for PowerAuth Networking `2.0.0` to be published. Before merging, replace the temporary networking PR dependency with the published version in both package manifests, `plugin.xml`, and `yarn.lock`, then rerun validation.
 - On non-release branches, keep the Cordova package and plugin versions at `0.0.1-dev`.
 - Prepare coordinated package, plugin, and changelog updates with `sh scripts/prepare-release.sh -v X.Y.Z`. Pass `--verify` to check a prepared release and `--prepare-dev` after a release to restore development metadata.
