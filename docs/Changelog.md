@@ -2,7 +2,8 @@
 
 ## TBA
 
-- **⚠️ BREAKING**: Requires PowerAuth Mobile JS SDK `5.0.0`.
+- Requires PowerAuth Mobile JS SDK `5.0.0` or newer.
+- Requires PowerAuth Networking JS SDK `2.0.0` or newer. Projects with an older `cordova-powerauth-networking` plugin installed must update it before adding this plugin.
 - The activation status passed to `WDOVerificationServiceListener.powerAuthActivationStatusChanged` now allows `UNKNOWN` and no longer allows `CREATED`.
 - **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
