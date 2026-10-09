@@ -501,7 +501,7 @@ export abstract class WDOBaseVerificationService<
             try {
                 const activation = WDOPlatform.powerAuth.activationWithActivationCode(response.activationCode, newActivationName, undefined)
                 await newPowerAuthInstance.createActivation(activation)
-                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuth.authenticationWithPassword(newPassword))
+                await newPowerAuthInstance.persistActivation(WDOPlatform.powerAuth.authenticationForActivationPersist(newPassword))
             } catch (e) {
                 // In case of failure, ensure no partial activation remains
                 if (await newPowerAuthInstance.canStartActivation() == false) {
@@ -592,7 +592,8 @@ export abstract class WDOBaseVerificationService<
 
     /* @internal */
     private async processError(error: any): Promise<any> {
-        if (error.code === "AUTHENTICATION_ERROR") { // PowerAuth Authentication failure
+        if (error.code === "AUTHENTICATION_ERROR" || error.code === "INVALID_ACTIVATION_STATE" ||
+            (error.code === "NETWORK_ERROR" && error.errorData?.httpStatusCode === 401)) {
             try {
                 const status = await this.powerauth.fetchActivationStatus()
                 if (status.state !== "ACTIVE") {
