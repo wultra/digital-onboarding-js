@@ -78,7 +78,7 @@ export class WDONetworkingCordovaIntegration implements WDONetworkingIntegration
     }
 
     networking(powerAuth: PowerAuth, baseUrl: string): WDONetworking {
-        return new WPNNetworking(powerAuth, baseUrl)
+        return new WPNNetworking(powerAuth, { baseURL: baseUrl })
     }
 }
 

@@ -59,12 +59,9 @@ export interface WDOResponseConfig { }
 export interface WDOApiEndpoint<TRequest, TResponse> { }
 
 /* @internal */
-export interface WDORRequestProcessor { }
-
-/* @internal */
 export interface WDONetworking {
     set acceptLanguage(value: string)
-    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: WDOPowerAuthAuthentication | undefined, requestProcessor?: WDORRequestProcessor | undefined): Promise<WDOResponse<TResponse>>
+    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: WDOPowerAuthAuthentication | undefined): Promise<WDOResponse<TResponse>>
 }
 
 /* @internal */
