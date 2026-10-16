@@ -413,9 +413,9 @@ async function simulateActivation() {
                 // upload pictures that are expected to be rejected to test the re-upload mechanism.
                 console.log(`First upload dummy document for document type ${doc.type} to test upload failure and reupload mechanism...`)
                 let dummyJpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q=="
-                const dummyImagesToUpload = [new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.front)]
+                const dummyImagesToUpload = [new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.front, undefined, undefined, doc.country)]
                 if (doc.sideCount > 1) {
-                    dummyImagesToUpload.push(new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.back))
+                    dummyImagesToUpload.push(new WDODocumentFile(dummyJpeg, doc.type, WDODocumentSide.back, undefined, undefined, doc.country))
                 }
 
                 const dummyUploadResult = await uploadDocuments(verificationService, dummyImagesToUpload)
@@ -433,7 +433,7 @@ async function simulateActivation() {
                     throw { message: "No 1st side of document captured from BlinkID scan!" }
                 }
 
-                const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front)]
+                const imagesToUpload = [new WDODocumentFile(image1, doc.type, WDODocumentSide.front, undefined, undefined, doc.country)]
 
                 const image2 = result.secondInputImage
                 if (!image2) {
@@ -443,7 +443,7 @@ async function simulateActivation() {
                     }
                 } else {
                     console.log("2nd side of document captured from BlinkID scan.")
-                    imagesToUpload.push(new WDODocumentFile(image2, doc.type, WDODocumentSide.back))
+                    imagesToUpload.push(new WDODocumentFile(image2, doc.type, WDODocumentSide.back, undefined, undefined, doc.country))
                 }
 
                 uploadResult = await uploadDocuments(verificationService, imagesToUpload)
@@ -689,7 +689,7 @@ function buildMockDocumentFile(doc: { type: WDODocumentType, country?: string },
     const mockType = mockTypeFor(doc.type)
     const json = JSON.stringify({ type: mockType, isoAlpha3CountryCode: doc.country ?? "CZE" })
     const base64 = btoa(json)
-    return new WDODocumentFile(base64, doc.type, side)
+    return new WDODocumentFile(base64, doc.type, side, undefined, undefined, doc.country)
 }
 
 function mockTypeFor(type: WDODocumentType): string {

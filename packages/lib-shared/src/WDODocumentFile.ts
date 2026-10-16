@@ -39,6 +39,8 @@ export class WDODocumentFile {
     public type: WDODocumentType
     /** Side of the document (`front` if the document is one-sided or only one side is expected). */
     public side: WDODocumentSide
+    /** Country of origin of the document as an ISO 3166-1 alpha-3 code. */
+    public country?: string
     /**
      * For image reuploading when the previous file of the same document was rejected.
      * 
@@ -53,16 +55,18 @@ export class WDODocumentFile {
      * @param side The side of the document that the image captures.
      * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @param country Country of origin as an ISO 3166-1 alpha-3 code. Defaults to the country returned for the scanned side.
      * @returns Document file to upload.
      */
     static fromScannedDocument(
         scannedDocument: WDOScannedDocument,
         side: WDODocumentSide,
         data: Base64EncodedJPEG,
-        dataSignature?: string
+        dataSignature?: string,
+        country?: string
     ): WDODocumentFile {
-        const originalDocumentId = scannedDocument.sides.find(s => s.type === side)?.serverId
-        return new WDODocumentFile(data, scannedDocument.type, side, originalDocumentId, dataSignature)
+        const scannedSide = scannedDocument.sides.find(s => s.type === side)
+        return new WDODocumentFile(data, scannedDocument.type, side, scannedSide?.serverId, dataSignature, country ?? scannedSide?.country)
     }
 
     /**
@@ -73,18 +77,21 @@ export class WDODocumentFile {
      * @param side The side of the document that the image captures.
      * @param originalDocumentId Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @param country Country of origin of the document as an ISO 3166-1 alpha-3 code. Optional.
      */
     constructor(
         data: Base64EncodedJPEG,
         type: WDODocumentType,
         side: WDODocumentSide,
         originalDocumentId?: string,
-        dataSignature?: string
+        dataSignature?: string,
+        country?: string
     ) {
         this.data = data
         this.dataSignature = dataSignature
         this.type = type
         this.side = side
+        this.country = country
         this.originalDocumentId = originalDocumentId
     }
 }
