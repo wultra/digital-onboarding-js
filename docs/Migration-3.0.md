@@ -54,7 +54,17 @@ const otp = await demoEndpointsService.getOTP(verificationService)
 
 `WDODemoEndpointsService` is constructed the same way as `WDOActivationService`/`WDOVerificationService` (same `powerauth` instance and `baseUrl`). The endpoint strategy (`WDOGetOTPEndpointStrategy`) defaults to `{ type: "automaticMock" }` and can be overridden as a second argument, e.g. `demoEndpointsService.getOTP(activationService, { type: "custom", url: "https://example.com/otp/detail" })`.
 
+4. Raise the iOS deployment target of your Cordova app to `15.0` or newer.
+
+```xml
+<platform name="ios">
+    <preference name="deployment-target" value="15.0" />
+</platform>
+```
+
 ## Checklist
+
+- Set the iOS `deployment-target` preference in your app's `config.xml` to `15.0` or newer.
 
 - Fetch and keep `WDOConfigurationResponse.otpResendPeriodSeconds` for the active process type, and handle `undefined` for older backends.
 - Update call sites that read `WDOOtpState.otpResendPeriodSeconds`.

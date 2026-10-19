@@ -78,7 +78,7 @@ export class WDONetworkingCordovaIntegration implements WDONetworkingIntegration
     }
 
     networking(powerAuth: PowerAuth, baseUrl: string): WDONetworking {
-        return new WPNNetworking(powerAuth, baseUrl)
+        return new WPNNetworking(powerAuth, { baseURL: baseUrl })
     }
 }
 
@@ -97,8 +97,8 @@ export class WDOPowerAuthCordovaIntegration {
         return PowerAuthActivation.createWithIdentityAttributes(identityAttributes, activationName)
     }
 
-    authenticationWithPassword(password: PowerAuthPassword): PowerAuthAuthentication {
-        return PowerAuthAuthentication.password(password)
+    authenticationForActivationPersist(password: PowerAuthPassword): PowerAuthAuthentication {
+        return PowerAuthAuthentication.persistWithPassword(password)
     }
 
     authenticationWithPossession(): PowerAuthAuthentication {

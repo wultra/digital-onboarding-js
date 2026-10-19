@@ -43,7 +43,7 @@ export interface WDONetworkingIntegration {
 /* @internal */
 export interface WDOPowerAuthIntegration {
     activationWithActivationCode(activationCode: string, activationName: string, otp: string | undefined): WDOPowerAuthActivation
-    authenticationWithPassword(password: WDOPowerAuthPassword): WDOPowerAuthAuthentication
+    authenticationForActivationPersist(password: WDOPowerAuthPassword): WDOPowerAuthAuthentication
     authenticationWithPossession(): WDOPowerAuthAuthentication
     activationWithIdentityAttributes(identityAttributes: any, activationName: string): WDOPowerAuthActivation
     isPowerAuthAuthentication(authentication: any): boolean
@@ -59,12 +59,9 @@ export interface WDOResponseConfig { }
 export interface WDOApiEndpoint<TRequest, TResponse> { }
 
 /* @internal */
-export interface WDORRequestProcessor { }
-
-/* @internal */
 export interface WDONetworking {
     set acceptLanguage(value: string)
-    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: WDOPowerAuthAuthentication | undefined, requestProcessor?: WDORRequestProcessor | undefined): Promise<WDOResponse<TResponse>>
+    call<TRequest, TResponse>(endpoint: WDOApiEndpoint<TRequest, TResponse>, requestData: TRequest, authentication: WDOPowerAuthAuthentication | undefined): Promise<WDOResponse<TResponse>>
 }
 
 /* @internal */
@@ -119,7 +116,7 @@ export interface WDOPowerAuthActivationStatus {
     /**
      * State of the activation.
      */
-    state: "CREATED" | "PENDING_COMMIT" | "ACTIVE" | "BLOCKED" | "REMOVED" | "DEADLOCK"
+    state: "PENDING_COMMIT" | "ACTIVE" | "BLOCKED" | "REMOVED" | "DEADLOCK" | "UNKNOWN"
     /**
      * Number of failed authentication attempts in a row.
      */
