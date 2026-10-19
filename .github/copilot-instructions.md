@@ -35,6 +35,7 @@
   - `src/WDOCordovaPlatform.ts` bridges secure storage, PowerAuth, networking, and environment metadata
   - `plugin.xml` exposes the bundle as a Cordova plugin and merges it onto `window`
 - `testapp-cordova/` is a manual integration harness, not an automated test project. Its `src/index.ts` exercises configuration fetch, activation, document selection/upload, presence check, OTP handling, and optional finish-activation against a real/demo backend.
+  - Server URLs, PowerAuth config, credentials, and BlinkID keys come from the gitignored `testapp-cordova/.env` (template: `.env.example`), injected at build time by `rollup.config.app.js` via `src/environment.ts`. Never commit `.env`.
 - `rollup.config.lib.js` currently builds only the Cordova package. React Native output is scaffolded but commented out, and `packages/lib-react-native` is not part of the active build/publish path.
 
 ## Key conventions

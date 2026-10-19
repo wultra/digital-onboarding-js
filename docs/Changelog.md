@@ -2,7 +2,12 @@
 
 ## 3.0.0
 
-- **⚠️ BREAKING**: `WDOOtpState` now carries only `remainingAttempts`.
+- Minimum supported iOS version is now `15.0`. The plugin sets the Cordova `deployment-target` preference to `15.0`.
+- Requires PowerAuth Mobile JS SDK `5.0.0` or newer.
+- Requires PowerAuth Networking JS SDK `2.0.0` or newer. Projects with an older `cordova-powerauth-networking` plugin installed must update it before adding this plugin.
+- When using `WPNNetworking` directly, replace the `requestProcessor` argument of `call()` with `WPNConfig.requestInterceptors` passed to the constructor. Interceptors synchronously receive and return a `WPNRequest`, including its `url`, and apply to every request of that networking instance. 
+- The activation status passed to `WDOVerificationServiceListener.powerAuthActivationStatusChanged` now allows `UNKNOWN` and no longer allows `CREATED`.
+- `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
 - Added `WDOVerificationService.startReVerification` to support Re-KYC (repeated identity verification) for an already active PowerAuth instance, without creating a new activation. Requires PA Enrollment Onboarding Server `2.2.3` or newer.
 - `WDOProcessResponse` now contains an optional `activationType` property indicating whether a new activation was created or an existing one was reused.
