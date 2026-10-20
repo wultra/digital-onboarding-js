@@ -1,5 +1,5 @@
 
-import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "./demodata"
+import { serverCredentials, blinkIdIos, blinkIdAndroid, otpMockStrategy } from "./environment"
 import "cordova-powerauth-mobile-sdk"
 import { WDOActivationService, WDODocumentFile, WDODocumentSide, WDODocumentType,
     WDOVerificationService, WDOVerificationState, WDOVerificationStateType, WDOConfigurationService,
@@ -383,7 +383,7 @@ async function simulateActivation() {
         }
 
         // Decide whether to use the real BlinkID scanning SDK or the mocked document upload based 
-        // on whether a BlinkID license key is actually configured for this platform in demodata.ts.
+        // on whether a BlinkID license key is actually configured for this platform in .env.
         const blinkIdKey = cordova.platformId == "ios" ? blinkIdIos : blinkIdAndroid
         const useRealDocumentScan = (blinkIdKey?.trim().length ?? 0) > 0
 
