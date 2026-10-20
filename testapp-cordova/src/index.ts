@@ -535,7 +535,7 @@ async function simulateActivation() {
             anotherStatus = await verificationService.finishActivation(
                 powerAuth2,
                 "onboarding-activation",
-                await PowerAuthPassword.fromString(pin, false),
+                await PowerAuthPassword.fromString(pin, { destroyOnUse: false }),
                 true
             )
             // on success, the state should be success
