@@ -60,7 +60,7 @@ export class WDOVerificationScanProcess {
                 return undefined
             }
             const documents = parsed.documents.map(d => {
-                const sides = d.sides.map(s => new Side(s.type as WDODocumentSide, s.serverId, s.uploadState))
+                const sides = d.sides.map(s => new Side(s.type as WDODocumentSide, s.serverId, s.uploadState, s.country))
                 return new WDOScannedDocument(d.type as WDODocumentType, sides)
             })
             return new WDOVerificationScanProcess(documents)
@@ -79,7 +79,8 @@ export class WDOVerificationScanProcess {
                 sides: d.sides.map(s => ({
                     type: s.type,
                     serverId: s.serverId,
-                    uploadState: s.uploadState
+                    uploadState: s.uploadState,
+                    country: s.country
                 }))
             }))
         }
@@ -122,7 +123,7 @@ export class WDOScannedDocument {
 
     /* @internal */
     processServerData(documents: WDODocument[]) {
-        this._sides = documents.map(doc => new Side(doc.side, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted))
+        this._sides = documents.map(doc => new Side(doc.side, doc.id, (doc.errors?.length ?? 0) > 0 ? UploadState.rejected : UploadState.accepted, doc.country))
     }
 }
 
@@ -150,11 +151,15 @@ export class Side {
     /** Upload state of the document */
     public uploadState: UploadState
 
+    /** Country of origin returned by the server as an ISO 3166-1 alpha-3 code, when available. */
+    public country?: string
+
     /* @internal */
-    constructor(type: WDODocumentSide, serverId: string, uploadState: UploadState) {
+    constructor(type: WDODocumentSide, serverId: string, uploadState: UploadState, country?: string) {
         this.type = type
         this.serverId = serverId
         this.uploadState = uploadState
+        this.country = country
     }
 }
 
@@ -165,6 +170,7 @@ interface CacheV2Side {
     type: string
     serverId: string
     uploadState: number
+    country?: string
 }
 
 /* @internal */
