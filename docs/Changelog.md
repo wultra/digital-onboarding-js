@@ -6,7 +6,12 @@
 - Requires PowerAuth Mobile JS SDK `5.0.0` or newer.
 - Requires PowerAuth Networking JS SDK `2.0.0` or newer. Projects with an older `cordova-powerauth-networking` plugin installed must update it before adding this plugin.
 - When using `WPNNetworking` directly, replace the `requestProcessor` argument of `call()` with `WPNConfig.requestInterceptors` passed to the constructor. Interceptors synchronously receive and return a `WPNRequest`, including its `url`, and apply to every request of that networking instance. 
+- `PowerAuthPassword` passed to `WDOVerificationService.finishActivation` with `validatePassword` set to `true` must be reusable. With PowerAuth Mobile JS SDK `5.0.0`, create it with `PowerAuthPassword.fromString(pin, { destroyOnUse: false })`.
 - The activation status passed to `WDOVerificationServiceListener.powerAuthActivationStatusChanged` now allows `UNKNOWN` and no longer allows `CREATED`.
+- See the [migration guide](Migration-4.0.md) for upgrade steps.
+
+## 3.0.0
+
 - `WDOOtpState` now carries only `remainingAttempts`.
 - `WDOConfigurationResponse` now includes optional `otpResendPeriodSeconds` (`undefined` on older backends that do not provide the field yet).
 - Added `WDOVerificationService.startReVerification` to support Re-KYC (repeated identity verification) for an already active PowerAuth instance, without creating a new activation. Requires PA Enrollment Onboarding Server `2.2.3` or newer.
