@@ -8,15 +8,20 @@ Networking traffic is logged in its own logger described in the [networking libr
 
 ### Verbosity Level
 
-You can limit the amount of logged information via the `verboseLevel` property.
+You can limit the amount of logged information via the `WDOLogger.logLevel` property.
+
+```typescript
+WDOLogger.logLevel = WDOLogLevel.DEBUG
+```
 
 | Level                  | Description                                       |
 | ---------------------- | ------------------------------------------------- |
 | `NONE`                 | Silences all messages.                            |
-| `ERROR`  _(default)_   | Only errors will be logged.                       |
-| `WARNING`              | Errors and warnings will be logged.               |
-| `INFO`                 | Error, warning and info messages will be logged.  |
+| `ERROR`                | Only errors will be logged.                       |
+| `WARN`                 | Errors and warnings will be logged.               |
+| `INFO`  _(default)_    | Error, warning and info messages will be logged.  |
 | `DEBUG`                | All messages will be logged.                      |
+
 ### Logger Delegate
 
 In case you want to process logs on your own (for example log into a file or some cloud service), you can set `WDOLogger.listener`.
