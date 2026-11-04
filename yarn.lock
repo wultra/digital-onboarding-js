@@ -1482,8 +1482,8 @@ __metadata:
 
 "cordova-digital-onboarding@file:../packages/lib-cordova::locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova":
   version: 0.0.1-dev
-  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=7c2c55&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
-  checksum: 10c0/3c55107d41fb8b7683e27adef518a630d55f49d5c426aa5d13cadc9fecce817183a44ca7262c374505c1af2469bcf53dd001829d6670422624e7b4f50676151d
+  resolution: "cordova-digital-onboarding@file:../packages/lib-cordova#../packages/lib-cordova::hash=4a2334&locator=com.wultra.cordova.onboardingtestapp%40workspace%3Atestapp-cordova"
+  checksum: 10c0/b4c9dd734e3a414f432f6e8bd27b983a716e7300db6c407ce1ff98db4400ffeb052c9521e4b36ed04f2e079320f671c21c5c705e05062ccb97707e6d30b39e3d
   languageName: node
   linkType: hard
 
@@ -2788,9 +2788,9 @@ __metadata:
   linkType: hard
 
 "ip-address@npm:^10.0.1":
-  version: 10.7.2
-  resolution: "ip-address@npm:10.7.2"
-  checksum: 10c0/290b9c63289b2a89a442dac19eff88d919e65cd41d1a720fa963be736e126f3b0cf4f88f6056b06abbf4a95300dc9ce5362a773e012ef30e0400074d175b9d31
+  version: 10.7.6
+  resolution: "ip-address@npm:10.7.6"
+  checksum: 10c0/b1877874793345a00ef46877e18b8ff38d91ce4d07195f8e26d1381a0248b296cfad73e2ec1ba7c5c39e347d365971e036fbb6ffbc672b7d3f0d9648ed2fafa5
   languageName: node
   linkType: hard
 
