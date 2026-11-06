@@ -472,19 +472,20 @@ When a document is scanned (both sides when required), it needs to be uploaded t
 __Images of the document should not be bigger than hundreds of kilobytes. Files that are too big will take longer time to upload and process on the server.__
 <!-- end -->
 
-To upload a document, use `documentsSubmit` function. Each side of a document is a single `WDODocumentFile` instance.
+To upload a document, use `documentsSubmit` function. Each side of a document is a single `WDODocumentFile` instance. You can provide its country of origin as an optional ISO 3166-1 alpha-3 code, such as `"CZE"`, using the `country` property or the final constructor argument.
 
 Example:
 
 ```typescript
 const verification: WDOVerificationService // configured instance
 
-const passportToUpload = WDODocumentFile(
+const passportToUpload = new WDODocumentFile(
     "BASE64_ENCODED_IMAGE_DATA", // raw image data from the document scanning library/photo camera
     "PASSPORT",
     WDODocumentSide.front, // passport has only front side
     undefined, // original id, optional (use only when re-uploading the file - for example when first upload was rejected because of a blur)
-    undefined // signature, optional (use when provided by the document scanning library)
+    undefined, // signature, optional (use when provided by the document scanning library)
+    "CZE" // country of origin, optional ISO 3166-1 alpha-3 code
 )
 try {
     const result = await verification.documentsSubmit([passportToUpload])
@@ -515,6 +516,8 @@ declare class WDODocumentFile {
     type: WDODocumentType;
     /** Side of the document (`front` if the document is one-sided or only one side is expected). */
     side: WDODocumentSide;
+    /** Country of origin of the document as an ISO 3166-1 alpha-3 code. */
+    country?: string;
     /**
      * For image reuploading when the previous file of the same document was rejected.
      *
@@ -528,9 +531,10 @@ declare class WDODocumentFile {
      * @param side The side of the document that the image captures.
      * @param data Raw image data. Make sure that the data aren't too big, hundreds of kbs should be enough.
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @param country Country of origin as an ISO 3166-1 alpha-3 code. Defaults to the country returned for the scanned side.
      * @returns Document file to upload.
      */
-    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string): WDODocumentFile;
+    static fromScannedDocument(scannedDocument: WDOScannedDocument, side: WDODocumentSide, data: Base64EncodedJPEG, dataSignature?: string, country?: string): WDODocumentFile;
     /**
      * Image of a document that can be sent to the backend for Identity Verification.
      *
@@ -539,13 +543,14 @@ declare class WDODocumentFile {
      * @param side The side of the document that the image captures.
      * @param originalDocumentId Original document ID In case of a reupload. If you've previously uploaded this type and side and won't specify the previous ID, the image won't be overwritten.
      * @param dataSignature Signature of the image data. Optional, use only when the scan SDK supports this. `undefined` by default.
+     * @param country Country of origin of the document as an ISO 3166-1 alpha-3 code. Optional.
      */
-    constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string);
+    constructor(data: Base64EncodedJPEG, type: WDODocumentType, side: WDODocumentSide, originalDocumentId?: string, dataSignature?: string, country?: string);
 }
 ```
 
 <!-- begin box info -->
-To create an instance of the `WDODocumentFile`, you can use `WDODocumentFile.fromScannedDocument`. The `WDOScannedDocument` is returned in the process status as a "next document to scan".
+To create an instance of the `WDODocumentFile`, you can use `WDODocumentFile.fromScannedDocument`. The `WDOScannedDocument` is returned in the process status as a "next document to scan". Each uploaded `Side` exposes the optional `country` returned by document status. The factory preserves this country and the original document ID when re-uploading, including after an app restart. You can override the country with the factory's final argument. On older backends that omit the country, it remains `undefined`.
 <!-- end -->
 
 ## Presence check

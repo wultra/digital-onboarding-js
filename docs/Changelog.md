@@ -2,6 +2,9 @@
 
 ## TBA
 
+- Added optional ISO 3166-1 alpha-3 `country` to document uploads and document status sides. The country is preserved in the scan cache and by `WDODocumentFile.fromScannedDocument()` when re-uploading.
+
+- `WDOOtpState` now carries only `remainingAttempts`.
 - Minimum supported iOS version is now `15.0`. The plugin sets the Cordova `deployment-target` preference to `15.0`.
 - Requires PowerAuth Mobile JS SDK `5.0.0` or newer.
 - Requires PowerAuth Networking JS SDK `2.0.0` or newer. Projects with an older `cordova-powerauth-networking` plugin installed must update it before adding this plugin.

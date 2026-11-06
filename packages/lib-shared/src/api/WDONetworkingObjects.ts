@@ -102,6 +102,8 @@ export interface WDODocument {
     type: string
     /** Side of the file */
     side: WDODocumentSide
+    /** Country of origin of the document as an ISO 3166-1 alpha-3 code. */
+    country?: string
     /** Status of the processing */
     status: WDODocumentStatus
     /** Possible errors */
@@ -134,6 +136,8 @@ export interface WDODocumentSubmitFile {
     type: string
     /** Side of the document (for example, front side of the ID card) */
     side: WDODocumentSide
+    /** Country of origin of the document as an ISO 3166-1 alpha-3 code. */
+    country?: string
     /** Original document ID in case of re-upload */
     originalDocumentId?: string
     /** Base64 encoded data image. */

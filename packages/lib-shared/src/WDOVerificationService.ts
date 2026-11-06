@@ -381,6 +381,7 @@ export abstract class WDOBaseVerificationService<
                 filename: `${f.type.toLowerCase()}_${f.side.toLowerCase()}.jpg`,
                 type: f.type,
                 side: f.side,
+                country: f.country,
                 originalDocumentId: f.originalDocumentId,
                 data: f.data
             }
@@ -534,7 +535,7 @@ export abstract class WDOBaseVerificationService<
     private async processDocumentsToUpload(pid: string, documents: WDODocumentFile[]): Promise<WDODocumentFile[]> {
         // clone the documents to avoid mutating the original ones with resolved originalDocumentId
         const processedFiles = documents.map(f => {
-            return new WDODocumentFile(f.data, f.type, f.side, f.originalDocumentId, f.dataSignature)
+            return new WDODocumentFile(f.data, f.type, f.side, f.originalDocumentId, f.dataSignature, f.country)
         })
 
         // Following block fills in originalDocumentId for documents being re-uploaded without it.
