@@ -2,6 +2,8 @@
 
 ## TBA
 
+## 4.0.0
+
 - Minimum supported iOS version is now `15.0`. The plugin sets the Cordova `deployment-target` preference to `15.0`.
 - Requires PowerAuth Mobile JS SDK `5.0.0` or newer.
 - Requires PowerAuth Networking JS SDK `2.0.0` or newer. Projects with an older `cordova-powerauth-networking` plugin installed must update it before adding this plugin.
